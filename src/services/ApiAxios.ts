@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth';
 
-
 class ApiAxios {
   myDomain = '127.0.0.1:8000'
 
@@ -78,7 +77,6 @@ class ApiAxios {
   add(url: string, data: any){
     return this.axiosInstance().post(url, data)
   }
-
 
   /**
    * Exécute une réquête de selection par valeur d'un parametre

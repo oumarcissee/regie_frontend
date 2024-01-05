@@ -20,35 +20,26 @@ export const useAuthStore = defineStore({
     }),
     actions: {
         async login(username: string, password: string) {
-            const response = await new ApiAxios().add('/jwt/create/', {username, password})
-            // update pinia state
-            this.accessToken = response.data.access;
-            this.refreshToken = response.data.refresh;
-            this.isAuthenticated = true;
-
-            await this.connection()
-
-            if (this.user?.role === 'admin') {
-                this.dashboard = 'AdminDashboard'
-            } else if (this.user?.role === 'moderator') {
-                this.dashboard = 'ModeratorDashboard'
-            } else if (this.user?.role === 'recruiter') {
-                this.dashboard = 'RecruiterDashboard'
-            } else {
-                this.dashboard = 'Dashboard'
-            }
-         
-            // store user details and jwt in local storage to keep user logged in between page refreshes
-            // localStorage.setItem('user', JSON.stringify(user));
-            // redirect to previous url or default to home page
-            router.push(this.returnUrl || '/dashboards/modern');
-        },
-
-        async connection() {
+            // console.log(username, password);
             try {
-                const response = await new ApiAxios().find('/users/me/');
-                this.user  = response.data
-            } catch(error){
+                const response = await new ApiAxios().add('/jwt/create/', {username,password});
+                // update pinia state
+                this.accessToken = response.data.access;
+                this.refreshToken = response.data.refresh;
+                this.isAuthenticated = true;
+        
+                const userConnected = await new ApiAxios().find('/users/me/');
+                this.user = userConnected.data;
+                
+                if (this.user?.role === 'admin') {
+                    router.push(this.returnUrl || '/dashboards/modern');
+                } else if (this.user?.role === 'manager_a') {
+                    router.push(this.returnUrl || '/dashboards/modern/mag');
+                } else {
+                    router.push('/');
+                }
+                
+            } catch (error) {
                 console.log(error)
             }
         },
