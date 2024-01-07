@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
+import { isAxiosError } from '@/services/utils';
 import { router } from '@/router';
 import { fetchWrapper } from '@/utils/helpers/fetch-wrapper';
+
 import ApiAxios from '@/services/ApiAxios';
 
 const baseUrl = `${import.meta.env.VITE_API_URL}/users`;
@@ -22,7 +24,8 @@ export const useAuthStore = defineStore({
         async login(username: string, password: string) {
             // console.log(username, password);
             try {
-                const response = await new ApiAxios().add('/jwt/create/', {username,password});
+                const response = await new ApiAxios().add('/jwt/create/', { username, password });
+                console.log(response)
                 // update pinia state
                 this.accessToken = response.data.access;
                 this.refreshToken = response.data.refresh;
@@ -32,15 +35,20 @@ export const useAuthStore = defineStore({
                 this.user = userConnected.data;
                 
                 if (this.user?.role === 'admin') {
-                    router.push(this.returnUrl || '/dashboards/modern');
+                    router.push({name: 'ModernDashboard'});
                 } else if (this.user?.role === 'manager_a') {
-                    router.push(this.returnUrl || '/dashboards/modern/mag');
+                    router.push({name: 'ManagerADashboard'});
                 } else {
                     router.push('/');
                 }
                 
             } catch (error) {
-                console.log(error)
+               if (isAxiosError(error)) {
+                    if (error.response) {
+                        return Promise.reject("Aucun compte actif n'a été trouvé avec les informations d'identification");
+                    }
+                }
+                return Promise.reject("Erreur de connexion");
             }
         },
 

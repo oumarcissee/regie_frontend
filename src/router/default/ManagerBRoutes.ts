@@ -1,16 +1,16 @@
-const MainRoutes = {
-    path: '/main',
+const ManagerBRoutes = {
+    path: '/mainManagerB',
     meta: {
         requiresAuth: true,
-        role: 'admin'
+        role: 'manager_b'
     },
-    redirect: '/main',
+    redirect: '/mainManagerB',
     component: () => import('@/layouts/full/FullLayout.vue'),
     children: [
         {
             name: 'ModernDashboard',
             path: '/dashboards/modern',
-            component: () => import('@/views/dashboard/modern/index.vue')
+            component: () => import('@/views/dashboard/modern/indexManagerB.vue')
         },
         {
             name: 'eCommerce',
@@ -382,4 +382,4 @@ const MainRoutes = {
     ]
 };
 
-export default MainRoutes;
+export default ManagerBRoutes;

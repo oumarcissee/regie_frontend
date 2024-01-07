@@ -2,7 +2,7 @@ const MagasinierA = {
     path: '/main2',
     meta: {
         requiresAuth: true,
-        role: 'manager_a'
+        role: 'Kepper_a'
     },
     redirect: '/main2',
     component: () => import('@/layouts/full/FullLayoutMagA.vue'),

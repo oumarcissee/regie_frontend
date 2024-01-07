@@ -72,6 +72,7 @@ const customizer = useCustomizerStore();
             <HorizontalSidebar v-if="customizer.setHorizontalLayout" />
 
             <v-main>
+               
                 <v-container fluid class="page-wrapper pb-sm-15 pb-10">
                     <div :class="customizer.boxed ? 'maxWidth' : ''">
                         <RouterView />
@@ -87,6 +88,7 @@ const customizer = useCustomizerStore();
                         </v-btn>
                     </div>
                 </v-container>
+                
             </v-main>
         </v-app>
     </v-locale-provider>

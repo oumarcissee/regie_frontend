@@ -1,43 +1,43 @@
 import { useAuthStore } from '@/stores/auth';
+import type { AxiosError } from 'axios';
 
-const authStore = useAuthStore();
 import moment from 'moment';
 
 
 
 
-const appStore = useAppStore()
+// const appStore = useAppStore()
 
-/**
- *Cette fonction permet d'effectuer une notification
- * @param {String} title
- * @param {String} text
- * @param {String} type
- * @param {String} url
- */
+// /**
+//  *Cette fonction permet d'effectuer une notification
+//  * @param {String} title
+//  * @param {String} text
+//  * @param {String} type
+//  * @param {String} url
+//  */
 
-const flash = async (title: any, text: any, type: any) => {
+// const flash = async (title: any, text: any, type: any) => {
 
-  if (appStore.isAuthenticated) {
-    appStore.notification.admin.title = title
-    appStore.notification.admin.text = text
-    appStore.notification.admin.type = type
-    appStore.notification.admin.state = true
-    setTimeout(() => {
-      appStore.notification.admin.state = false
-    }, 5000)
+//   if (appStore.isAuthenticated) {
+//     appStore.notification.admin.title = title
+//     appStore.notification.admin.text = text
+//     appStore.notification.admin.type = type
+//     appStore.notification.admin.state = true
+//     setTimeout(() => {
+//       appStore.notification.admin.state = false
+//     }, 5000)
 
-  } else {
-    appStore.notification.main.title = title
-    appStore.notification.main.text = text
-    appStore.notification.main.type = type
-    appStore.notification.main.state = true
-    setTimeout(() => {
-      appStore.notification.main.state = false
-    }, 5000)
-  }
+//   } else {
+//     appStore.notification.main.title = title
+//     appStore.notification.main.text = text
+//     appStore.notification.main.type = type
+//     appStore.notification.main.state = true
+//     setTimeout(() => {
+//       appStore.notification.main.state = false
+//     }, 5000)
+//   }
 
-}
+// }
 
 /**
  *
@@ -66,7 +66,7 @@ const truncateText = (text: string | any[], limit: number) => {
  * @param {String} type
  * @returns
  */
-const formatDate = (customDate: moment.MomentInput, type = 'number') => {
+const formatDate = (customDate: moment.MomentInput, type: string = 'number') => {
   moment.locale('fr')
 
   if (type === 'number') {
@@ -107,24 +107,30 @@ const formatSlug = (chaine: string) => {
 }
 
 
-const dateISOFormated = (dateISO8601: string | number | Date) => {
+// const dateISOFormated = (dateISO8601: string | number | Date) => {
 
-  // Créer un objet Date à partir de la date ISO 8601
-  const dateObj = new Date(dateISO8601);
+//   // Créer un objet Date à partir de la date ISO 8601
+//   const dateObj = new Date(dateISO8601);
 
-  // Extraire l'année, le mois et le jour de l'objet Date
-  const year = dateObj.getFullYear();
-  const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Mois de 0 à 11, donc +1 et formaté sur 2 chiffres
-  const day = String(dateObj.getDate()).padStart(2, '0'); // Jour du mois, formaté sur 2 chiffres
+//   // Extraire l'année, le mois et le jour de l'objet Date
+//   const year = dateObj.getFullYear();
+//   const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Mois de 0 à 11, donc +1 et formaté sur 2 chiffres
+//   const day = String(dateObj.getDate()).padStart(2, '0'); // Jour du mois, formaté sur 2 chiffres
 
-  // Former la date au format "yyyy-mm-dd"
-  const dateFormatted = `${year}-${month}-${day}`;
+//   // Former la date au format "yyyy-mm-dd"
+//   const dateFormatted = `${year}-${month}-${day}`;
 
-  return dateFormatted
+//   return dateFormatted
 
+// }
+
+
+// Fonction utilitaire pour vérifier si c'est une erreur Axios
+function isAxiosError(error: any): error is AxiosError {
+    return (error as AxiosError).isAxiosError !== undefined;
 }
 
 export {
-  flash, truncateText, formatDate, formatSlug, dateISOFormated
+ truncateText, formatDate, formatSlug, isAxiosError
 
 }

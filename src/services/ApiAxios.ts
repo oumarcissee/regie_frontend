@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosResponse } from 'axios';
 import { useAuthStore } from '@/stores/auth';
 
 class ApiAxios {
@@ -8,19 +8,21 @@ class ApiAxios {
    * Initialisation
   */
   axiosInstance() {
+    const {isAuthenticated , accessToken} = useAuthStore()
 
-    if(useAuthStore().isAuthenticated){// Connexion
+    if(isAuthenticated){// Connexion
       return axios.create({
         baseURL: (window.location.protocol  === 'https:' ? 'https' : 'http') + `://${this.myDomain}/api`,
           headers:{
-            Authorization: `JWT ${useAuthStore().accessToken}`
+            Authorization: `JWT ${accessToken}`
           }
       })
-    } else {
-      return axios.create({
-        baseURL: (window.location.protocol  === 'https:' ? 'https' : 'http') + `://${this.myDomain}/api`,
-      })
     }
+
+    return axios.create({
+      baseURL: (window.location.protocol  === 'https:' ? 'https' : 'http') + `://${this.myDomain}/api`,
+    })
+    
   }
 
   /**
@@ -74,7 +76,7 @@ class ApiAxios {
    * @param {String} url
    * @param {Object} data
   */
-  add(url: string, data: any){
+  add(url: string, data: any) {
     return this.axiosInstance().post(url, data)
   }
 
@@ -112,5 +114,23 @@ class ApiAxios {
     });
   }
 }
+
+
+function handleResponse(response: AxiosResponse) {
+    const data = response.data;
+
+    if (!response.status.toString().startsWith('2')) {
+        const { user, logout } = useAuthStore();
+        if ([401, 403].includes(response.status) && user) {
+            logout();
+        }
+
+        const error = (data && data.message) || response.statusText;
+        return Promise.reject(error);
+    }
+
+    return data;
+}
+
 
 export default ApiAxios;

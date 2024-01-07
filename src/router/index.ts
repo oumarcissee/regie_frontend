@@ -3,6 +3,7 @@ import MainRoutes from './MainRoutes';
 import MagasinierA from './MagasinierA';
 import AuthRoutes from './AuthRoutes';
 import { useAuthStore } from '@/stores/auth';
+import ManagerARoutes from './default/ManagerARoutes';
 
 export const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -12,6 +13,8 @@ export const router = createRouter({
             component: () => import('@/views/authentication/Error.vue')
         },
         MainRoutes,
+        ManagerARoutes,
+        
         MagasinierA,
         AuthRoutes
     ]
@@ -26,7 +29,9 @@ router.beforeEach(async (to, from, next) => {
         const authRequired = !publicPages.includes(to.path);
 
         if (authRequired && (!userRole || !hasAccess(userRole, to))) {
+            
             auth.returnUrl = to.fullPath;
+          
             return next('/auth/login');
         } else {
             next();

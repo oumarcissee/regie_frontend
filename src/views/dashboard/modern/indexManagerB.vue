@@ -15,7 +15,6 @@ import TopProjects from "../dashboardComponents/modern/TopProjects.vue";
 </script>
 <template>
     <v-row>
-        ADMIN PRINCIPALE
         <!-- Top cards -->
         <v-col cols="12">
             <Topcards/>
