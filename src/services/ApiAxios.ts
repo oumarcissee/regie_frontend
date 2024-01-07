@@ -115,22 +115,4 @@ class ApiAxios {
   }
 }
 
-
-function handleResponse(response: AxiosResponse) {
-    const data = response.data;
-
-    if (!response.status.toString().startsWith('2')) {
-        const { user, logout } = useAuthStore();
-        if ([401, 403].includes(response.status) && user) {
-            logout();
-        }
-
-        const error = (data && data.message) || response.statusText;
-        return Promise.reject(error);
-    }
-
-    return data;
-}
-
-
 export default ApiAxios;

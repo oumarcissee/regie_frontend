@@ -4,6 +4,8 @@ import QuickLinks from '@/components/landingpage/layout/PageMenuQuicklinks.vue';
 import AppsLink from '@/components/landingpage/layout/PageMegamenu.vue';
 import { demosMegamenu, appsMegamenu } from '@/_mockApis/landingpage/lpPage';
 import { HelpIcon, ChevronDownIcon } from 'vue-tabler-icons';
+import { useAuthStore } from '@/stores/auth';
+const  { isAuthenticated , dashboard} = useAuthStore()
 </script>
 
 <template>
@@ -85,7 +87,10 @@ import { HelpIcon, ChevronDownIcon } from 'vue-tabler-icons';
     </v-menu>
     <v-btn variant="text" color="primary" class="custom-hover-primary nav-links" href="https://demos.adminmart.com/premium/vue/modernize-vuejs/docs/index.html" target="_blank">Documentation</v-btn>
     <v-btn variant="text" color="primary" class="custom-hover-primary nav-links" href="https://adminmart.com/support/" target="_blank">Support</v-btn>
-    <v-btn class="custom-hover-primary bg-primary ml-2 text-white" flat :to="{name: 'Side-Login'}" 
+    <v-btn v-if="!isAuthenticated" class="custom-hover-primary bg-primary ml-2 text-white" flat :to="{name: 'Side-Login'}" 
         ><span class="text-white">Connectez-vous</span></v-btn
+    >
+    <v-btn v-else class="custom-hover-primary bg-primary ml-2 text-white" flat :to="{name: dashboard}" 
+        ><span class="text-white">Mon compte</span></v-btn
     >
 </template>

@@ -8,7 +8,7 @@ const ManagerBRoutes = {
     component: () => import('@/layouts/full/FullLayout.vue'),
     children: [
         {
-            name: 'ModernDashboard',
+            name: 'ModernDashboardB',
             path: '/dashboards/modern',
             component: () => import('@/views/dashboard/modern/indexManagerB.vue')
         },

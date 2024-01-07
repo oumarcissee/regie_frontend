@@ -34,11 +34,11 @@ const UserError = ref()
 
 
 const submit = handleSubmit(async (data: any, {setErrors}: any) => {
-    const authStore = useAuthStore();
+    const { login } = useAuthStore();
   
     try {
         UserError.value = null
-        return await authStore.login(data.username, data.password);
+        return await login(data.username, data.password);
     } catch (error) {
         UserError.value = error
         return setErrors({ apiError: error });

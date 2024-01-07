@@ -9,7 +9,7 @@ const ManagerARoutes = {
     children: [
         {
             name: 'ManagerADashboard',
-            path: '/dashboards/modern',
+            path: '/rut/dashboard',
             component: () => import('@/views/dashboard/modern/indexManagerA.vue')
         },
         {

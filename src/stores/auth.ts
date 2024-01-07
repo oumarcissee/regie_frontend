@@ -13,7 +13,6 @@ export const useAuthStore = defineStore({
         // initialize state from local storage to enable user to stay logged in
         // @ts-ignore
         returnUrl: null,
-        
         dashboard: '',
         user: Object(),
         isAuthenticated: false,
@@ -25,7 +24,7 @@ export const useAuthStore = defineStore({
             // console.log(username, password);
             try {
                 const response = await new ApiAxios().add('/jwt/create/', { username, password });
-                console.log(response)
+                // console.log(response)
                 // update pinia state
                 this.accessToken = response.data.access;
                 this.refreshToken = response.data.refresh;
@@ -35,8 +34,10 @@ export const useAuthStore = defineStore({
                 this.user = userConnected.data;
                 
                 if (this.user?.role === 'admin') {
-                    router.push({name: 'ModernDashboard'});
+                    this.dashboard = 'ModernDashboard';
+                    router.push({ name: 'ModernDashboard' });
                 } else if (this.user?.role === 'manager_a') {
+                    this.dashboard = 'ManagerADashboard';
                     router.push({name: 'ManagerADashboard'});
                 } else {
                     router.push('/');
@@ -54,6 +55,7 @@ export const useAuthStore = defineStore({
 
         logout() {
             this.user = null;
+            this.isAuthenticated = false
             localStorage.removeItem('user');
             router.push('/');
         }
