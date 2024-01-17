@@ -207,12 +207,13 @@ const MainRoutes = {
     //         name: 'Height Table',
     //         path: '/tables/height',
     //         component: () => import('@/views/tables/TableHeight.vue')
-    //     },
-    //     {
-    //         name: 'Editable Table',
-    //         path: '/tables/editable',
-    //         component: () => import('@/views/tables/TableEditable.vue')
-    //     },
+        //     },
+    ,
+        {
+            name: 'Editable Table',
+            path: '/tables/editable',
+            component: () => import('@/views/tables/TableEditable.vue')
+        },
     //     {
     //         name: 'Basic Data Table',
     //         path: '/tables/datatables/basic',

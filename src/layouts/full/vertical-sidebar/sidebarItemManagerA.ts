@@ -81,6 +81,15 @@ const sidebarItemManagerA: menu[] = [
         chipBgColor: 'secondary',
         to: '/rut/dashboard'
     },
+
+    { header: 'Commandes' },
+    {
+        title: 'Fournisseurs',
+        icon: BoxIcon,
+        chipColor: 'surface',
+        chipBgColor: 'secondary',
+        to: '/rut/providers'
+    },
     // {
     //     title: 'eCommerce',
     //     icon: ShoppingCartIcon,

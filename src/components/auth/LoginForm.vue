@@ -5,14 +5,15 @@ import { Form, useField, useForm } from 'vee-validate';
 
 /*Social icons*/
 import google from '@/assets/images/svgs/google-icon.svg';
-import facebook from '@/assets/images/svgs/facebook-icon.svg';
 
+import facebook from '@/assets/images/svgs/facebook-icon.svg';
+import { isModuleResolutionError } from '@rushstack/eslint-patch/lib/_patch-base';
 
 const { handleSubmit, handleReset } = useForm({
   validationSchema: {
     username(value: string | any[]) {
-      if (value?.length >= 4) return true;
-      return "Le nom d'utilisateur doit avoir au moins 4 caractères.";
+      if (value?.length >= 3) return true;
+      return "Le nom d'utilisateur doit avoir au moins 3 caractères.";
     },
 
     password(value: string | any[]) {
@@ -49,6 +50,7 @@ const submit = handleSubmit(async (data: any, {setErrors}: any) => {
 </script>
 
 <template>
+
     <v-row class="d-flex mb-3">
         <v-col cols="6" sm="6" >
             <v-btn variant="outlined" size="large" class="border text-subtitle-1" block>
