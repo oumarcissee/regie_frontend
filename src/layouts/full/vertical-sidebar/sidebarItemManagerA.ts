@@ -82,13 +82,46 @@ const sidebarItemManagerA: menu[] = [
         to: '/rut/dashboard'
     },
 
-    { header: 'Commandes' },
+    { header: 'Gestion des commandes' },
+    
     {
         title: 'Fournisseurs',
-        icon: BoxIcon,
-        chipColor: 'surface',
-        chipBgColor: 'secondary',
-        to: '/rut/providers'
+        icon: UserCircleIcon,
+        to: '/rut/providers/',
+        children: [
+            {
+                title: 'Liste',
+                icon: BoxIcon,
+                chipColor: 'surface',
+                chipBgColor: 'secondary',
+                to: '/rut/providers/list'
+            },
+
+            {
+                title: 'Nouveau',
+                icon: UserPlusIcon,
+                chipColor: 'surface',
+                chipBgColor: 'secondary',
+                to: '/rut/providers/add'
+            },
+             
+
+            // {
+            //     title: 'Detail',
+            //     icon: PointIcon,
+            //     to: '/ecommerce/product/detail/1'
+            // },
+            // {
+            //     title: 'List',
+            //     icon: PointIcon,
+            //     to: '/ecommerce/productlist'
+            // },
+            // {
+            //     title: 'Checkout',
+            //     icon: PointIcon,
+            //     to: '/ecommerce/checkout'
+            // }
+        ]
     },
     // {
     //     title: 'eCommerce',

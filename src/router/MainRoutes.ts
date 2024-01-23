@@ -168,11 +168,11 @@ const MainRoutes = {
     //         path: '/forms/form-vertical',
     //         component: () => import('@/views/forms/FormVertical.vue')
     //     },
-    //     {
-    //         name: 'Form Custom',
-    //         path: '/forms/form-custom',
-    //         component: () => import('@/views/forms/FormCustom.vue')
-    //     },
+        // ,{
+        //     name: 'Form Custom',
+        //     path: '/forms/form-custom',
+        //     component: () => import('@/views/forms/FormCustom.vue')
+        // },
     //     {
     //         name: 'Form Validation',
     //         path: '/forms/form-validation',

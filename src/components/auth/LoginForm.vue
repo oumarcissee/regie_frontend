@@ -7,7 +7,7 @@ import { Form, useField, useForm } from 'vee-validate';
 import google from '@/assets/images/svgs/google-icon.svg';
 
 import facebook from '@/assets/images/svgs/facebook-icon.svg';
-import { isModuleResolutionError } from '@rushstack/eslint-patch/lib/_patch-base';
+
 
 const { handleSubmit, handleReset } = useForm({
   validationSchema: {
