@@ -27,6 +27,7 @@ const checkbox = ref(false);
 const valid = ref(false);
 const show1 = ref(false);
 
+
 const username = useField("username");
 const password = useField("password");
 
@@ -34,9 +35,9 @@ const UserError = ref()
 
 
 
-const submit = handleSubmit(async (data: any, {setErrors}: any) => {
+const submit = handleSubmit(async (data: any, { setErrors }: any) => {
     const { login } = useAuthStore();
-  
+
     try {
         UserError.value = null
         return await login(data.username, data.password);
