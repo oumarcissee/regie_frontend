@@ -25,12 +25,17 @@ export const useProdiverStore = defineStore({
     actions: {
         async add(data: any) {
             try {
-                const response = await new ApiAxios().add('/u/users/', data);
+                const response = await new ApiAxios().add('/u/create-provider/', data);
+                router.push({name: 'Providers'})
+                // this.store = response.data;
+                // localStorage.setItem('user', JSON.stringify(response.data));
+                
             } catch (error) {
                 if (isAxiosError(error)) {
                     if (error.response && error.response.data) {
+                        console.log(error.response.data);
             
-                        const responseData = error.response.data as { username: string[], email: string[], phone: string[]};
+                        const responseData = error.response.data as { username: string[], email: string[], phone_number: string[], error: string[]};
 
                         this.errors.usernameError = responseData.username ? responseData.username[0] : null;
                         this.errors.usernameText = data.username
@@ -38,14 +43,12 @@ export const useProdiverStore = defineStore({
                         this.errors.emailError = responseData.email ? responseData.email[0] : null;
                         this.errors.emailText = data.email;
 
-                        this.errors.phone_numberError = responseData.phone ? responseData.phone[0] : null;
-                        this.errors.phone_numberText = data.phone;
-                        
-                        
-                        // Utilisez usernameError et emailError comme vous le souhaitez,
-                        // par exemple, vous pouvez les enregistrer dans un fichier TypeScript
-                        
-                        return Promise.reject(this.errors);
+                        this.errors.phone_numberError = responseData.phone_number ? responseData.phone_number[0] : null;
+                        this.errors.phone_numberText = data.phone_number;
+        
+                        if (responseData.error) {
+                            router.push({name: 'Providers'})
+                        }
                     }
                 }
                 return Promise.reject("Autres erreur");

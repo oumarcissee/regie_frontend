@@ -110,7 +110,7 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
         errors.emailError = null
 
         return await add(formData);
-        // UserError.value = null
+        
     } catch (error: any) {
         // UserError.value = error
       
