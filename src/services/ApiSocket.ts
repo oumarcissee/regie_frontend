@@ -4,9 +4,9 @@ class WebSocketManager {
 
   //Le domaine complet
   myDomain = 'localhost:8000'
-  socket
-  onOpenHandlers
-  onMessageHandlers
+  socket: WebSocket | null
+  onOpenHandlers: any[]
+  onMessageHandlers: any[]
   constructor() {
     this.socket = null;
     this.onOpenHandlers = [];
@@ -17,30 +17,30 @@ class WebSocketManager {
    * @param {String} endPoint
    * @returns
    */
-  connect(endPoint) {
+  connect(endPoint: any) {
     this.socket = new WebSocket( (window.location.protocol  === 'https:' ? 'wss' : 'ws') + `://${this.myDomain}/ws/${endPoint}/`);
 
     this.socket.onopen = () => {
       this.onOpenHandlers.forEach(handler => handler());
     };
 
-    this.socket.onmessage = (event) => {
+    this.socket.onmessage = (event: { data: string; }) => {
       const data = JSON.parse(event.data);
       this.onMessageHandlers.forEach(handler => handler(data));
     };
 
-    return new Promise((resolve, reject) => {
-      this.socket.onopen = () => {
-        resolve();
-      };
+    return new Promise<void>((resolve, reject) => {
+      // this.socket.onopen = () => {
+      //   resolve();
+      // }
 
-      this.socket.onclose = (event ) => {
-        reject(event);
-      };
+      // this.socket.onclose = (event: any ) => {
+      //   reject(event);
+      // };
     });
   }
 
-  send(data ) {
+  send(data: any ) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify(data));
     }
@@ -53,12 +53,12 @@ class WebSocketManager {
   }
 
   // Fonction pour ajouter un gestionnaire onopen
-  addOnOpenHandler(handler) {
+  addOnOpenHandler(handler: any) {
     this.onOpenHandlers.push(handler);
   }
 
   // Fonction pour ajouter un gestionnaire onmessage
-  addOnMessageHandler(handler ) {
+  addOnMessageHandler(handler: any ) {
     this.onMessageHandlers.push(handler);
   }
 }

@@ -29,6 +29,11 @@ export const useAuthStore = defineStore({
                 this.accessToken = response.data.access;
                 this.refreshToken = response.data.refresh;
                 this.isAuthenticated = true;
+                
+                // // localStorage.setItem('user', JSON.stringify(response.data.user));
+                // localStorage.setItem('accessToken', JSON.stringify(response.data.access));
+                // localStorage.setItem('refreshToken', JSON.stringify(response.data.refresh));
+
         
                 const userConnected = await new ApiAxios().find('/users/me/');
                 this.user = userConnected.data;
@@ -57,6 +62,11 @@ export const useAuthStore = defineStore({
             this.user = null;
             this.isAuthenticated = false
             localStorage.removeItem('user');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            this.accessToken = null;
+            this.refreshToken = null;
+            
             router.push('/');
         }
     }

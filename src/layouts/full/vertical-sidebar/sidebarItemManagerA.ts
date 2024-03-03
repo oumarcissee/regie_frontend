@@ -123,11 +123,54 @@ const sidebarItemManagerA: menu[] = [
             // }
         ]
     },
-    // {
-    //     title: 'eCommerce',
-    //     icon: ShoppingCartIcon,
-    //     to: '/dashboards/ecommerce'
-    // },
+
+    { header: 'Magasin' },
+    {
+        title: 'Magasiniers',
+        icon: ShoppingCartIcon,
+        to: '/dashboards/ecommerce',
+         children: [
+            {
+                title: 'Liste',
+                icon: BoxIcon,
+                chipColor: 'surface',
+                chipBgColor: 'secondary',
+                to: '/rut/providers/listd'
+            },
+
+            {
+                title: 'Nouveau',
+                icon: UserPlusIcon,
+                chipColor: 'surface',
+                chipBgColor: 'secondary',
+                to: '/rut/providers/addd'
+            },
+             
+
+            // {
+            //     title: 'Detail',
+            //     icon: PointIcon,
+            //     to: '/ecommerce/product/detail/1'
+            // },
+            // {
+            //     title: 'List',
+            //     icon: PointIcon,
+            //     to: '/ecommerce/productlist'
+            // },
+            // {
+            //     title: 'Checkout',
+            //     icon: PointIcon,
+            //     to: '/ecommerce/checkout'
+            // }
+        ]
+    },
+
+    {
+        title: 'Ecommerce',
+        icon: ShoppingCartIcon,
+        to: '/dashboards/ecommerce',
+
+    },
     // { header: 'Apps' },
     // {
     //     title: 'Contact',

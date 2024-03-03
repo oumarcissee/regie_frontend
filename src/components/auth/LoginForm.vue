@@ -9,7 +9,7 @@ import google from '@/assets/images/svgs/google-icon.svg';
 import facebook from '@/assets/images/svgs/facebook-icon.svg';
 
 
-const { handleSubmit, handleReset } = useForm({
+const { handleSubmit, handleReset , isSubmitting} = useForm({
   validationSchema: {
     username(value: string | any[]) {
       if (value?.length >= 3) return true;
@@ -40,7 +40,9 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
 
     try {
         UserError.value = null
-        return await login(data.username, data.password);
+        await login(data.username, data.password);
+        handleReset();
+        return;
     } catch (error) {
         UserError.value = error
         return setErrors({ apiError: error });
@@ -71,7 +73,7 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
             <span class="bg-surface px-5 py-3 position-relative">or Continuer avec</span>
         </div>  
     </div>
-    <Form @submit="submit()" v-slot="{ errors, isSubmitting }" class="mt-5">
+    <Form @submit="submit()" v-slot="{ errors }" class="mt-5">
         <v-label class="text-subtitle-1 font-weight-semibold pb-2 text-lightText">Identifiant</v-label>
         <VTextField
             v-model="username.value.value"

@@ -10,7 +10,7 @@ const { errors, add } = useProdiverStore()
 
 
 
-const { handleSubmit, handleReset } = useForm({
+const { handleSubmit, handleReset , isSubmitting} = useForm({
     validationSchema: {
         username(value: string | any[]) {
             // if (value?.length >= 4) return true;
@@ -69,17 +69,8 @@ const { handleSubmit, handleReset } = useForm({
     },
 });
 
-const select = ref('One');
-const items = ref(['One', 'Two', 'Three', 'Four']);
-const radios = ref('Male');
-const checked = ref(true);
-const range = ref([20, 40]);
-const sel1 = ref('750');
-const sel2 = ref('950');    
-const select1 = ref(['750', '850', '950']);
-const select2 = ref(['950', '1050', '1150']);
-const volume = ref(40);
-const model = ref(true);
+
+const valid = ref(false);
 
 
 const email = useField("email");
@@ -88,6 +79,7 @@ const first_name = useField("first_name");
 const last_name = useField("last_name");
 const phone_number = useField("phone_number");
 const address = useField("address");
+
 
 const pError = ref();
 
@@ -109,15 +101,17 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
         errors.usernameError = null
         errors.emailError = null
 
-        return await add(formData);
+        await add(formData);
+        handleReset();
+        return;
         
-    } catch (error: any) {
+    } catch (error) {
         // UserError.value = error
       
         // alert(error?.usernameError + "   "+ error?.emailError)
         pError.value = error
         submit()
-        return;
+        return setErrors({ apiError: error });
     }
 
 });
@@ -125,7 +119,7 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
 
 </script>
 <template>
-    <v-form @submit.prevent="submit" v-slot="{ errors, isSubmitting }">
+    <v-form @submit.prevent="submit()" v-slot="{ errors }">
         <v-row>
         
             <v-col cols="12" sm="4">
@@ -150,14 +144,16 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
                 <v-text-field variant="outlined" placeholder="6xxxxxxx" color="primary" :error-messages="phone_number.errorMessage.value" v-model="phone_number.value.value"></v-text-field>
             </v-col>
 
-            <v-btn size="large" :loading="isSubmitting" color="primary"  block type="submit" flat>Ajouter</v-btn>  
-            <!-- <div v-if="errors.apiError " class="mt-2"> 
+            <v-btn size="large" :loading="isSubmitting" color="primary" :disabled="valid" block type="submit" flat>Ajouter</v-btn>  
+
+            <div v-if="errors.apiError " class="mt-2">
                 <v-alert color="error">{{ errors.apiError }} </v-alert>
             </div>
-
+            
             <div v-else-if="pError" class="mt-2">
                 <v-alert color="error">{{ pError }} </v-alert>
-            </div> -->
+            </div>
+
         </v-row>
     </v-form>
 </template>
