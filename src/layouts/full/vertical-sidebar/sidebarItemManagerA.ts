@@ -82,19 +82,19 @@ const sidebarItemManagerA: menu[] = [
         to: '/rut/dashboard'
     },
 
-    { header: 'Gestion des commandes' },
+    { header: 'Gestion des utilisateurs' },
     
     {
-        title: 'Fournisseurs',
+        title: 'utilisateurs',
         icon: UserCircleIcon,
-        to: '/rut/providers/',
+        to: '/rut/users/',
         children: [
             {
                 title: 'Liste',
                 icon: BoxIcon,
                 chipColor: 'surface',
                 chipBgColor: 'secondary',
-                to: '/rut/providers/list'
+                to: '/rut/users/list'
             },
 
             {
@@ -102,7 +102,7 @@ const sidebarItemManagerA: menu[] = [
                 icon: UserPlusIcon,
                 chipColor: 'surface',
                 chipBgColor: 'secondary',
-                to: '/rut/providers/add'
+                to: '/rut/users/add'
             },
              
 

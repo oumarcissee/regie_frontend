@@ -15,13 +15,13 @@ const ManagerARoutes = {
 
         {
             name: 'Providers',
-            path: '/rut/providers/list',
+            path: '/rut/users/list',
             component: () => import('@/views/dashboard/modern/rut/Provider.vue')
         },
 
         {
             name: 'AddProviders',
-            path: '/rut/providers/add',
+            path: '/rut/users/add',
             component: () => import('@/views/providers/AddProvider.vue')
         },
         
