@@ -5,6 +5,9 @@ import { fetchWrapper } from '@/utils/helpers/fetch-wrapper';
 
 import ApiAxios from '@/services/ApiAxios';
 
+import Swal from 'sweetalert2'
+
+
 const baseUrl = `${import.meta.env.VITE_API_URL}/users`;
 
 export const useProdiverStore = defineStore({
@@ -26,7 +29,14 @@ export const useProdiverStore = defineStore({
         async add(data: any) {
             try {
                 const response = await new ApiAxios().add('/u/create-provider/', data);
-                router.push({name: 'Providers'})
+                router.push({ name: 'Providers' })
+                Swal.fire({
+                    position: "top-end",
+                    icon: "success",
+                    title: "Objet ajouté avec succès",
+                    showConfirmButton: false,
+                    timer: 3000
+                });
                 // this.store = response.data;
                 // localStorage.setItem('user', JSON.stringify(response.data));
                 

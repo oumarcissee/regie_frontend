@@ -5,6 +5,7 @@ import { ref } from 'vue';
 import { Volume2Icon, VolumeIcon } from 'vue-tabler-icons';
 import { useProdiverStore } from '@/stores/providerStore';
 
+
 const { errors, add } = useProdiverStore()
 
 
@@ -37,9 +38,24 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
             return true;
         },
 
+        
         first_name(value: string | any[]) {
             if (value?.length >= 2) return true;
             return "Le prénom doit avoir au moins 2 caractères.";
+        },
+        
+        role(value: string | any[]) {
+            if (value) return true
+            return "Choisissez un rôle.";  
+        },
+        matricule(value: string | any[]) {
+            
+            if (roleSelected.value !== 'provider') {
+                if (!value?.length || value?.length < 2) {
+                    return "Le matricule est obligatoire.";
+                }
+            } 
+            return true;
         },
 
         last_name(value: string | any[]) {
@@ -73,15 +89,29 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
 const valid = ref(false);
 
 
-const email = useField("email");
-const username = useField("username");
-const first_name = useField("first_name");
-const last_name = useField("last_name");
-const phone_number = useField("phone_number");
-const address = useField("address");
+const email         = useField("email");
+const username      = useField("username");
+const first_name    = useField("first_name");
+const last_name     = useField("last_name");
+const phone_number  = useField("phone_number");
+const address       = useField("address");
+const matricule     = useField("matricule")
+const role          = useField("role");
+
+const roles = ref([
+    {title:'MAGASINIER',    value: 'kepper_a'},
+    {title:'FOURNISSEUR',   value: 'provider'},
+])
 
 
 const pError = ref();
+
+const roleSelected = ref();
+
+const changed = (value: string | any[]) => {
+    roleSelected.value = value
+    return value
+}
 
 
 const submit = handleSubmit(async (data: any, { setErrors }: any) => {
@@ -89,11 +119,13 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
     const formData = {
         email: data.email,
         username: data.username,
+        matricule: data.matricule,
         first_name: data.first_name,
         last_name: data.last_name,
         phone_number: data.phone_number,
         address: data.address,
         password: data.first_name+data.phone_number,
+        role : data.role,
     }
 
     try {
@@ -101,14 +133,12 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
         errors.usernameError = null
         errors.emailError = null
 
-        await add(formData);
-        handleReset();
-        return;
+       
+       
+        return await add(formData);
         
     } catch (error) {
-        // UserError.value = error
-      
-        // alert(error?.usernameError + "   "+ error?.emailError)
+     
         pError.value = error
         submit()
         return setErrors({ apiError: error });
@@ -121,6 +151,8 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
 <template>
     <v-form @submit.prevent="submit()" v-slot="{ errors }">
         <v-row>
+
+           
         
             <v-col cols="12" sm="4">
                 <v-label class="mb-2 font-weight-medium">Nom d'utilisateur</v-label>
@@ -137,22 +169,39 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
                 <v-text-field variant="outlined" placeholder="Nom" color="primary" :error-messages="last_name.errorMessage.value" v-model="last_name.value.value"></v-text-field>
             </v-col>
 
-            <v-col cols="12" sm="4">
-                <v-label class="mb-2 font-weight-medium">Adresse</v-label>
-                <v-text-field variant="outlined" placeholder="Sonfonia" color="primary" :error-messages="address.errorMessage.value" v-model="address.value.value"></v-text-field>
+             <v-col cols="12" sm="4">
+                
+                <v-label class="mb-2 font-weight-medium">Rôle</v-label>
+                <v-select  :items="roles" @update:modelValue="changed" single-line variant="outlined" v-model="role.value.value" :error-messages="role.errorMessage.value"></v-select>
+
                 <v-label class="mb-2 font-weight-medium">Téléphone</v-label>
                 <v-text-field variant="outlined" placeholder="6xxxxxxx" color="primary" :error-messages="phone_number.errorMessage.value" v-model="phone_number.value.value"></v-text-field>
             </v-col>
 
+
+
+            
+            <v-col cols="12" sm="4">
+                <v-label class="mb-2 font-weight-medium">Adresse</v-label>
+                <v-text-field variant="outlined" placeholder="Sonfonia" color="primary" :error-messages="address.errorMessage.value" v-model="address.value.value"></v-text-field>
+                
+            </v-col>
+
+             <v-col cols="12" sm="4" v-if="role.value.value !== 'provider'">
+                <v-label class="mb-2 font-weight-medium">Matricule</v-label>
+                <v-text-field variant="outlined" placeholder="Matricule" color="primary" :error-messages="matricule.errorMessage.value" v-model="matricule.value.value"
+               ></v-text-field>
+            </v-col>
+
             <v-btn size="large" :loading="isSubmitting" color="primary" :disabled="valid" block type="submit" flat>Ajouter</v-btn>  
 
-            <div v-if="errors.apiError " class="mt-2">
+            <!-- <div v-if="errors.apiError " class="mt-2">
                 <v-alert color="error">{{ errors.apiError }} </v-alert>
             </div>
             
             <div v-else-if="pError" class="mt-2">
                 <v-alert color="error">{{ pError }} </v-alert>
-            </div>
+            </div> -->
 
         </v-row>
     </v-form>
