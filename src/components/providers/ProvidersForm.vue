@@ -132,8 +132,6 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
         pError.value = null
         errors.usernameError = null
         errors.emailError = null
-
-       
        
         return await add(formData);
         
