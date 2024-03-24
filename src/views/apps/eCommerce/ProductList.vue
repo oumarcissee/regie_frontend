@@ -28,6 +28,7 @@ const headers: Header[] = [
     { text: 'Action', value: 'operation' }
 ];
 const items = ref(getProducts);
+
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 
 const itemsSelected = ref<Item[]>([]);

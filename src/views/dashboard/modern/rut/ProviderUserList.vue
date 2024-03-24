@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useEcomStore } from '@/stores/apps/eCommerce';
+
+import { useProviderStore } from '@/stores/rutStore/providerStore';
+
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 import type { Header, Item } from 'vue3-easy-data-table';
 import 'vue3-easy-data-table/dist/style.css';
 import { format } from 'date-fns';
 
-const store = useEcomStore();
+const store = useProviderStore();
 onMounted(() => {
-    store.fetchProducts();
+    store.fetchProviders();
 });
 
 const getProducts = computed(() => {
-    return store.products;
+    return store.users;
 });
 
 const searchField = ref();
@@ -22,12 +24,13 @@ const headers: Header[] = [
     { text: '#', value: 'image' },
     { text: 'Nom et prénom', value: 'name', sortable: true },
     { text: 'Créer le', value: 'created', sortable: true },
-    { text: 'Téléphone', value: 'offerPrice', sortable: true },
+    { text: 'Téléphone', value: 'phoneNumber', sortable: true },
     { text: 'Rôle', value: 'salePrice', sortable: true },
     { text: 'Statut', value: 'isStock' , sortable: true },
     { text: 'Action', value: 'operation' }
 ];
 const items = ref(getProducts);
+
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 
 const itemsSelected = ref<Item[]>([]);
@@ -75,42 +78,57 @@ const itemsSelected = ref<Item[]>([]);
                 >
                     <template #item-image="{ image }">
                         <div class="player-wrapper">
-                            <img alt="product" width="70" class="rounded-circle img-fluid" :src="image" />
+                            <img alt="user" width="70" class="rounded-circle img-fluid" :src="image" />
                         </div>
                     </template>
-                    <template #item-name="{ name , date}">
+                    <template #item-name="{ first_name , last_name}">
                         <div class="player-wrapper">
-                            <h5 class="text-h5">{{ name }}</h5>
-                            <span class="text-subtitle-1 d-block mt-1 textSecondary">{{ format(new Date(date), 'E, MMM d') }}</span>
+                            <h5 class="text-h5">{{ first_name }}</h5>
+                            <span class="text-subtitle-1 d-block mt-1 textSecondary">{{ last_name }}</span>
                         </div>
                     </template>
-                    <template #item-created="{ date }">
+                    <template #item-created="{ date_joined }">
                         <div class="player-wrapper">
-                            {{ format(new Date(date), 'E, MMM d') }}
+                            {{ format(new Date(date_joined), 'E, MMM d') }}
                         </div>
                     </template>
-                    <template #item-offerPrice="{ offerPrice , name}">
+                    <template #item-phoneNumber="{ phone_number}">
                         <div class="player-wrapper">
-                            <h5 class="text-h5">${{ name }}</h5>
+                            <h5 class="text-h5">{{ phone_number }}</h5>
                         </div>
                     </template>
-                    <template #item-salePrice="{ salePrice }">
+                    <template #item-salePrice="{ role }">
                         <div class="player-wrapper">
-                            <h5 class="text-h5">${{ salePrice }}</h5>
+                            <h5 v-if="role === 'manager_a'" class="text-h5">RUT</h5>
+                            <h5 v-if="role === 'manager_b'" class="text-h5">RE et CF</h5>
+                            <h5 v-if="role === 'provider'" class="text-h5">Fournisseur</h5>
                         </div>
                     </template>
-                    <template #item-isStock="{ isStock }">
+                    <template #item-isStock="{ is_active }">
                         <div class="player-wrapper">
-                            <v-chip color="success" v-if="isStock" size="small"> In Stock </v-chip>
-                            <v-chip color="error" v-else size="small"> Out of Stock </v-chip>
+                            <v-chip color="success" v-if="is_active" size="small"> Activé </v-chip>
+                            <v-chip color="error" v-else size="small"> Desactivé</v-chip>
                         </div>
                     </template>
 
                     <template #item-operation="item">
-                        <div class="operation-wrapper">
-                            <v-btn icon variant="text">
-                                <DotsIcon size="18" />
-                            </v-btn>
+                        <div class="operation-wrapper"><div class="d-flex align-center">
+                            <v-tooltip text="Editer">
+                                <template v-slot:activator="{ props }">
+                                    <v-btn icon flat  v-bind="props"
+                                        ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
+                                    /></v-btn>
+                                </template>
+                            </v-tooltip>
+                            <v-tooltip text="Supprimer">
+                                <template v-slot:activator="{ props }">
+                                    <v-btn icon flat  v-bind="props"
+                                        ><TrashIcon stroke-width="1.5" size="20" class="text-error"
+                                    /></v-btn>
+                                </template>
+                            </v-tooltip>
+                        </div>
+
                         </div>
                     </template>
                 </EasyDataTable>

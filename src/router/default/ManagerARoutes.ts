@@ -16,7 +16,7 @@ const ManagerARoutes = {
         {
             name: 'Providers',
             path: '/rut/users/list',
-            component: () => import('@/views/dashboard/modern/rut/Provider.vue')
+            component: () => import('@/views/dashboard/modern/rut/ProviderUserList.vue')
         },
 
         {

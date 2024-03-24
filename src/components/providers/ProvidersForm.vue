@@ -6,6 +6,8 @@ import { Volume2Icon, VolumeIcon } from 'vue-tabler-icons';
 import { useProdiverStore } from '@/stores/providerStore';
 
 
+import Swal from 'sweetalert2'
+
 const { errors, add } = useProdiverStore()
 
 
@@ -112,9 +114,12 @@ const changed = (value: string | any[]) => {
     roleSelected.value = value
     return value
 }
+let irreur : number = 0;
 
 
 const submit = handleSubmit(async (data: any, { setErrors }: any) => {
+
+
 
     const formData = {
         email: data.email,
@@ -124,7 +129,7 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
         last_name: data.last_name,
         phone_number: data.phone_number,
         address: data.address,
-        password: data.first_name+data.phone_number,
+        password: data.phone_number + "myPassword",
         role : data.role,
     }
 
@@ -136,9 +141,11 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
         return await add(formData);
         
     } catch (error) {
-     
-        pError.value = error
+
+        pError.value = error  
+        irreur ++;
         submit()
+
         return setErrors({ apiError: error });
     }
 
@@ -150,8 +157,6 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
     <v-form @submit.prevent="submit()" v-slot="{ errors }">
         <v-row>
 
-           
-        
             <v-col cols="12" sm="4">
                 <v-label class="mb-2 font-weight-medium">Nom d'utilisateur</v-label>
                 <v-text-field variant="outlined" placeholder="Nom d'utilisateur" color="primary"

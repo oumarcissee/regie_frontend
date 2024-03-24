@@ -1,85 +1,118 @@
 import { defineStore } from 'pinia';
-import { isAxiosError } from '@/services/utils';
-import { router } from '@/router';
-import { fetchWrapper } from '@/utils/helpers/fetch-wrapper';
-
-import ApiAxios from '@/services/ApiAxios';
-
-import type { UsersStateProps } from '@/types/UsersTypes';
+// project imports
+import axios from '@/utils/axios';
+// types
+import type { ProductStateProps } from '@/types/apps/EcommerceType';
 import { filter, map, sum } from 'lodash';
 
-// Interface pour typer les erreurs
-
-export const UsersStore = defineStore({
-    id: 'usersStore',
-    state: (): UsersStateProps => ({
-        users: [],
+export const useEcomStore = defineStore({
+    id: 'userStoreList',
+    state: (): ProductStateProps => ({
+        products: [],
+        cart: [],
         gender: '',
         category: [],
         price: '',
         subTotal: 0,
         discount: 5,
         total: 0,
-
-        errors: {} as any
+        addresses: [],
+        color: 'All',
     }),
-
     getters: {},
     actions: {
-
-        async add(data: any) {
-            try {
-                const response = await new ApiAxios().add('/u/create-provider/', data);
-                router.push({name: 'Users'})
-                // this.store = response.data;
-                // localStorage.setItem('user', JSON.stringify(response.data));
-                
-            } catch (error) {
-                if (isAxiosError(error)) {
-                    if (error.response && error.response.data) {
-                        console.log(error.response.data);
-            
-                        const responseData = error.response.data as { username: string[], email: string[], phone_number: string[], error: string[]};
-
-                        this.errors.usernameError     = responseData.username ? responseData.username[0] : null;
-                        this.errors.usernameText      = data.username
-
-                        this.errors.emailError        = responseData.email ? responseData.email[0] : null;
-                        this.errors.emailText         = data.email;
-
-                        this.errors.phone_numberError = responseData.phone_number ? responseData.phone_number[0] : null;
-                        this.errors.phone_numberText  = data.phone_number;
-        
-                        if (responseData.error) {
-                            router.push({name: 'Users'})
-                        }
-                    }
-                }
-                return Promise.reject("Autres erreur");
-            }
-        },
-
         // Fetch Customers from action
-        async fetchUsers() {
+        async fetchProducts() {
             try {
-                const data = await new ApiAxios().find('/users')
-                this.users = data.data;
+                const data = await axios.get('/api/products/list');
+                this.products = data.data;
             } catch (error) {
                 alert(error);
                 console.log(error);
             }
         },
-    
+        // Fetch Customers from addresses
+        async fetchAddress() {
+            try {
+                const data = await axios.get('/api/address/list');
+                this.addresses = data.data;
+            } catch (error) {
+                alert(error);
+                console.log(error);
+            }
+        },
         //select gender
         SelectGender(items: any) {
             this.gender = items;
         },
-       
+        sortByColor(itemcolor: string) {
+            this.color = itemcolor;
+        },
         //select category
         SelectCategory(items: any) {
             this.category = items;
         },
-       
+        //select Price
+        SelectPrice(items: any) {
+            this.price = items;
+        },
+        //AddToCart
+        AddToCart(item: any) {
+            const product = item;
+            this.cart = [...this.cart, product];
+        },
+        //qty
+        incrementQty(item: any) {
+            const productId = item;
+            const updateCart = map(this.cart, (product: any) => {
+                if (product.id === productId) {
+                    return {
+                        ...product,
+                        qty: product.qty + 1
+                    };
+                }
+                return product;
+            });
+            this.cart = updateCart;
+            this.subTotal = sum(this.cart.map((product: any) => product.salePrice * product.qty));
+            this.discount = Math.round(this.subTotal * (5 / 100));
+            this.total = this.subTotal - this.discount;
+        },
+        //qty
+        decrementQty(item: any) {
+            const productId = item;
+            const updateCart = map(this.cart, (product: any) => {
+                if (product.id === productId) {
+                    return {
+                        ...product,
+                        qty: product.qty - 1
+                    };
+                }
+                return product;
+            });
+            this.cart = updateCart;
+            this.subTotal = sum(this.cart.map((product: any) => product.salePrice * product.qty));
+            this.subTotal = sum(this.cart.map((product: any) => product.salePrice * product.qty));
+            this.discount = Math.round(this.subTotal * (5 / 100));
+            this.total = this.subTotal - this.discount;
+        },
+        // delete Cart
+        deleteCart(item: any) {
+            const updateCart = filter(this.cart, (p) => p.id !== item);
+            this.cart = updateCart;
+        },
+        //subtotal
+        getsubTotal() {
+            this.subTotal = sum(this.cart.map((product: any) => product.salePrice * product.qty));
+        },
+        //total
+        getTotal() {
+            this.total = this.subTotal - this.discount;
+        },
+        //discount
+        getDiscount() {
+            this.discount = Math.round(this.subTotal * (5 / 100));
+        },
 
         //Reset Filter
         filterReset(){}

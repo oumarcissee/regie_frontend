@@ -21,6 +21,8 @@ export const useProdiverStore = defineStore({
             emailText: null as any,
             phone_numberError: null as any,
             phone_numberText: null as any,
+            passwordError: null as any,
+            passwordText: null as any,
            
         },
         store: Object(),
@@ -33,9 +35,23 @@ export const useProdiverStore = defineStore({
                 Swal.fire({
                     position: "top-end",
                     icon: "success",
-                    title: "Objet ajouté avec succès",
+                    title: "Enregisrement effectué",
                     showConfirmButton: false,
-                    timer: 3000
+                    timer: 3000,
+                    showClass: {
+                        popup: `
+                        animate__animated
+                        animate__fadeInRight
+                        animate__faster
+                        `
+                    },
+                    hideClass: {
+                        popup: `
+                        animate__animated
+                        animate__fadeInRight
+                        animate__faster
+                        `
+                    }
                 });
                 // this.store = response.data;
                 // localStorage.setItem('user', JSON.stringify(response.data));
@@ -45,7 +61,7 @@ export const useProdiverStore = defineStore({
                     if (error.response && error.response.data) {
                         console.log(error.response.data);
             
-                        const responseData = error.response.data as { username: string[], email: string[], phone_number: string[], error: string[]};
+                        const responseData = error.response.data as { username: string[], email: string[], phone_number: string[], error: string[], password: string[]};
 
                         this.errors.usernameError = responseData.username ? responseData.username[0] : null;
                         this.errors.usernameText = data.username
@@ -56,6 +72,7 @@ export const useProdiverStore = defineStore({
                         this.errors.phone_numberError = responseData.phone_number ? responseData.phone_number[0] : null;
                         this.errors.phone_numberText = data.phone_number;
         
+                      
                         if (responseData.error) {
                             router.push({name: 'Providers'})
                         }
