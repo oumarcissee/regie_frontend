@@ -130,7 +130,22 @@ function isAxiosError(error: any): error is AxiosError {
     return (error as AxiosError).isAxiosError !== undefined;
 }
 
+
+
+let selected: any;
+
+
+function setItemSelected(item: any): void { 
+  selected = item;
+}
+
+const getItemSelected = () => {
+  return selected && selected
+}
+
+
 export {
- truncateText, formatDate, formatSlug, isAxiosError
+  truncateText, formatDate, formatSlug, isAxiosError,
+  setItemSelected,getItemSelected
 
 }

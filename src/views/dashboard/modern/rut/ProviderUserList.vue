@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { router } from '@/router';
+import { setItemSelected } from '@/services/utils';
 
 import { useProviderStore } from '@/stores/rutStore/providerStore';
 
@@ -9,6 +11,7 @@ import 'vue3-easy-data-table/dist/style.css';
 import { format } from 'date-fns';
 
 const store = useProviderStore();
+
 onMounted(() => {
     store.fetchProviders();
 });
@@ -16,6 +19,10 @@ onMounted(() => {
 const getProducts = computed(() => {
     return store.users;
 });
+
+const editedIndex = ref(-1);
+
+
 
 const searchField = ref();
 const searchValue = ref('');
@@ -30,6 +37,19 @@ const headers: Header[] = [
     { text: 'Action', value: 'operation' }
 ];
 const items = ref(getProducts);
+
+// Méthode pour modifier un élément
+const editItem = (index: any) => {
+    store.item = index;
+    setItemSelected(index)
+    console.log(index);
+
+    return router.push({name: 'EditProvider', params:{param: index.id}})
+};
+
+
+
+
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 
@@ -102,6 +122,7 @@ const itemsSelected = ref<Item[]>([]);
                             <h5 v-if="role === 'manager_a'" class="text-h5">RUT</h5>
                             <h5 v-if="role === 'manager_b'" class="text-h5">RE et CF</h5>
                             <h5 v-if="role === 'provider'" class="text-h5">Fournisseur</h5>
+                            <h5 v-if="role === 'kepper_a'" class="text-h5">MAGASINIER</h5>
                         </div>
                     </template>
                     <template #item-isStock="{ is_active }">
@@ -115,7 +136,7 @@ const itemsSelected = ref<Item[]>([]);
                         <div class="operation-wrapper"><div class="d-flex align-center">
                             <v-tooltip text="Editer">
                                 <template v-slot:activator="{ props }">
-                                    <v-btn icon flat  v-bind="props"
+                                    <v-btn icon flat @click="editItem(item)" v-bind="props"
                                         ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
                                     /></v-btn>
                                 </template>

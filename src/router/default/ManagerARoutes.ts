@@ -24,6 +24,11 @@ const ManagerARoutes = {
             path: '/rut/users/add',
             component: () => import('@/views/providers/AddProvider.vue')
         },
+        {
+            name: 'EditProvider',
+            path: '/rut/users/edit/:param',
+            component: () => import('@/views/providers/AddProvider.vue')
+        },
         
        
     ]

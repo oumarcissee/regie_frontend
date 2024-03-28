@@ -25,34 +25,63 @@ export const useProdiverStore = defineStore({
             passwordText: null as any,
            
         },
+        itemSelected: null,
         store: Object(),
     }),
     actions: {
-        async add(data: any) {
+        async add(data: any, param?: any) {
             try {
-                const response = await new ApiAxios().add('/u/create-provider/', data);
-                router.push({ name: 'Providers' })
-                Swal.fire({
-                    position: "top-end",
-                    icon: "success",
-                    title: "Enregisrement effectué",
-                    showConfirmButton: false,
-                    timer: 3000,
-                    showClass: {
-                        popup: `
-                        animate__animated
-                        animate__fadeInRight
-                        animate__faster
-                        `
-                    },
-                    hideClass: {
-                        popup: `
-                        animate__animated
-                        animate__fadeInRight
-                        animate__faster
-                        `
-                    }
-                });
+                if (param) {
+                    const response = await new ApiAxios().updatePartialForm(`/users/${param}/`, data, param);
+                    router.push({ name: 'Providers' })
+                    this.$reset()
+                    Swal.fire({
+                        position: "center",
+                        icon: "success",
+                        title: "Modification effectué",
+                        showConfirmButton: false,
+                        timer: 2000,
+                        showClass: {
+                            popup: `
+                            animate__animated
+                            animate__fadeInRight
+                            animate__faster
+                            `
+                        },
+                        hideClass: {
+                            popup: `
+                            animate__animated
+                            animate__fadeInRight
+                            animate__faster
+                            `
+                        }
+                    });
+                } else {
+                    const response = await new ApiAxios().add('/u/create-provider/', data);
+                    router.push({ name: 'Providers' })
+                    this.$reset()
+                    Swal.fire({
+                        position: "center",
+                        icon: "success",
+                        title: "Enregisrement effectué",
+                        showConfirmButton: false,
+                        timer: 2000,
+                        showClass: {
+                            popup: `
+                            animate__animated
+                            animate__fadeInRight
+                            animate__faster
+                            `
+                        },
+                        hideClass: {
+                            popup: `
+                            animate__animated
+                            animate__fadeInRight
+                            animate__faster
+                            `
+                        }
+                    });
+                }
                 // this.store = response.data;
                 // localStorage.setItem('user', JSON.stringify(response.data));
                 

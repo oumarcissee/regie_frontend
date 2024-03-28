@@ -1,16 +1,57 @@
 <script setup lang="ts">
 import { router } from '@/router';
 import { useField, useForm } from 'vee-validate';
-import { ref } from 'vue';
+import { onMounted, ref , onUnmounted} from 'vue';
 import { Volume2Icon, VolumeIcon } from 'vue-tabler-icons';
+
+import {getItemSelected, setItemSelected } from '@/services/utils';
+
 import { useProdiverStore } from '@/stores/providerStore';
-
-
-import Swal from 'sweetalert2'
 
 const { errors, add } = useProdiverStore()
 
+let itemSelected: null = null;
 
+onMounted(async () => {
+    
+
+    if (getItemSelected()) {
+        username.value.value   = getItemSelected()?.username
+        email.value.value      = getItemSelected()?.email
+        first_name.value.value = getItemSelected()?.first_name
+        last_name.value.value  = getItemSelected()?.last_name
+        phone_number.value.value = getItemSelected()?.phone_number
+        address.value.value    = getItemSelected()?.address
+        matricule.value.value  = getItemSelected()?.matricule
+        role.value.value = getItemSelected()?.role
+
+        roleSelected.value = await getItemSelected()?.role
+
+        
+    } 
+});
+
+
+// Fonction pour réinitialiser les champs
+const resetFields = () => {
+    if (getItemSelected()) setItemSelected(null);
+
+    username.value.value = '';
+    email.value.value = '';
+    first_name.value.value = '';
+    last_name.value.value = '';
+    phone_number.value.value = '';
+    address.value.value = '';
+    matricule.value.value = '';
+    role.value.value = '';
+
+    roleSelected.value = '';
+};
+
+// Utiliser onUnmounted pour appeler la fonction de réinitialisation
+onUnmounted(async() => {
+ resetFields();
+});
 
 
 const { handleSubmit, handleReset , isSubmitting} = useForm({
@@ -39,7 +80,6 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
 
             return true;
         },
-
         
         first_name(value: string | any[]) {
             if (value?.length >= 2) return true;
@@ -51,7 +91,6 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
             return "Choisissez un rôle.";  
         },
         matricule(value: string | any[]) {
-            
             if (roleSelected.value !== 'provider') {
                 if (!value?.length || value?.length < 2) {
                     return "Le matricule est obligatoire.";
@@ -77,7 +116,6 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
 
             return true;
         },
-
 
         address(value: string | any[]) {
             if (value?.length >= 3) return true;
@@ -110,6 +148,7 @@ const pError = ref();
 
 const roleSelected = ref();
 
+
 const changed = (value: string | any[]) => {
     roleSelected.value = value
     return value
@@ -118,8 +157,6 @@ let irreur : number = 0;
 
 
 const submit = handleSubmit(async (data: any, { setErrors }: any) => {
-
-
 
     const formData = {
         email: data.email,
@@ -137,9 +174,13 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
         pError.value = null
         errors.usernameError = null
         errors.emailError = null
-       
+
+        if (getItemSelected()) {
+            return await add(formData, getItemSelected().id)
+        }
+    
         return await add(formData);
-        
+
     } catch (error) {
 
         pError.value = error  
@@ -180,9 +221,6 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
                 <v-label class="mb-2 font-weight-medium">Téléphone</v-label>
                 <v-text-field variant="outlined" placeholder="6xxxxxxx" color="primary" :error-messages="phone_number.errorMessage.value" v-model="phone_number.value.value"></v-text-field>
             </v-col>
-
-
-
             
             <v-col cols="12" sm="4">
                 <v-label class="mb-2 font-weight-medium">Adresse</v-label>

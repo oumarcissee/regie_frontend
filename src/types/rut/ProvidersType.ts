@@ -99,6 +99,7 @@ export interface UsersStateProps {
     discount?: any;
     color?: string;
     rank?:number;
+    item?: any | string ;
 }
 
 

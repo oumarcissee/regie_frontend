@@ -5,6 +5,7 @@ import ApiAxios from '@/services/ApiAxios';
 import axios from '@/utils/axios';
 
 
+
 import type { UsersStateProps } from '@/types/rut/ProvidersType';
 import { filter, map, sum } from 'lodash';
 
@@ -13,6 +14,8 @@ export const useProviderStore = defineStore({
     id: 'rutProviders',
     state: (): UsersStateProps => ({
         users: [],
+
+        item: '',
       
         cart: [],
         gender: '',
@@ -23,13 +26,14 @@ export const useProviderStore = defineStore({
         total: 0,
         addresses: [],
         color: 'All',
+        
     }),
     getters: {},
     actions: {
         // Fetch followers from action
         async fetchProviders() {
             try {
-                const response = await new ApiAxios().find('/users/');
+                const response = await new ApiAxios().find('/u/get-users/');
                 this.users = response.data?.results;
                 
             } catch (error) {
