@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { router } from '@/router';
+
 import { useField, useForm } from 'vee-validate';
 import { onMounted, ref , onUnmounted} from 'vue';
 import { Volume2Icon, VolumeIcon } from 'vue-tabler-icons';
+
+import type { UserCreateOptions } from '@/types/rut/ProvidersType';
 
 import {getItemSelected, setItemSelected } from '@/services/utils';
 
@@ -155,20 +158,24 @@ const changed = (value: string | any[]) => {
 }
 let irreur : number = 0;
 
-
 const submit = handleSubmit(async (data: any, { setErrors }: any) => {
-
-    const formData = {
-        email: data.email,
+    
+    const formData : UserCreateOptions = {
         username: data.username,
         matricule: data.matricule,
         first_name: data.first_name,
         last_name: data.last_name,
-        phone_number: data.phone_number,
+        role: data.role,
         address: data.address,
-        password: data.phone_number + "myPassword",
-        role : data.role,
+    };
+    
+    formData.phone_number = data.phone_number;
+    formData.email = data.email;
+
+    if (!getItemSelected()) {
+        formData.password = formData.phone_number + "mqslkdjw@;";
     }
+    
 
     try {
         pError.value = null
@@ -182,10 +189,12 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
         return await add(formData);
 
     } catch (error) {
-
         pError.value = error  
-        irreur ++;
-        submit()
+        irreur++;
+
+        while (irreur < 5) {     
+            submit()
+        }
 
         return setErrors({ apiError: error });
     }

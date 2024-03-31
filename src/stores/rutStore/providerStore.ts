@@ -31,9 +31,10 @@ export const useProviderStore = defineStore({
     getters: {},
     actions: {
         // Fetch followers from action
-        async fetchProviders() {
+        async fetchUsers() {
             try {
                 const response = await new ApiAxios().find('/u/get-users/');
+                console.log(response);
                 this.users = response.data?.results;
                 
             } catch (error) {
@@ -42,7 +43,7 @@ export const useProviderStore = defineStore({
             }
         },
 
-           async fetchAddress() {
+        async fetchAddress() {
             try {
                 const data = await axios.get('/api/address/list');
                 this.addresses = data.data;

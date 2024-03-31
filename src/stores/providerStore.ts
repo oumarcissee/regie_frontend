@@ -32,7 +32,7 @@ export const useProdiverStore = defineStore({
         async add(data: any, param?: any) {
             try {
                 if (param) {
-                    const response = await new ApiAxios().updatePartialForm(`/users/${param}/`, data, param);
+                    const response = await new ApiAxios().updatePartialForm(`/u/users/${param}/`, data, param);
                     router.push({ name: 'Providers' })
                     this.$reset()
                     Swal.fire({
@@ -57,7 +57,7 @@ export const useProdiverStore = defineStore({
                         }
                     });
                 } else {
-                    const response = await new ApiAxios().add('/u/create-provider/', data);
+                    const response = await new ApiAxios().add('/u/users/', data);
                     router.push({ name: 'Providers' })
                     this.$reset()
                     Swal.fire({

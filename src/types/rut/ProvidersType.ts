@@ -103,4 +103,14 @@ export interface UsersStateProps {
 }
 
 
-
+export interface UserCreateOptions {
+    email?: string;
+    username?: string;
+    matricule?: string;
+    first_name?: string;
+    last_name?: string;
+    phone_number?: string;
+    password?: string | undefined; // Champ password est facultatif
+    role: string;
+    address?: string;
+}

@@ -12,8 +12,8 @@ import { format } from 'date-fns';
 
 const store = useProviderStore();
 
-onMounted(() => {
-    store.fetchProviders();
+onMounted(async() => {
+    await store.fetchUsers();
 });
 
 const getProducts = computed(() => {
