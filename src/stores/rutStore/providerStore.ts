@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia';
 // project imports
 import ApiAxios from '@/services/ApiAxios';
+import fr from 'date-fns/locale/fr';
+import { format } from 'date-fns';
+
+const locale = fr; // or en, or es
+
 
 import axios from '@/utils/axios';
 
@@ -34,97 +39,38 @@ export const useProviderStore = defineStore({
         async fetchUsers() {
             try {
                 const response = await new ApiAxios().find('/u/get-users/');
-                console.log(response);
-                this.users = response.data?.results;
+
+                response.data?.results.forEach((item: any) => {
+                    switch (item.role) {
+                        case 'provider':
+                            item.role = 'FOURNISSEUR';
+                            break;
+                        case 'kepper_a':
+                            item.role = 'MAGASINIER (A)';
+                        break;
+                        case 'manager_a':
+                            item.role = 'RUT';
+                        break;
+                        case 'manager_b':
+                            item.role = 'OPEX';
+                        break;
+                        default:
+                            item.role = 'UNDEFINIT';
+                            break;
+                    }
+
+                    item.date_joined = format(new Date(item.date_joined),"dd, MMMM yyyy", { locale });
+
+                    this.users?.push(item);
+                });
+
+                
                 
             } catch (error) {
                 alert(error);
                 return Promise.reject(error);
             }
         },
-
-        async fetchAddress() {
-            try {
-                const data = await axios.get('/api/address/list');
-                this.addresses = data.data;
-            } catch (error) {
-                alert(error);
-                console.log(error);
-            }
-        },
-        //select gender
-        SelectGender(items: any) {
-            this.gender = items;
-        },
-        sortByColor(itemcolor: string) {
-            this.color = itemcolor;
-        },
-        //select category
-        SelectCategory(items: any) {
-            this.category = items;
-        },
-        //select Price
-        SelectPrice(items: any) {
-            this.price = items;
-        },
-        //AddToCart
-        AddToCart(item: any) {
-            const product = item;
-            this.cart = [...this.cart, product];
-        },
-        //qty
-        incrementQty(item: any) {
-            const productId = item;
-            const updateCart = map(this.cart, (product: any) => {
-                if (product.id === productId) {
-                    return {
-                        ...product,
-                        qty: product.qty + 1
-                    };
-                }
-                return product;
-            });
-            this.cart = updateCart;
-            this.subTotal = sum(this.cart.map((product: any) => product.salePrice * product.qty));
-            this.discount = Math.round(this.subTotal * (5 / 100));
-            this.total = this.subTotal - this.discount;
-        },
-        //qty
-        decrementQty(item: any) {
-            const productId = item;
-            const updateCart = map(this.cart, (product: any) => {
-                if (product.id === productId) {
-                    return {
-                        ...product,
-                        qty: product.qty - 1
-                    };
-                }
-                return product;
-            });
-            this.cart = updateCart;
-            this.subTotal = sum(this.cart.map((product: any) => product.salePrice * product.qty));
-            this.subTotal = sum(this.cart.map((product: any) => product.salePrice * product.qty));
-            this.discount = Math.round(this.subTotal * (5 / 100));
-            this.total = this.subTotal - this.discount;
-        },
-        // delete Cart
-        deleteCart(item: any) {
-            const updateCart = filter(this.cart, (p) => p.id !== item);
-            this.cart = updateCart;
-        },
-        //subtotal
-        getsubTotal() {
-            this.subTotal = sum(this.cart.map((product: any) => product.salePrice * product.qty));
-        },
-        //total
-        getTotal() {
-            this.total = this.subTotal - this.discount;
-        },
-        //discount
-        getDiscount() {
-            this.discount = Math.round(this.subTotal * (5 / 100));
-        },
-
         //Reset Filter
         filterReset(){}
 

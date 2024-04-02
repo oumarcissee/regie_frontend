@@ -94,7 +94,7 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
             return "Choisissez un rôle.";  
         },
         matricule(value: string | any[]) {
-            if (roleSelected.value !== 'provider') {
+            if (roleSelected.value !== 'FOURNISSEUR') {
                 if (!value?.length || value?.length < 2) {
                     return "Le matricule est obligatoire.";
                 }
@@ -142,8 +142,8 @@ const matricule     = useField("matricule")
 const role          = useField("role");
 
 const roles = ref([
-    {title:'MAGASINIER',    value: 'kepper_a'},
-    {title:'FOURNISSEUR',   value: 'provider'},
+    {title:'MAGASINIER (A)',    value: 'kepper_a'},
+    {title:'FOURNISSEUR',       value: 'provider'},
 ])
 
 
@@ -165,9 +165,27 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
         matricule: data.matricule,
         first_name: data.first_name,
         last_name: data.last_name,
-        role: data.role,
         address: data.address,
     };
+
+    switch (data.role) {
+        case 'FOURNISSEUR':
+            formData.role = 'provider';
+            break;
+        case 'MAGASINIER (A)':
+            formData.role = 'kepper_a';
+        break;
+        case 'RUT':
+            formData.role = 'manager_a';
+        break;
+        case 'MAGASINIER (B)':
+            formData.role = 'manager_b';
+        break;
+
+        default:
+            formData.role = data.role;
+            break;
+    }
     
     formData.phone_number = data.phone_number;
     formData.email = data.email;
@@ -192,9 +210,7 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
         pError.value = error  
         irreur++;
 
-        while (irreur < 5) {     
-            submit()
-        }
+        submit()
 
         return setErrors({ apiError: error });
     }
@@ -237,7 +253,7 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
                 
             </v-col>
 
-             <v-col cols="12" sm="4" v-if="role.value.value !== 'provider'">
+             <v-col cols="12" sm="4" v-if="role.value.value !== 'FOURNISSEUR'">
                 <v-label class="mb-2 font-weight-medium">Matricule</v-label>
                 <v-text-field variant="outlined" placeholder="Matricule" color="primary" :error-messages="matricule.errorMessage.value" v-model="matricule.value.value"
                ></v-text-field>

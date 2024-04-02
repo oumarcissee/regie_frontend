@@ -5,6 +5,9 @@ import UiParentCard from '@/components/shared/UiParentCard.vue';
 import type { Header, Item } from 'vue3-easy-data-table';
 import 'vue3-easy-data-table/dist/style.css';
 import { format } from 'date-fns';
+import fr from 'date-fns/esm/locale/fr/index.js';
+
+const locale = fr; // or en, or es
 
 const store = useEcomStore();
 onMounted(() => {
@@ -86,7 +89,7 @@ const itemsSelected = ref<Item[]>([]);
                     </template>
                     <template #item-created="{ date }">
                         <div class="player-wrapper">
-                            {{ format(new Date(date), 'E, MMM d') }}
+                            {{ date}}
                         </div>
                     </template>
                     <template #item-offerPrice="{ offerPrice }">

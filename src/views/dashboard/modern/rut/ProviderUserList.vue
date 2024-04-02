@@ -8,7 +8,11 @@ import { useProviderStore } from '@/stores/rutStore/providerStore';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 import type { Header, Item } from 'vue3-easy-data-table';
 import 'vue3-easy-data-table/dist/style.css';
+
+import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
+
+const locale = fr; // or en, or es
 
 const store = useProviderStore();
 
@@ -24,19 +28,22 @@ const editedIndex = ref(-1);
 
 
 
-const searchField = ref();
+const searchField = ref(['last_name', 'first_name', 'role']);
 const searchValue = ref('');
+
+
 
 const headers: Header[] = [
     { text: '#', value: 'image' },
-    { text: 'Nom et prénom', value: 'name', sortable: true },
-    { text: 'Créer le', value: 'created', sortable: true },
+    { text: 'Nom et prénom', value: 'last_name', sortable: true },
+    { text: 'Créer le', value: 'date_joined', sortable: true },
     { text: 'Téléphone', value: 'phoneNumber', sortable: true },
-    { text: 'Rôle', value: 'salePrice', sortable: true },
-    { text: 'Statut', value: 'isStock' , sortable: true },
+    { text: 'Rôle', value: 'role', sortable: true },
+    { text: 'Statut', value: 'is_active' , sortable: true },
     { text: 'Action', value: 'operation' }
 ];
 const items = ref(getProducts);
+
 
 // Méthode pour modifier un élément
 const editItem = (index: any) => {
@@ -49,8 +56,6 @@ const editItem = (index: any) => {
 
 
 
-
-
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 
 const itemsSelected = ref<Item[]>([]);
@@ -59,13 +64,13 @@ const itemsSelected = ref<Item[]>([]);
 <template>
     <v-row>
         <v-col cols="12" md="12">
-            <UiParentCard title="Product List">
+            <UiParentCard title="Liste des utilisateurs">
                 <v-row justify="space-between" class="align-center mb-3">
                     <v-col cols="12" md="3">
                         <v-text-field
                             type="text"
                             variant="outlined"
-                            placeholder="Search Product"
+                            placeholder="Rechercher utilisateur"
                             v-model="searchValue"
                             density="compact"
                             hide-details
@@ -101,15 +106,15 @@ const itemsSelected = ref<Item[]>([]);
                             <img alt="user" width="70" class="rounded-circle img-fluid" :src="image" />
                         </div>
                     </template>
-                    <template #item-name="{ first_name , last_name}">
+                    <template #item-last_name="{first_name, last_name}">
                         <div class="player-wrapper">
-                            <h5 class="text-h5">{{ first_name }}</h5>
-                            <span class="text-subtitle-1 d-block mt-1 textSecondary">{{ last_name }}</span>
+                            <h5 class="text-h5">{{ last_name }}</h5>
+                            <span class="text-subtitle-1 d-block mt-1 textSecondary">{{ first_name }}</span>
                         </div>
                     </template>
-                    <template #item-created="{ date_joined }">
+                    <template #item-date_joined="{ date_joined }">
                         <div class="player-wrapper">
-                            {{ format(new Date(date_joined), 'E, MMM d') }}
+                            {{ date_joined }}
                         </div>
                     </template>
                     <template #item-phoneNumber="{ phone_number}">
@@ -119,13 +124,11 @@ const itemsSelected = ref<Item[]>([]);
                     </template>
                     <template #item-salePrice="{ role }">
                         <div class="player-wrapper">
-                            <h5 v-if="role === 'manager_a'" class="text-h5">RUT</h5>
-                            <h5 v-if="role === 'manager_b'" class="text-h5">RE et CF</h5>
-                            <h5 v-if="role === 'provider'" class="text-h5">Fournisseur</h5>
-                            <h5 v-if="role === 'kepper_a'" class="text-h5">MAGASINIER</h5>
+                            <h5 class="text-h5">{{role}}</h5>
+                           
                         </div>
                     </template>
-                    <template #item-isStock="{ is_active }">
+                    <template #item-is_active="{ is_active }">
                         <div class="player-wrapper">
                             <v-chip color="success" v-if="is_active" size="small"> Activé </v-chip>
                             <v-chip color="error" v-else size="small"> Desactivé</v-chip>

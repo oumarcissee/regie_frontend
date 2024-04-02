@@ -22,7 +22,12 @@ const route = useRoute()
             href: '/rut/dashboard'
         },
         {
-            text: 'Nouveau',
+            text: 'Liste',
+            disabled: false,
+            href: '/rut/users/list'
+        },
+        {
+            text: 'Modifier',
             disabled: true,
             href: '#'
         }
