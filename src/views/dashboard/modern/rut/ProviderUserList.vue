@@ -1,37 +1,51 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { router } from '@/router';
-import { setItemSelected } from '@/services/utils';
+import { setItemSelected , deleteItem, confirmButton} from '@/services/utils';
 
 import { useProviderStore } from '@/stores/rutStore/providerStore';
 
 import UiParentCard from '@/components/shared/UiParentCard.vue';
+
 import type { Header, Item } from 'vue3-easy-data-table';
+
 import 'vue3-easy-data-table/dist/style.css';
-
-import fr from 'date-fns/locale/fr';
-import { format } from 'date-fns';
-
-const locale = fr; // or en, or es
 
 const store = useProviderStore();
 
 onMounted(async() => {
-    await store.fetchUsers();
+    refreshTable();
 });
 
-const getProducts = computed(() => {
-    return store.users;
+const getData = computed(() => {
+    return store.getItems
 });
+
+// Méthode pour modifier un élément
+const editItem = (index: any) => {
+    setItemSelected(index)
+    return router.push({name: 'EditProvider', params:{param: index.id}})
+};
+
+//Suppression d'un element
+const remove = async (index: any) => {
+    try {
+        await store.deleteItem(index, 'u/users');
+        await refreshTable(); // Rafraîchir les données après la suppression
+    } catch (error) {
+        console.error('Erreur lors de la suppression :', error);
+    }
+};
+
+
+const refreshTable = async () => {
+    await store.fetchUsers();
+};
 
 const editedIndex = ref(-1);
 
-
-
 const searchField = ref(['last_name', 'first_name', 'role']);
 const searchValue = ref('');
-
-
 
 const headers: Header[] = [
     { text: '#', value: 'image' },
@@ -42,23 +56,11 @@ const headers: Header[] = [
     { text: 'Statut', value: 'is_active' , sortable: true },
     { text: 'Action', value: 'operation' }
 ];
-const items = ref(getProducts);
-
-
-// Méthode pour modifier un élément
-const editItem = (index: any) => {
-    store.item = index;
-    setItemSelected(index)
-    console.log(index);
-
-    return router.push({name: 'EditProvider', params:{param: index.id}})
-};
-
-
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 
 const itemsSelected = ref<Item[]>([]);
+
 </script>
 
 <template>
@@ -93,7 +95,7 @@ const itemsSelected = ref<Item[]>([]);
                 </v-row>
                 <EasyDataTable
                     :headers="headers"
-                    :items="items"
+                    :items="getData"
                     table-class-name="customize-table"
                     :theme-color="themeColor"
                     :search-field="searchField"
@@ -106,6 +108,7 @@ const itemsSelected = ref<Item[]>([]);
                             <img alt="user" width="70" class="rounded-circle img-fluid" :src="image" />
                         </div>
                     </template>
+
                     <template #item-last_name="{first_name, last_name}">
                         <div class="player-wrapper">
                             <h5 class="text-h5">{{ last_name }}</h5>
@@ -122,7 +125,7 @@ const itemsSelected = ref<Item[]>([]);
                             <h5 class="text-h5">{{ phone_number }}</h5>
                         </div>
                     </template>
-                    <template #item-salePrice="{ role }">
+                    <template #item-role="{ role }">
                         <div class="player-wrapper">
                             <h5 class="text-h5">{{role}}</h5>
                            
@@ -146,7 +149,7 @@ const itemsSelected = ref<Item[]>([]);
                             </v-tooltip>
                             <v-tooltip text="Supprimer">
                                 <template v-slot:activator="{ props }">
-                                    <v-btn icon flat  v-bind="props"
+                                    <v-btn icon flat @click="remove(item)"  v-bind="props"
                                         ><TrashIcon stroke-width="1.5" size="20" class="text-error"
                                     /></v-btn>
                                 </template>

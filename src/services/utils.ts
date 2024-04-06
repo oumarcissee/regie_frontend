@@ -1,43 +1,9 @@
 import { useAuthStore } from '@/stores/auth';
 import type { AxiosError } from 'axios';
+import ApiAxios from './ApiAxios';
+import Swal from 'sweetalert2';
 
 import moment from 'moment';
-
-
-
-
-// const appStore = useAppStore()
-
-// /**
-//  *Cette fonction permet d'effectuer une notification
-//  * @param {String} title
-//  * @param {String} text
-//  * @param {String} type
-//  * @param {String} url
-//  */
-
-// const flash = async (title: any, text: any, type: any) => {
-
-//   if (appStore.isAuthenticated) {
-//     appStore.notification.admin.title = title
-//     appStore.notification.admin.text = text
-//     appStore.notification.admin.type = type
-//     appStore.notification.admin.state = true
-//     setTimeout(() => {
-//       appStore.notification.admin.state = false
-//     }, 5000)
-
-//   } else {
-//     appStore.notification.main.title = title
-//     appStore.notification.main.text = text
-//     appStore.notification.main.type = type
-//     appStore.notification.main.state = true
-//     setTimeout(() => {
-//       appStore.notification.main.state = false
-//     }, 5000)
-//   }
-
-// }
 
 /**
  *
@@ -60,38 +26,6 @@ const truncateText = (text: string | any[], limit: number) => {
   return text;
 };
 
-/**
- *
- * @param {String} date
- * @param {String} type
- * @returns
- */
-const formatDate = (customDate: moment.MomentInput, type: string = 'number') => {
-  moment.locale('fr')
-
-  if (type === 'number') {
-    const formattedDate = moment(customDate).format('L')
-    return formattedDate
-  } else if (type === 'ago') {
-    return moment(customDate, "YYYYMMDD").fromNow()
-  }else {
-    // const date = new Date(customDate);
-
-    // const options = {
-    //   weekday: "long",
-    //   year: "numeric",
-    //   month: "long",
-    //   day: "numeric",
-    //   hour: "2-digit",
-    //   minute: "2-digit",
-    // };
-    // const formattedDate = date.toLocaleString("fr-FR", options);
-    const formattedDate = moment(customDate).format('llll')
-    return formattedDate
-
-  }
-
-};
 
 const formatSlug = (chaine: string) => {
     // Convertir en minuscules
@@ -107,23 +41,6 @@ const formatSlug = (chaine: string) => {
 }
 
 
-// const dateISOFormated = (dateISO8601: string | number | Date) => {
-
-//   // Créer un objet Date à partir de la date ISO 8601
-//   const dateObj = new Date(dateISO8601);
-
-//   // Extraire l'année, le mois et le jour de l'objet Date
-//   const year = dateObj.getFullYear();
-//   const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Mois de 0 à 11, donc +1 et formaté sur 2 chiffres
-//   const day = String(dateObj.getDate()).padStart(2, '0'); // Jour du mois, formaté sur 2 chiffres
-
-//   // Former la date au format "yyyy-mm-dd"
-//   const dateFormatted = `${year}-${month}-${day}`;
-
-//   return dateFormatted
-
-// }
-
 
 // Fonction utilitaire pour vérifier si c'est une erreur Axios
 function isAxiosError(error: any): error is AxiosError {
@@ -131,8 +48,8 @@ function isAxiosError(error: any): error is AxiosError {
 }
 
 
-
 let selected: any;
+let confirmButton = false;
 
 
 function setItemSelected(item: any): void { 
@@ -143,9 +60,49 @@ const getItemSelected = () => {
   return selected && selected
 }
 
+/**
+ * @param  {String} item 
+ * @param  {String} url 
+ */
+const deleteItem = async (item: any, url: string, data: Array<any> ) => {
+    Swal.fire({
+    title: "Êtes vous sûr ?",
+    text: "Vous ne pourrez plus revenir en arrière!",
+    icon: "warning",
+    showCancelButton: true,
+    cancelButtonText: "Annuler",
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Oui, Je le supprime!"
+    }).then(async (result) => {
+    if (result.isConfirmed) {
+        try {
+            const response = await new ApiAxios().delete(`/${url}/${item.id}/`, item.id);
+            Swal.fire({
+                title: "Supprimé!",
+                text: "Votre objet a bien été supprimé.",
+                icon: "success"
+            });
+            //
+            return data?.filter((user: any) => user.id !== item.id);
+            
+        } catch (error) {
+            console.log(error);
+            Swal.fire({
+                title: "Erreur!",
+                text: "Votre objet ne peut pas être supprimé.",
+                icon: "warning"
+            });
+            return error;
+        }
+        
+    }
+        
+    });
+}
 
 export {
-  truncateText, formatDate, formatSlug, isAxiosError,
-  setItemSelected,getItemSelected
-
+  truncateText, formatSlug, isAxiosError,
+  setItemSelected,getItemSelected, deleteItem,
+  confirmButton
 }

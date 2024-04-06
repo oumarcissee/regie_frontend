@@ -86,7 +86,7 @@ export type PaymentOptionsProps = {
 export interface UsersStateProps {
     users?: Users[];
    
-    cart?: Users[] | any;
+    items?: Users[] | any;
 
     addresses?: Address[];
     sortBy?: String;
@@ -99,7 +99,7 @@ export interface UsersStateProps {
     discount?: any;
     color?: string;
     rank?:number;
-    item?: any | string ;
+    isConfirmButton?: boolean ;
 }
 
 
@@ -111,6 +111,6 @@ export interface UserCreateOptions {
     last_name?: string;
     phone_number?: string;
     password?: string | undefined; // Champ password est facultatif
-    role: string;
+    role?: string;
     address?: string;
 }

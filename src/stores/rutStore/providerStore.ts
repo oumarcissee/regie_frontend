@@ -1,13 +1,11 @@
 import { defineStore } from 'pinia';
 // project imports
 import ApiAxios from '@/services/ApiAxios';
+import Swal from 'sweetalert2';
 import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
 
 const locale = fr; // or en, or es
-
-
-import axios from '@/utils/axios';
 
 
 
@@ -19,10 +17,10 @@ export const useProviderStore = defineStore({
     id: 'rutProviders',
     state: (): UsersStateProps => ({
         users: [],
+        items: [],
 
-        item: '',
+        isConfirmButton: false,
       
-        cart: [],
         gender: '',
         category: [],
         price: '',
@@ -33,12 +31,19 @@ export const useProviderStore = defineStore({
         color: 'All',
         
     }),
-    getters: {},
+    getters: {
+        getItems(state) {
+        // autocompletion! ✨
+            return state.items
+        },
+       
+    },
     actions: {
         // Fetch followers from action
         async fetchUsers() {
             try {
                 const response = await new ApiAxios().find('/u/get-users/');
+                const items: any[] | undefined = []
 
                 response.data?.results.forEach((item: any) => {
                     switch (item.role) {
@@ -61,23 +66,58 @@ export const useProviderStore = defineStore({
 
                     item.date_joined = format(new Date(item.date_joined),"dd, MMMM yyyy", { locale });
 
-                    this.users?.push(item);
+                    items.push(item);
                 });
-
-                
+ 
+                this.items = items;
                 
             } catch (error) {
                 alert(error);
                 return Promise.reject(error);
             }
         },
-        //Reset Filter
-        filterReset(){}
+        
 
+        /**
+         * @param  {String} item 
+         * @param  {String} url 
+         */
+        async deleteItem (item: any, url: string){
+            Swal.fire({
+            title: "Êtes vous sûr ?",
+            text: "Vous ne pourrez plus revenir en arrière!",
+            icon: "warning",
+            showCancelButton: true,
+            cancelButtonText: "Annuler",
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Oui, Je le supprime!"
+            }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const response = await new ApiAxios().delete(`/${url}/${item.id}/`, item.id);
+                    Swal.fire({
+                        title: "Supprimé!",
+                        text: "Votre objet a bien été supprimé.",
+                        icon: "success"
+                    });
+                    //
+                    this.items = this.items?.filter((user: any) => user.id !== item.id);
 
-     
-       
-       
+                } catch (error) {
+                    console.log(error);
+                    Swal.fire({
+                        title: "Erreur!",
+                        text: "Votre objet ne peut pas être supprimé.",
+                        icon: "warning"
+                    });
+                    return error;
+                }
+                
+            }
+                
+            });
+        }
        
     }
 });
