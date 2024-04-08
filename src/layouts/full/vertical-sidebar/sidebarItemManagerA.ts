@@ -124,18 +124,24 @@ const sidebarItemManagerA: menu[] = [
         ]
     },
 
-    { header: 'Magasin' },
+    { header: 'GESTION DES COMMANDES' },
     {
-        title: 'Magasiniers',
+        title: 'Produits',
         icon: ShoppingCartIcon,
-        to: '/dashboards/ecommerce',
+        to: '/rut/products',
+
+    },
+    {
+        title: 'Commandes',
+        icon: ShoppingCartIcon,
+        to: '/rut/orders',
          children: [
             {
                 title: 'Liste',
                 icon: BoxIcon,
                 chipColor: 'surface',
                 chipBgColor: 'secondary',
-                to: '/rut/providers/listd'
+                to: '/rut/orders/list'
             },
 
             {
@@ -143,135 +149,62 @@ const sidebarItemManagerA: menu[] = [
                 icon: UserPlusIcon,
                 chipColor: 'surface',
                 chipBgColor: 'secondary',
-                to: '/rut/providers/addd'
+                to: '/rut/orders/add'
             },
              
-
-            // {
-            //     title: 'Detail',
-            //     icon: PointIcon,
-            //     to: '/ecommerce/product/detail/1'
-            // },
-            // {
-            //     title: 'List',
-            //     icon: PointIcon,
-            //     to: '/ecommerce/productlist'
-            // },
-            // {
-            //     title: 'Checkout',
-            //     icon: PointIcon,
-            //     to: '/ecommerce/checkout'
-            // }
         ]
+    },
+    {
+        title: 'Paiement des denrées',
+        icon: ShoppingCartIcon,
+        to: '/rut/unites',
+
+    },
+  
+    { header: 'DISTRIBUTION' },
+    {
+        title: 'Boredereaux',
+        icon: BorderAllIcon,
+        to: '/rut/boredereaux',
+
     },
 
     {
-        title: 'Ecommerce',
+        title: 'Unites/services',
         icon: ShoppingCartIcon,
-        to: '/dashboards/ecommerce',
+        to: '/rut/unites',
 
     },
-    // { header: 'Apps' },
-    // {
-    //     title: 'Contact',
-    //     icon: BoxIcon,
-    //     to: '/apps/contacts',
-    //     chip: '2',
-    //     chipColor: 'surface',
-    //     chipBgColor: 'secondary'
-    // },
 
-    // {
-    //     title: 'Blog',
-    //     icon: ChartDonut3Icon,
-    //     to: '/',
-    //     children: [
-    //         {
-    //             title: 'Posts',
-    //             icon: PointIcon,
-    //             to: '/apps/blog/posts'
-    //         },
-    //         {
-    //             title: 'Detail',
-    //             icon: PointIcon,
-    //             to: '/apps/blog/early-black-friday-amazon-deals-cheap-tvs-headphones'
-    //         }
-    //     ]
-    // },
-    // {
-    //     title: 'E-Commerce',
-    //     icon: BasketIcon,
-    //     to: '/ecommerce/',
-    //     children: [
-    //         {
-    //             title: 'Shop',
-    //             icon: PointIcon,
-    //             to: '/ecommerce/products'
-    //         },
-    //         {
-    //             title: 'Detail',
-    //             icon: PointIcon,
-    //             to: '/ecommerce/product/detail/1'
-    //         },
-    //         {
-    //             title: 'List',
-    //             icon: PointIcon,
-    //             to: '/ecommerce/productlist'
-    //         },
-    //         {
-    //             title: 'Checkout',
-    //             icon: PointIcon,
-    //             to: '/ecommerce/checkout'
-    //         }
-    //     ]
-    // },
-    // {
-    //     title: 'Chats',
-    //     icon: Message2Icon,
-    //     to: '/apps/chats'
-    // },
-    // {
-    //     title: 'User Profile',
-    //     icon: UserCircleIcon,
-    //     to: '/',
-    //     children: [
-    //         {
-    //             title: 'Profile',
-    //             icon: PointIcon,
-    //             to: '/apps/user/profile'
-    //         },
-    //         {
-    //             title: 'Followers',
-    //             icon: PointIcon,
-    //             to: '/apps/user/profile/followers'
-    //         },
-    //         {
-    //             title: 'Friends',
-    //             icon: PointIcon,
-    //             to: '/apps/user/profile/friends'
-    //         },
-    //         {
-    //             title: 'Gallery',
-    //             icon: PointIcon,
-    //             to: '/apps/user/profile/gallery'
-    //         }
-    //     ]
-    // },
-    // {
-    //     title: 'Notes',
-    //     icon: FilesIcon,
-    //     to: '/apps/notes'
-    // },
-    // {
-    //     title: 'Calendar',
-    //     icon: CalendarIcon,
-    //     to: '/apps/calendar'
-    // },
-    // {
-    //     title: 'Kanban',
-    //     icon: LayoutKanbanIcon,
-    //     to: '/apps/kanban'
-    // },
+    {
+        title: 'Menu Dépense',
+        icon: ShoppingCartIcon,
+        to: '/rut/unites',
+
+    },
+    { header: 'AUTRES' },
+    {
+        title: 'Paramètres',
+        icon: SettingsIcon,
+        to: '/rut/settings',
+
+    },
+
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // { header: 'Pages' },
     // {

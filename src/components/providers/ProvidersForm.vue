@@ -36,7 +36,7 @@ onMounted(async () => {
 
 
 // Fonction pour réinitialiser les champs
-const resetFields = () => {
+const resetFields = async () => {
     if (getItemSelected()) setItemSelected(null);
 
     username.value.value = '';
@@ -53,7 +53,7 @@ const resetFields = () => {
 
 // Utiliser onUnmounted pour appeler la fonction de réinitialisation
 onUnmounted(async() => {
- resetFields();
+    await resetFields();
 });
 
 

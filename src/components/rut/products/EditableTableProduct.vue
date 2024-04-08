@@ -1,18 +1,123 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useProductsList } from '@/stores/rutStore/products/productsListStore';
 
-import { useProviderStore } from '../../stores/rutStore/providerStore';
+import { useField, useForm } from 'vee-validate';
 
-import contact from '../../_mockApis/apps/contact/index';
+import type {  Items } from '@/types/rut/ProductsType';
 
-const store = useProviderStore();
+import contact from '@/_mockApis/apps/contact';
 
-onMounted(() => {
-    store.fetchProviders();
+const {fetchProducts,getProducts, errors} = useProductsList();
+
+onMounted(async () => {
+    await fetchProducts();
 });
-const getProviders: any = computed(() => {
-    return store.providers;
+
+const getContacts: any = computed(() => {
+    return getProducts;
 });
+
+const { handleSubmit, handleReset , isSubmitting} = useForm({
+    validationSchema: {
+        name(value: string | any[]) {
+        if (value?.length <= 4 || !value) {
+                return "Le nom d'utilisateur doit être au moins 4 lettres.";
+            } else if(errors.nameError && errors.nameText === value){
+
+                return errors.nameError
+            }
+
+            return true;
+        },
+
+        image(value: string | any[]) {
+            if (value?.length <= 2 || !value) {
+                return "L'adresse doit être valide.";
+            }
+            return true;
+        },
+        
+        price(value: string | any[]) {
+            if (value?.length >= 2) return true;
+            return "Le prénom doit avoir au moins 2 caractères.";
+        },
+        
+        unite(value: string | any[]) {
+            if (value) return true
+            return "Choisissez un rôle.";  
+        },
+        rate_per_days(value: string | any[]) {
+            
+            if (!value?.length || value?.length < 2) {
+                return "Le matricule est obligatoire.";
+            }
+            
+            return true;
+        },
+
+        divider(value: string | any[]) {
+            if (value?.length >= 2) return true;
+            return "Le nom doit avoir au moins 2 caractères.";
+        },
+
+
+        description(value: string | any[]) {
+            if (value?.length >= 3) return true;
+            return true
+        },
+              
+    },
+});
+
+
+
+const name              = useField("name");
+const image             = useField("image");
+const price             = useField("price");
+const unite             = useField("unite");
+const rate_per_days     = useField("rate_per_days");
+const divider           = useField("divider");
+const description       = useField("description")
+
+let count: any = ref(0)
+
+const submit = handleSubmit(async (data: any, { setErrors }: any) => {
+   try {
+        const formData : Items = {
+            name: data.name,
+            image: data.image[0],
+            price: data.price,
+            unite: data.unite,
+            rate_per_days: data.rate_per_days,
+            divider: data.divider,
+        };
+
+    } catch (error) {
+ 
+        count++;
+        if(count.value > 5) return
+        submit()
+
+        return setErrors({ apiError: error });
+    }
+
+});
+
+const uniteSelected = ref();
+
+const changed = (value: string | any[]) => {
+    uniteSelected.value = value
+    return value
+}
+
+
+const unites = ref([
+    {title: 'Sac(s)',    value: 'bag'},
+    {title: 'Bidon(s)', value: 'can' },
+    {title: 'Carton(s)', value: 'Cardboard'},
+])
+
 
 const valid = ref(true);
 const dialog = ref(false);
@@ -30,8 +135,6 @@ const editedItem = ref({
     role: '',
     rolestatus: ''
 });
-
-
 const defaultItem = ref({
     id: '',
     avatar: '1.jpg',
@@ -42,6 +145,8 @@ const defaultItem = ref({
     role: '',
     rolestatus: ''
 });
+
+
 
 //Methods
 const filteredList = computed(() => {
@@ -78,90 +183,110 @@ function save() {
 
 //Computed Property
 const formTitle = computed(() => {
-    return editedIndex.value === -1 ? 'Nouveau fournisseur' : 'Modification fournisseur';
+    return editedIndex.value === -1 ? 'Nouvel Article' : 'Editer un Article';
 });
 </script>
 <template>
     <v-row>
         <v-col cols="12" lg="4" md="6">
-            <v-text-field density="compact" v-model="search" label="Recherher" hide-details variant="outlined"></v-text-field>
+            <v-text-field density="compact" v-model="search" label="Rechercher des articles" hide-details variant="outlined"></v-text-field>
         </v-col>
         <v-col cols="12" lg="8" md="6" class="text-right">
             <v-dialog v-model="dialog" max-width="800">
                 <template v-slot:activator="{ props }">
                     <v-btn color="primary" v-bind="props" flat class="ml-auto">
-                        <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Nouveau 
+                        <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Ajouter un article
                     </v-btn>
                 </template>
                 <v-card>
-                    <v-card-title class="pa-4 bg-secondary">
+                    <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
                         <span class="title text-white">{{ formTitle }}</span>
+                        <v-icon @click="" class="ml-auto">mdi-close</v-icon>
                     </v-card-title>
+
 
                     <v-card-text>
                         <v-form ref="form" v-model="valid" lazy-validation>
                             <v-row>
                                 <v-col cols="12" sm="6">
-                                    <v-text-field variant="outlined" hide-details v-model="editedItem.id" label="Nom complet"></v-text-field>
+                                    <v-text-field 
+                                        variant="outlined" 
+                                        v-model="name.value.value"
+                                        :error-messages="name.errorMessage.value"  
+                                        label="Libéllé"
+                                    >
+                                    </v-text-field>
+                                </v-col>
+                                <v-col cols="12" sm="6">
+                                    <v-file-input
+                                        chips
+                                        label="Importer une image"
+                                        variant="outlined"
+                                        v-model="image.value.value"
+                                        :error-messages="image.errorMessage.value" 
+                                    ></v-file-input>
+                    
                                 </v-col>
                                 <v-col cols="12" sm="6">
                                     <v-text-field
                                         variant="outlined"
-                                        hide-details
-                                        v-model="editedItem.userinfo"
-                                        label="User info"
+                                        v-model="price.value.value"
+                                        :error-messages="price.errorMessage.value" 
+                                        label="Prix unitaire" 
                                     ></v-text-field>
                                 </v-col>
                                 <v-col cols="12" sm="6">
                                     <v-text-field
                                         variant="outlined"
-                                        hide-details
-                                        v-model="editedItem.usermail"
-                                        label="User email"
-                                        type="email"
+                                        v-model="rate_per_days.value.value"
+                                        :error-messages="rate_per_days.errorMessage.value" 
+                                        label="Le taux par jour"
                                     ></v-text-field>
                                 </v-col>
                                 <v-col cols="12" sm="6">
                                     <v-text-field
                                         variant="outlined"
-                                        hide-details
-                                        v-model="editedItem.phone"
-                                        label="Phone"
-                                        type="phone"
+                                        v-model="divider.value.value"
+                                        :error-messages="divider.errorMessage.value" 
+                                        label="Le diviseur"
+                                        type="number"
                                     ></v-text-field>
                                 </v-col>
                                 <v-col cols="12" sm="6">
-                                    <v-text-field
-                                        variant="outlined"
-                                        hide-details
-                                        v-model="editedItem.jdate"
-                                        label="Joining Date"
-                                    ></v-text-field>
+                                    <v-select  
+                                        label="Unité"
+                                        :items="unites" @update:modelValue="changed" 
+                                        single-line variant="outlined" 
+                                        v-model="unite.value.value" 
+                                        :error-messages="unite.errorMessage.value">
+                                    </v-select>
                                 </v-col>
-                                <v-col cols="12" sm="6">
-                                    <v-text-field variant="outlined" hide-details v-model="editedItem.role" label="Role"></v-text-field>
-                                </v-col>
+                                
                                 <v-col cols="12" sm="12">
-                                    <v-select
-                                        variant="outlined"
-                                        hide-details
-                                        :items="rolesbg"
-                                        v-model="editedItem.rolestatus"
-                                        label="Role Background"
-                                    ></v-select>
+                                     <VTextarea
+                                        label="Description"
+                                        auto-grow
+                                        placeholder="Salut, avez-vous quel que chose a dire?"
+                                        rows="2"
+                                        color="primary"
+                                        row-height="25"
+                                        shaped
+                                        v-model="description.value.value" 
+                                        :error-messages="description.errorMessage.value"
+                                    ></VTextarea>
                                 </v-col>
                             </v-row>
                         </v-form>
                     </v-card-text>
 
                     <v-card-actions class="pa-4">
-                        <v-spacer></v-spacer>
-                        <v-btn color="error" @click="close">Cancel</v-btn>
+                        
                         <v-btn
                             color="secondary"
                             :disabled="editedItem.userinfo == '' || editedItem.usermail == ''"
                             variant="flat"
                             @click="save"
+                            block
                             >Save</v-btn
                         >
                     </v-card-actions>
@@ -173,14 +298,11 @@ const formTitle = computed(() => {
         <thead>
             <tr>
                 <th class="text-subtitle-1 font-weight-semibold">Id</th>
-                <th class="text-subtitle-1 font-weight-semibold">Nom et prenoms</th>
-                <th class="text-subtitle-1 font-weight-semibold">Téléphone</th>
+                <th class="text-subtitle-1 font-weight-semibold">UserInfo</th>
+                <th class="text-subtitle-1 font-weight-semibold">Phone</th>
                 <th class="text-subtitle-1 font-weight-semibold">Joining Date</th>
                 <th class="text-subtitle-1 font-weight-semibold">Role</th>
                 <th class="text-subtitle-1 font-weight-semibold">Actions</th>
-            
-            
-                
             </tr>
         </thead>
         <tbody>

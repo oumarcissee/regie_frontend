@@ -29,6 +29,13 @@ const ManagerARoutes = {
             path: '/rut/users/edit/:param',
             component: () => import('@/views/providers/EditProvider.vue')
         },
+
+        //Les urls de produits
+        {
+            name: 'ProductList',
+            path: '/rut/products',
+            component: () => import('@/views/rut/products/ProductsList.vue')
+        },
         
        
     ]
