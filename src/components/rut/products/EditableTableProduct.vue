@@ -22,7 +22,7 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
     validationSchema: {
         name(value: string | any[]) {
         if (value?.length <= 4 || !value) {
-                return "Le nom d'utilisateur doit être au moins 4 lettres.";
+                return "Le libéllé doit avoir au moins 4 lettres.";
             } else if(errors.nameError && errors.nameText === value){
 
                 return errors.nameError
@@ -32,38 +32,44 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
         },
 
         image(value: string | any[]) {
-            if (value?.length <= 2 || !value) {
-                return "L'adresse doit être valide.";
+            if (!value) {
+                return "Selectonner une image.";
             }
             return true;
         },
         
         price(value: string | any[]) {
-            if (value?.length >= 2) return true;
-            return "Le prénom doit avoir au moins 2 caractères.";
+            if (!(/^[0-9]*[1-9][0-9]*$/.test(value as any))) {
+                // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
+                return "Entrer le prix de l'article avec des chiffres.";
+            }
+            return true;
         },
         
         unite(value: string | any[]) {
             if (value) return true
-            return "Choisissez un rôle.";  
+            return "Choisissez l'unité.";  
         },
-        rate_per_days(value: string | any[]) {
-            
-            if (!value?.length || value?.length < 2) {
-                return "Le matricule est obligatoire.";
+        rate_per_days(value: string | any[]) {  
+            if (!(/^\d+\.\d+$/.test(value as any))) {
+                // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
+                return "Entrer le taux (en nombre decimal).";
             }
             
             return true;
         },
 
         divider(value: string | any[]) {
-            if (value?.length >= 2) return true;
-            return "Le nom doit avoir au moins 2 caractères.";
+            if (!(/^[0-9]*[1-9][0-9]*$/.test(value as any))) {
+                // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
+                return "Entrer le diviseur.";
+            }
+            return true;
         },
 
 
         description(value: string | any[]) {
-            if (value?.length >= 3) return true;
+            if (value) return true;
             return true
         },
               
@@ -201,7 +207,7 @@ const formTitle = computed(() => {
                 <v-card>
                     <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
                         <span class="title text-white">{{ formTitle }}</span>
-                        <v-icon @click="" class="ml-auto">mdi-close</v-icon>
+                        <v-icon @click="close()" class="ml-auto">mdi-close</v-icon>
                     </v-card-title>
 
 
@@ -249,13 +255,14 @@ const formTitle = computed(() => {
                                         v-model="divider.value.value"
                                         :error-messages="divider.errorMessage.value" 
                                         label="Le diviseur"
-                                        type="number"
+                                       
                                     ></v-text-field>
                                 </v-col>
                                 <v-col cols="12" sm="6">
                                     <v-select  
                                         label="Unité"
-                                        :items="unites" @update:modelValue="changed" 
+                                        :items="unites" 
+                                        @update:modelValue="changed" 
                                         single-line variant="outlined" 
                                         v-model="unite.value.value" 
                                         :error-messages="unite.errorMessage.value">
