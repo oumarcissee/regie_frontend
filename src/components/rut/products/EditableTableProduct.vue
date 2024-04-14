@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watchEffect, watch, type Ref} from 'vue';
 import { useProductsList } from '@/stores/rutStore/products/productsListStore';
+
+import Cropper from 'cropperjs';
 
 import { useField, useForm } from 'vee-validate';
 
@@ -8,15 +10,82 @@ import type {  Items } from '@/types/rut/ProductsType';
 
 import contact from '@/_mockApis/apps/contact';
 
-const {fetchProducts,getProducts, errors} = useProductsList();
+
+const { fetchProducts, getProducts, errors } = useProductsList();
+
+
+const img = ref(null) as any;
+
+const dialogImg = ref(false) as any;
+
+const selectedImage = ref(null);
+const reader = new FileReader();
+const imageInput = ref(null);
+const imageSrc = ref("");
+
+// Déclarez cropper comme une référence de Cropper | null
+let cropper: Ref<Cropper | null> = ref(null);
+
+reader.onload = (e: any) => {
+    imageSrc.value = e.target?.result as string;
+};
+
+// Méthode pour gérer le changement de fichier
+const onFileChange = (event: any) => {
+    dialogImg.value = true
+    const file = event.target.files?.[0] || event.dataTransfer.files?.[0];
+
+    if (file) {
+        selectedImage.value = file;
+        imageSrc.value = URL.createObjectURL(selectedImage.value);
+    }
+
+};
+
+watchEffect(() => {
+    if (selectedImage.value) {
+        imageSrc.value = URL.createObjectURL(selectedImage.value);
+        // reader.readAsDataURL(selectedImage.value);
+    } else {
+        imageSrc.value = "";
+    }
+})
+
+watch( imageSrc, () => {
+    if (imageSrc.value) {
+        cropper.value?.replace(imageSrc.value);
+    }
+}, { flush: 'post'})
+
+
+if (dialogImg) {
+    const imgElement = document.getElementById('imgRef');
+    if(imgElement){
+        cropper.value = new Cropper(img, {
+            aspectRatio:1,
+            minCropBoxWidth: 256,
+            minCropBoxHeight: 256,
+            viewMode:3,
+            dragMode: 'move',
+            background: false,
+            cropBoxMovable: false,
+            cropBoxResizable: false,
+        });
+    }
+} else {
+    if (cropper.value) cropper.value?.destroy();
+}
 
 onMounted(async () => {
     await fetchProducts();
+        
+
 });
 
 const getContacts: any = computed(() => {
     return getProducts;
 });
+
 
 const { handleSubmit, handleReset , isSubmitting} = useForm({
     validationSchema: {
@@ -76,8 +145,6 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
     },
 });
 
-
-
 const name              = useField("name");
 const image             = useField("image");
 const price             = useField("price");
@@ -127,6 +194,7 @@ const unites = ref([
 
 const valid = ref(true);
 const dialog = ref(false);
+
 const search = ref('');
 const rolesbg = ref(['primary', 'secondary', 'error', 'success', 'warning']);
 const desserts = ref(contact);
@@ -178,6 +246,14 @@ function close() {
         editedIndex.value = -1;
     }, 300);
 }
+
+function closeImg() {
+    dialogImg.value = false;
+    setTimeout(() => {
+        editedItem.value = Object.assign({}, defaultItem.value);
+        editedIndex.value = -1;
+    }, 300);
+}
 function save() {
     if (editedIndex.value > -1) {
         Object.assign(desserts.value[editedIndex.value], editedItem.value);
@@ -191,13 +267,50 @@ function save() {
 const formTitle = computed(() => {
     return editedIndex.value === -1 ? 'Nouvel Article' : 'Editer un Article';
 });
+
+
+
+
+
 </script>
 <template>
     <v-row>
         <v-col cols="12" lg="4" md="6">
-            <v-text-field density="compact" v-model="search" label="Rechercher des articles" hide-details variant="outlined"></v-text-field>
+            <v-text-field density="compact" v-model="search" label="Rechercher des articles" variant="outlined"></v-text-field>
         </v-col>
         <v-col cols="12" lg="8" md="6" class="text-right">
+            <!-- Dialogue img -->
+            <v-dialog v-model="dialogImg">
+                <v-card>
+                    <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
+                        <span class="title text-white">Recadrement de l'image</span>
+                        <v-icon @click="closeImg()" class="ml-auto">mdi-close</v-icon>
+                    </v-card-title>
+
+                    <v-card-text>
+                        <v-row>      
+                            <v-col cols="12" sm="12">
+                                <div class="my-2 w-64 object-fill max-auto">
+                                    <v-img :src="imageSrc" ref="img" id="imgRef" class="block max-w-full"></v-img>
+                                </div>
+                            </v-col>
+                        </v-row>
+                    </v-card-text>
+
+                    <v-card-actions class="pa-4">
+                        
+                        <v-btn
+                            color="secondary"
+                            variant="flat"
+                            block
+                            >Valider</v-btn
+                        >
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+            <!-- End dialogue img -->
+
+
             <v-dialog v-model="dialog" max-width="800">
                 <template v-slot:activator="{ props }">
                     <v-btn color="primary" v-bind="props" flat class="ml-auto">
@@ -209,7 +322,7 @@ const formTitle = computed(() => {
                         <span class="title text-white">{{ formTitle }}</span>
                         <v-icon @click="close()" class="ml-auto">mdi-close</v-icon>
                     </v-card-title>
-
+                    
 
                     <v-card-text>
                         <v-form ref="form" v-model="valid" lazy-validation>
@@ -225,13 +338,17 @@ const formTitle = computed(() => {
                                 </v-col>
                                 <v-col cols="12" sm="6">
                                     <v-file-input
+                                        ref="imageInput"
                                         chips
                                         label="Importer une image"
                                         variant="outlined"
+                                        accept="image/*"
                                         v-model="image.value.value"
                                         :error-messages="image.errorMessage.value" 
+                                        @change="onFileChange"
                                     ></v-file-input>
-                    
+                                       <!-- Cropper -->
+                                   
                                 </v-col>
                                 <v-col cols="12" sm="6">
                                     <v-text-field
@@ -354,3 +471,10 @@ const formTitle = computed(() => {
         </tbody>
     </v-table>
 </template>
+
+
+<style scope >
+.cropper-view-box, .cropper-face {
+  border-radius: 50%;
+}
+</style>

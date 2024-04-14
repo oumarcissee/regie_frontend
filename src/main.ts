@@ -30,6 +30,9 @@ import VueScrollTo from 'vue-scrollto';
 //LightBox
 import VueEasyLightbox from 'vue-easy-lightbox';
 
+import VueCropper from 'vue-cropperjs';
+import 'cropperjs/dist/cropper.css';
+
 
 
 const i18n = createI18n({
@@ -41,6 +44,7 @@ const i18n = createI18n({
 
 const app = createApp(App);
 fakeBackend();
+
 app.use(router);
 app.component('EasyDataTable', Vue3EasyDataTable);
 app.use(PerfectScrollbar);
