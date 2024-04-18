@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watchEffect, watch, type Ref} from 'vue';
+import { ref, computed, onMounted, watchEffect, watch, type Ref, onUnmounted} from 'vue';
 import { useProductsList } from '@/stores/rutStore/products/productsListStore';
 
-import Cropper from 'cropperjs';
+import  type { VueCropperMethods }  from 'vue-cropperjs';
+import VueCropper from 'vue-cropperjs';
+
+import 'cropperjs/dist/cropper.css';
 
 import { useField, useForm } from 'vee-validate';
 
@@ -14,6 +17,103 @@ import contact from '@/_mockApis/apps/contact';
 const { fetchProducts, getProducts, errors } = useProductsList();
 
 
+
+
+
+let imgSrc = ref('@/assets/images/berserk.jpg');
+let cropImg = ref<string | null>(null);
+let data = ref<string | null>(null);
+let cropper = ref<VueCropperMethods | null>(null);
+let input = ref<HTMLInputElement | null>(null);
+
+
+function setImage(e: Event) {
+  dialogImg.value = true
+  const target = e.target as HTMLInputElement;
+  const file = (target.files as FileList)[0];
+
+  if (!file || file.type.indexOf('image/') === -1) {
+    alert('Please select an image file');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    if (event.target && event.target.result) {
+      imgSrc.value = event.target.result.toString();
+      if (cropper.value) {
+        cropper.value.replace(imgSrc.value);
+      }
+    }
+  };
+
+  reader.readAsDataURL(file);
+}
+
+
+
+function cropImage() {
+  if (cropper.value) {
+    const canvas = cropper.value.getCroppedCanvas();
+    if (canvas) {
+      cropImg.value = canvas.toDataURL();
+    }
+  }
+}
+
+
+
+function getCropBoxData() {
+  data.value = JSON.stringify(cropper.value?.getCropBoxData(), null, 4);
+}
+
+function getData() {
+  data.value = JSON.stringify(cropper.value?.getData(), null, 4);
+}
+
+function move(offsetX: number, offsetY: number | undefined) {
+  cropper.value?.move(offsetX, offsetY);
+}
+
+function reset() {
+  cropper.value?.reset();
+}
+
+function rotate(deg: number) {
+  cropper.value?.rotate(deg);
+}
+
+function setCropBoxData() {
+  if (!data.value) return;
+  cropper.value?.setCropBoxData(JSON.parse(data.value));
+}
+
+function setData() {
+  if (!data.value) return;
+  cropper.value?.setData(JSON.parse(data.value));
+}
+
+
+function showFileChooser() {
+  input.value?.click();
+}
+
+function zoom(percent: number) {
+  cropper.value?.relativeZoom(percent);
+}
+
+
+
+
+
+//************************************************************************************************
+
+
+
+
+
+
+
 const img = ref(null) as any;
 
 const dialogImg = ref(false) as any;
@@ -23,8 +123,6 @@ const reader = new FileReader();
 const imageInput = ref(null);
 const imageSrc = ref("");
 
-// Déclarez cropper comme une référence de Cropper | null
-let cropper: Ref<Cropper | null> = ref(null);
 
 reader.onload = (e: any) => {
     imageSrc.value = e.target?.result as string;
@@ -36,8 +134,8 @@ const onFileChange = (event: any) => {
     const file = event.target.files?.[0] || event.dataTransfer.files?.[0];
 
     if (file) {
+        imageSrc.value = URL.createObjectURL(file);
         selectedImage.value = file;
-        imageSrc.value = URL.createObjectURL(selectedImage.value);
     }
 
 };
@@ -50,37 +148,6 @@ watchEffect(() => {
         imageSrc.value = "";
     }
 })
-
-watch( imageSrc, () => {
-    if (imageSrc.value) {
-        cropper.value?.replace(imageSrc.value);
-    }
-}, { flush: 'post'})
-
-
-if (dialogImg) {
-    const imgElement = document.getElementById('imgRef');
-    if(imgElement){
-        cropper.value = new Cropper(img, {
-            aspectRatio:1,
-            minCropBoxWidth: 256,
-            minCropBoxHeight: 256,
-            viewMode:3,
-            dragMode: 'move',
-            background: false,
-            cropBoxMovable: false,
-            cropBoxResizable: false,
-        });
-    }
-} else {
-    if (cropper.value) cropper.value?.destroy();
-}
-
-onMounted(async () => {
-    await fetchProducts();
-        
-
-});
 
 const getContacts: any = computed(() => {
     return getProducts;
@@ -270,8 +337,6 @@ const formTitle = computed(() => {
 
 
 
-
-
 </script>
 <template>
     <v-row>
@@ -280,7 +345,7 @@ const formTitle = computed(() => {
         </v-col>
         <v-col cols="12" lg="8" md="6" class="text-right">
             <!-- Dialogue img -->
-            <v-dialog v-model="dialogImg">
+            <v-dialog v-model="dialogImg" max-width="800">
                 <v-card>
                     <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
                         <span class="title text-white">Recadrement de l'image</span>
@@ -289,12 +354,44 @@ const formTitle = computed(() => {
 
                     <v-card-text>
                         <v-row>      
-                            <v-col cols="12" sm="12">
-                                <div class="my-2 w-64 object-fill max-auto">
-                                    <v-img :src="imageSrc" ref="img" id="imgRef" class="block max-w-full"></v-img>
+                          <v-col cols="12" sm="8">
+          
+                            <div class="content">
+                              <section class="cropper-area">
+                                <div class="img-cropper">
+                                  <VueCropper
+                                    ref="cropper"
+                                    :aspect-ratio="16 / 9"
+                                    :src="imageSrc"
+                                    preview=".preview"
+                                  />
                                 </div>
-                            </v-col>
+                                
+                              </section>
+                      
+                            </div>
+                                
+                          </v-col> 
+
+                          <v-col cols="12" sm="4">
+                               <section class="preview-area">
+                                <p>Visualiser</p>
+                                <div class="preview" />
+                                <p>Image coupée</p>
+                                <div class="cropped-image">
+                                  <img
+                                    v-if="cropImg"
+                                    :src="cropImg"
+                                    alt="Cropped Image"
+                                  />
+                                  <div v-else class="crop-placeholder" />
+                                </div>
+                              </section>
+                          </v-col> 
+
                         </v-row>
+
+
                     </v-card-text>
 
                     <v-card-actions class="pa-4">
@@ -338,14 +435,14 @@ const formTitle = computed(() => {
                                 </v-col>
                                 <v-col cols="12" sm="6">
                                     <v-file-input
-                                        ref="imageInput"
+                                        ref="input"
                                         chips
                                         label="Importer une image"
                                         variant="outlined"
                                         accept="image/*"
                                         v-model="image.value.value"
                                         :error-messages="image.errorMessage.value" 
-                                        @change="onFileChange"
+                                        @change="setImage"
                                     ></v-file-input>
                                        <!-- Cropper -->
                                    
@@ -473,8 +570,55 @@ const formTitle = computed(() => {
 </template>
 
 
-<style scope >
+<style >
 .cropper-view-box, .cropper-face {
   border-radius: 50%;
+}
+
+
+input[type="file"] {
+  display: none;
+}
+
+
+.content {
+  display: flex;
+  justify-content: space-between;
+}
+
+.cropper-area {
+  width: 614px;
+}
+
+
+
+.preview-area {
+  width: 307px;
+}
+
+.preview-area p {
+  font-size: 1.25rem;
+  margin: 0;
+  margin-bottom: 1rem;
+}
+
+.preview-area p:last-of-type {
+  margin-top: 1rem;
+}
+
+.preview {
+  width: 100%;
+  height: calc(372px * (9 / 16));
+  overflow: hidden;
+}
+
+.crop-placeholder {
+  width: 100%;
+  height: 200px;
+  background: #ccc;
+}
+
+.cropped-image img {
+  max-width: 100%;
 }
 </style>

@@ -30,9 +30,6 @@ import VueScrollTo from 'vue-scrollto';
 //LightBox
 import VueEasyLightbox from 'vue-easy-lightbox';
 
-import VueCropper from 'vue-cropperjs';
-import 'cropperjs/dist/cropper.css';
-
 
 
 const i18n = createI18n({
