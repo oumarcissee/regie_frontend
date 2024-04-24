@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watchEffect, watch, type Ref, onUnmounted} from 'vue';
 import { useProductsList } from '@/stores/rutStore/products/productsListStore';
+import {getItemSelected, setItemSelected } from '@/services/utils';
 
 import  type { VueCropperMethods }  from 'vue-cropperjs';
 import VueCropper from 'vue-cropperjs';
@@ -12,19 +13,55 @@ import { useField, useForm } from 'vee-validate';
 import type {  Items } from '@/types/rut/ProductsType';
 
 import contact from '@/_mockApis/apps/contact';
+import { router } from '@/router';
+import { round } from 'lodash';
 
 
-const { fetchProducts, getProducts, errors } = useProductsList();
+const { fetchProducts, getProducts, addOrUpdateProduct, errors} = useProductsList();
 
 
+onMounted(async () => {
+    if (getItemSelected()) {
+        name.value.value = getItemSelected()?.name;
+        image.value.value = getItemSelected()?.image;
+        price.value.value = getItemSelected()?.price;
+        unite.value.value = getItemSelected()?.unite;
+        rate_per_days.value.value = getItemSelected()?.rate_per_days;
+        divider.value.value = getItemSelected()?.divider;
+        description.value.value = getItemSelected()?.description;
 
+        
+    } 
+});
 
+// Fonction pour réinitialiser les champs
+const resetFields = async () => {
+    if (getItemSelected()) setItemSelected(null);
+    name.value.value = null;
+    image.value.value = null;
+    price.value.value = null;
+    unite.value.value = null;
+    rate_per_days.value.value = null;
+    divider.value.value = null;
+    description.value.value = null;
+};
 
-let imgSrc = ref('@/assets/images/berserk.jpg');
+// Utiliser onUnmounted pour appeler la fonction de réinitialisation
+onUnmounted(async() => {
+    await resetFields();
+});
+
+let form : Items  = Object()
+
+const formData = new FormData();
+
+const imageSrc = ref('');
+
 let cropImg = ref<string | null>(null);
-let data = ref<string | null>(null);
+const data = ref<string | null | undefined>(null);
 let cropper = ref<VueCropperMethods | null>(null);
 let input = ref<HTMLInputElement | null>(null);
+const croppedFile = ref<File | null>(null);
 
 
 function setImage(e: Event) {
@@ -33,16 +70,17 @@ function setImage(e: Event) {
   const file = (target.files as FileList)[0];
 
   if (!file || file.type.indexOf('image/') === -1) {
-    alert('Please select an image file');
-    return;
+        dialogImg.value = false
+        return;
   }
 
   const reader = new FileReader();
   reader.onload = (event) => {
     if (event.target && event.target.result) {
-      imgSrc.value = event.target.result.toString();
+      imageSrc.value = event.target.result.toString();
       if (cropper.value) {
-        cropper.value.replace(imgSrc.value);
+          cropper.value.replace(imageSrc.value);
+
       }
     }
   };
@@ -51,13 +89,20 @@ function setImage(e: Event) {
 }
 
 
-
 function cropImage() {
   if (cropper.value) {
-    const canvas = cropper.value.getCroppedCanvas();
-    if (canvas) {
-      cropImg.value = canvas.toDataURL();
-    }
+      const canvas = cropper.value.getCroppedCanvas({
+        width: 400,
+        height: 400,
+      }).toBlob((blob: any) => {
+        const timestamp = new Date().getTime(); // Obtient un timestamp unique
+        const fileName = `cropped_image_${timestamp}.jpg`; // Nom du fichier avec timestamp
+        formData.append('image', blob, fileName); // Ajoute le blob avec le nom de fichier unique
+       
+    }, 'image/jpg');
+
+    
+    dialogImg.value = false; 
   }
 }
 
@@ -105,49 +150,8 @@ function zoom(percent: number) {
 
 
 
-
-//************************************************************************************************
-
-
-
-
-
-
-
-const img = ref(null) as any;
-
 const dialogImg = ref(false) as any;
 
-const selectedImage = ref(null);
-const reader = new FileReader();
-const imageInput = ref(null);
-const imageSrc = ref("");
-
-
-reader.onload = (e: any) => {
-    imageSrc.value = e.target?.result as string;
-};
-
-// Méthode pour gérer le changement de fichier
-const onFileChange = (event: any) => {
-    dialogImg.value = true
-    const file = event.target.files?.[0] || event.dataTransfer.files?.[0];
-
-    if (file) {
-        imageSrc.value = URL.createObjectURL(file);
-        selectedImage.value = file;
-    }
-
-};
-
-watchEffect(() => {
-    if (selectedImage.value) {
-        imageSrc.value = URL.createObjectURL(selectedImage.value);
-        // reader.readAsDataURL(selectedImage.value);
-    } else {
-        imageSrc.value = "";
-    }
-})
 
 const getContacts: any = computed(() => {
     return getProducts;
@@ -168,8 +172,9 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
         },
 
         image(value: string | any[]) {
-            if (!value) {
-                return "Selectonner une image.";
+    
+            if (!value || value[0]?.type.indexOf('image/') === -1) {
+                return "Veillez selectionez une image";
             }
             return true;
         },
@@ -220,25 +225,43 @@ const rate_per_days     = useField("rate_per_days");
 const divider           = useField("divider");
 const description       = useField("description")
 
-let count: any = ref(0)
+const count = ref(0);
 
 const submit = handleSubmit(async (data: any, { setErrors }: any) => {
    try {
-        const formData : Items = {
+        form = {
             name: data.name,
-            image: data.image[0],
+            image: croppedFile.value ? croppedFile.value : data.image[0],
             price: data.price,
             unite: data.unite,
             rate_per_days: data.rate_per_days,
             divider: data.divider,
         };
 
+        
+        formData.append('name', data.name);
+        formData.append('price', data.price);
+        formData.append('unite', data.unite);
+        formData.append('rate_per_days', data.rate_per_days);
+        formData.append('divider', data.divider);
+        formData.append('description', data.description);
+    
+
+        //Si un élément est selectioné
+        if(getItemSelected()) return await addOrUpdateProduct(formData, getItemSelected().custom_id);
+        //Si y'a aucun élément n'est selectioné
+        return await addOrUpdateProduct(formData)
+
     } catch (error) {
  
-        count++;
-        if(count.value > 5) return
-        submit()
+        count.value++;
+        if (count.value >= 5) {
+            // Arrêter l'exécution du script ou effectuer une action appropriée
+            console.log('Le nombre maximum de tentatives de soumission a été dépassé.');
+            return;
+        }
 
+        submit()
         return setErrors({ apiError: error });
     }
 
@@ -255,7 +278,7 @@ const changed = (value: string | any[]) => {
 const unites = ref([
     {title: 'Sac(s)',    value: 'bag'},
     {title: 'Bidon(s)', value: 'can' },
-    {title: 'Carton(s)', value: 'Cardboard'},
+    {title: 'Carton(s)', value: 'cardboard'},
 ])
 
 
@@ -266,27 +289,6 @@ const search = ref('');
 const rolesbg = ref(['primary', 'secondary', 'error', 'success', 'warning']);
 const desserts = ref(contact);
 const editedIndex = ref(-1);
-const editedItem = ref({
-    id: '',
-    avatar: '1.jpg',
-    userinfo: '',
-    usermail: '',
-    phone: '',
-    jdate: '',
-    role: '',
-    rolestatus: ''
-});
-const defaultItem = ref({
-    id: '',
-    avatar: '1.jpg',
-    userinfo: '',
-    usermail: '',
-    phone: '',
-    jdate: '',
-    role: '',
-    rolestatus: ''
-});
-
 
 
 //Methods
@@ -296,45 +298,43 @@ const filteredList = computed(() => {
     });
 });
 
-function editItem(item: any) {
-    editedIndex.value = desserts.value.indexOf(item);
-    editedItem.value = Object.assign({}, item);
-    dialog.value = true;
-}
-function deleteItem(item: any) {
-    const index = desserts.value.indexOf(item);
-    confirm('Are you sure you want to delete this item?') && desserts.value.splice(index, 1);
-}
+
 
 function close() {
     dialog.value = false;
-    setTimeout(() => {
-        editedItem.value = Object.assign({}, defaultItem.value);
-        editedIndex.value = -1;
-    }, 300);
 }
 
 function closeImg() {
     dialogImg.value = false;
-    setTimeout(() => {
-        editedItem.value = Object.assign({}, defaultItem.value);
-        editedIndex.value = -1;
-    }, 300);
+   
 }
-function save() {
-    if (editedIndex.value > -1) {
-        Object.assign(desserts.value[editedIndex.value], editedItem.value);
-    } else {
-        desserts.value.push(editedItem.value);
-    }
-    close();
-}
+
+// Méthode pour modifier un élément
+const editItem = (index: any) => {
+    dialog.value = true;
+    setItemSelected(index)
+    // return router.push({name: 'EditProvider', params:{param: index.id}})
+};
+
+//Suppression d'un element
+// const remove = async (index: any) => {
+//     try {
+//         await store.deleteItem(index, 'u/users');
+//         await refreshTable(); // Rafraîchir les données après la suppression
+//     } catch (error) {
+//         console.error('Erreur lors de la suppression :', error);
+//     }
+// };
+
+// const refreshTable = async () => {
+//     await store.fetchUsers();
+// };
+
 
 //Computed Property
 const formTitle = computed(() => {
     return editedIndex.value === -1 ? 'Nouvel Article' : 'Editer un Article';
 });
-
 
 
 </script>
@@ -343,9 +343,9 @@ const formTitle = computed(() => {
         <v-col cols="12" lg="4" md="6">
             <v-text-field density="compact" v-model="search" label="Rechercher des articles" variant="outlined"></v-text-field>
         </v-col>
-        <v-col cols="12" lg="8" md="6" class="text-right">
+        <v-col cols="12" lg="8" md="6" class="text-right ">
             <!-- Dialogue img -->
-            <v-dialog v-model="dialogImg" max-width="800">
+            <v-dialog v-model="dialogImg" max-width="1000" >
                 <v-card>
                     <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
                         <span class="title text-white">Recadrement de l'image</span>
@@ -354,7 +354,7 @@ const formTitle = computed(() => {
 
                     <v-card-text>
                         <v-row>      
-                          <v-col cols="12" sm="8">
+                          <v-col cols="12" >
           
                             <div class="content">
                               <section class="cropper-area">
@@ -373,7 +373,7 @@ const formTitle = computed(() => {
                                 
                           </v-col> 
 
-                          <v-col cols="12" sm="4">
+                          <!-- <v-col cols="12" sm="4">
                                <section class="preview-area">
                                 <p>Visualiser</p>
                                 <div class="preview" />
@@ -387,10 +387,9 @@ const formTitle = computed(() => {
                                   <div v-else class="crop-placeholder" />
                                 </div>
                               </section>
-                          </v-col> 
+                          </v-col>  -->
 
                         </v-row>
-
 
                     </v-card-text>
 
@@ -400,13 +399,13 @@ const formTitle = computed(() => {
                             color="secondary"
                             variant="flat"
                             block
-                            >Valider</v-btn
+                            @click="cropImage"
+                            >Recadrer l'image</v-btn
                         >
                     </v-card-actions>
                 </v-card>
             </v-dialog>
             <!-- End dialogue img -->
-
 
             <v-dialog v-model="dialog" max-width="800">
                 <template v-slot:activator="{ props }">
@@ -439,7 +438,7 @@ const formTitle = computed(() => {
                                         chips
                                         label="Importer une image"
                                         variant="outlined"
-                                        accept="image/*"
+                                        accept=".jpeg,.jpg,.png"
                                         v-model="image.value.value"
                                         :error-messages="image.errorMessage.value" 
                                         @change="setImage"
@@ -504,11 +503,11 @@ const formTitle = computed(() => {
                         
                         <v-btn
                             color="secondary"
-                            :disabled="editedItem.userinfo == '' || editedItem.usermail == ''"
                             variant="flat"
-                            @click="save"
+                            @click="submit"
                             block
-                            >Save</v-btn
+                            :loading="isSubmitting"
+                            >Enregistrer</v-btn
                         >
                     </v-card-actions>
                 </v-card>
@@ -557,7 +556,7 @@ const formTitle = computed(() => {
                         </v-tooltip>
                         <v-tooltip text="Delete">
                             <template v-slot:activator="{ props }">
-                                <v-btn icon flat @click="deleteItem(item)" v-bind="props"
+                                <v-btn icon flat @click="" v-bind="props"
                                     ><TrashIcon stroke-width="1.5" size="20" class="text-error"
                                 /></v-btn>
                             </template>
@@ -570,55 +569,3 @@ const formTitle = computed(() => {
 </template>
 
 
-<style >
-.cropper-view-box, .cropper-face {
-  border-radius: 50%;
-}
-
-
-input[type="file"] {
-  display: none;
-}
-
-
-.content {
-  display: flex;
-  justify-content: space-between;
-}
-
-.cropper-area {
-  width: 614px;
-}
-
-
-
-.preview-area {
-  width: 307px;
-}
-
-.preview-area p {
-  font-size: 1.25rem;
-  margin: 0;
-  margin-bottom: 1rem;
-}
-
-.preview-area p:last-of-type {
-  margin-top: 1rem;
-}
-
-.preview {
-  width: 100%;
-  height: calc(372px * (9 / 16));
-  overflow: hidden;
-}
-
-.crop-placeholder {
-  width: 100%;
-  height: 200px;
-  background: #ccc;
-}
-
-.cropped-image img {
-  max-width: 100%;
-}
-</style>

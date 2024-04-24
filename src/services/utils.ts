@@ -3,7 +3,6 @@ import type { AxiosError } from 'axios';
 import ApiAxios from './ApiAxios';
 import Swal from 'sweetalert2';
 
-import moment from 'moment';
 
 /**
  *

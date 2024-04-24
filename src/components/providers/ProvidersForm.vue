@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { router } from '@/router';
 
 import { useField, useForm } from 'vee-validate';
 import { onMounted, ref , onUnmounted} from 'vue';
-import { Volume2Icon, VolumeIcon } from 'vue-tabler-icons';
+
 
 import type { UserCreateOptions } from '@/types/rut/ProvidersType';
 
@@ -13,27 +12,19 @@ import { useProdiverStore } from '@/stores/providerStore';
 
 const { errors, add } = useProdiverStore()
 
-let itemSelected: null = null;
-
 onMounted(async () => {
-    
-
     if (getItemSelected()) {
-        username.value.value   = getItemSelected()?.username
-        email.value.value      = getItemSelected()?.email
-        first_name.value.value = getItemSelected()?.first_name
-        last_name.value.value  = getItemSelected()?.last_name
-        phone_number.value.value = getItemSelected()?.phone_number
-        address.value.value    = getItemSelected()?.address
-        matricule.value.value  = getItemSelected()?.matricule
-        role.value.value = getItemSelected()?.role
-
+        username.value.value   = await getItemSelected()?.username
+        email.value.value      = await getItemSelected()?.email
+        first_name.value.value = await getItemSelected()?.first_name
+        last_name.value.value  = await getItemSelected()?.last_name
+        phone_number.value.value = await getItemSelected()?.phone_number
+        address.value.value    = await getItemSelected()?.address
+        matricule.value.value  = await getItemSelected()?.matricule
+        role.value.value = await getItemSelected()?.role
         roleSelected.value = await getItemSelected()?.role
-
-        
     } 
 });
-
 
 // Fonction pour réinitialiser les champs
 const resetFields = async () => {
