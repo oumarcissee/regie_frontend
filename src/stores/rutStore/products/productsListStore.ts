@@ -90,19 +90,17 @@ export const useProductsList = defineStore({
                         }
                     });
                 }
-                // this.store = response.data;
-                // localStorage.setItem('user', JSON.stringify(response.data));
-                
+             
             } catch (error) {
-                if (isAxiosError(error)) {
-                    console.log(error, "Dans le catch")
-                    if (error.response && error.response.data) {
-                        console.log(error.response.data);
-            
-                        const responseData = error.response.data as { name: string[]};
 
-                        this.errors.nameError = responseData.name ? responseData.name[0] : null;
-                        this.errors.nameText  = data.name
+                if (isAxiosError(error)) {
+                    // console.log(error)
+                    if (error.response && error.response.data) {
+                      
+                        const responseData = error.response.data as { name: string[]};
+                        this.errors.nameError = responseData.name ? "Cet article existe déja." : null;
+                        this.errors.nameText = data.get('name')
+                        
                       
                     }
                 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watchEffect, watch, type Ref, onUnmounted} from 'vue';
+import { ref, computed, onMounted,  onUnmounted} from 'vue';
 import { useProductsList } from '@/stores/rutStore/products/productsListStore';
 import {getItemSelected, setItemSelected } from '@/services/utils';
 
@@ -13,8 +13,6 @@ import { useField, useForm } from 'vee-validate';
 import type {  Items } from '@/types/rut/ProductsType';
 
 import contact from '@/_mockApis/apps/contact';
-import { router } from '@/router';
-import { round } from 'lodash';
 
 
 const { fetchProducts, getProducts, addOrUpdateProduct, errors} = useProductsList();
@@ -112,40 +110,6 @@ function getCropBoxData() {
   data.value = JSON.stringify(cropper.value?.getCropBoxData(), null, 4);
 }
 
-function getData() {
-  data.value = JSON.stringify(cropper.value?.getData(), null, 4);
-}
-
-function move(offsetX: number, offsetY: number | undefined) {
-  cropper.value?.move(offsetX, offsetY);
-}
-
-function reset() {
-  cropper.value?.reset();
-}
-
-function rotate(deg: number) {
-  cropper.value?.rotate(deg);
-}
-
-function setCropBoxData() {
-  if (!data.value) return;
-  cropper.value?.setCropBoxData(JSON.parse(data.value));
-}
-
-function setData() {
-  if (!data.value) return;
-  cropper.value?.setData(JSON.parse(data.value));
-}
-
-
-function showFileChooser() {
-  input.value?.click();
-}
-
-function zoom(percent: number) {
-  cropper.value?.relativeZoom(percent);
-}
 
 
 
@@ -164,10 +128,9 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
         if (value?.length <= 4 || !value) {
                 return "Le libéllé doit avoir au moins 4 lettres.";
             } else if(errors.nameError && errors.nameText === value){
-
-                return errors.nameError
+                return errors.nameError;
             }
-
+            
             return true;
         },
 
@@ -248,7 +211,7 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
     
 
         //Si un élément est selectioné
-        if(getItemSelected()) return await addOrUpdateProduct(formData, getItemSelected().custom_id);
+        if(getItemSelected()) return await addOrUpdateProduct(formData, getItemSelected().id);
         //Si y'a aucun élément n'est selectioné
         return await addOrUpdateProduct(formData)
 
@@ -421,6 +384,7 @@ const formTitle = computed(() => {
                     
 
                     <v-card-text>
+        
                         <v-form ref="form" v-model="valid" lazy-validation>
                             <v-row>
                                 <v-col cols="12" sm="6">
