@@ -7,14 +7,10 @@ import { RouterView } from "vue-router";
 </script>
 
 <style >
-.cropper-view-box, .cropper-face {
+/* .cropper-view-box, .cropper-face {
   border-radius: 50%;
-}
+} */
 
-
-input[type="file"] {
-  display: none;
-}
 
 
 .content {
@@ -45,7 +41,7 @@ input[type="file"] {
 
 .crop-placeholder {
   width: 100%;
-  height: 200px;
+  height: 100%;
   background: #ccc;
 }
 
