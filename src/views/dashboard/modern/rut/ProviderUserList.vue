@@ -4,6 +4,7 @@ import { router } from '@/router';
 import { setItemSelected , deleteItem, confirmButton} from '@/services/utils';
 
 import { useProviderStore } from '@/stores/rutStore/providerStore';
+const store = useProviderStore();
 
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 
@@ -11,7 +12,6 @@ import type { Header, Item } from 'vue3-easy-data-table';
 
 import 'vue3-easy-data-table/dist/style.css';
 
-const store = useProviderStore();
 
 onMounted(async() => {
     refreshTable();

@@ -36,6 +36,13 @@ const ManagerARoutes = {
             path: '/rut/products',
             component: () => import('@/views/rut/products/ProductsList.vue')
         },
+
+         //Les urls des commandes
+        {
+            name: 'OrdersList',
+            path: '/rut/orders/list',
+            component: () => import('@/views/rut/orders/OrderList.vue')
+        },
         
        
     ]

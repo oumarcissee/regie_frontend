@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted,  onUnmounted} from 'vue';
-import { useProductsList } from '@/stores/rutStore/products/productsListStore';
+import { useOrderStore } from '@/stores/rutStore/orders/orderStore';
 import {truncateText} from '@/services/utils';
 import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
@@ -16,9 +16,15 @@ import type {  Items } from '@/types/rut/ProductsType';
 
 import contact from '@/_mockApis/apps/contact';
 
+import type { Header, Item } from 'vue3-easy-data-table';
+import 'vue3-easy-data-table/dist/style.css';
 
-const { addOrUpdateProduct, errors } = useProductsList();
-const store = useProductsList();
+import { useProviderStore } from '@/stores/rutStore/providerStore';
+const store = useProviderStore();
+
+
+const { addOrUpdateProduct, errors } = useOrderStore();
+
 
 
 const { handleSubmit, handleReset , isSubmitting} = useForm({
@@ -195,7 +201,7 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
 
 // Fonction pour réinitialiser les champs
 const refreshTable = async () => {
-    await store.fetchItems();
+    await store.fetchUsers();
     close()
 };
 
@@ -279,75 +285,38 @@ const formButton = computed(() => {
 });
 
 
+const searchField = ref(['ref','Destinateur', 'created_at']);
+const searchValue = ref('');
+
+const headers: Header[] = [
+    { text: 'ID', value: 'id' },
+    { text: 'Numéro', value: 'ref', sortable: true },
+    { text: 'Destinateur', value: 'provider', sortable: true },
+    { text: 'Créé le', value: 'created_at', sortable: true },
+    { text: 'Modifié le', value: 'modified_at', sortable: true },
+    { text: 'Statut', value: 'status' , sortable: true },
+    { text: 'Action', value: 'operation' }
+];
+
+const themeColor = ref('rgb(var(--v-theme-secondary))');
+
+const itemsSelected = ref<Item[]>([]);
+
 </script>
 <template>
     <v-row>
         <v-col cols="12" lg="4" md="6">
-            <v-text-field density="compact" v-model="search" label="Rechercher des articles" variant="outlined"></v-text-field>
+             <v-text-field
+                type="text"
+                variant="outlined"
+                placeholder="Rechercher une commande"
+                v-model="searchValue"
+                density="compact"
+                hide-details
+                prepend-inner-icon="mdi-magnify"
+            />
         </v-col>
-        <v-col cols="12" lg="8" md="6" class="text-right ">
-            <!-- Dialogue img -->
-            <v-dialog v-model="dialogImg" max-width="1000" >
-                <v-card>
-                    <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
-                        <span class="title text-white">Recadrement de l'image</span>
-                        <v-icon @click="closeImg()" class="ml-auto">mdi-close</v-icon>
-                    </v-card-title>
-
-                    <v-card-text>
-                        <v-row>      
-                          <v-col cols="12" >
-          
-                            <div class="content">
-                             
-                                <div class="img-cropper">
-                                  <VueCropper
-                                    ref="cropper"
-                                    :aspect-ratio="16 /9"
-                                    :src="imageSrc"
-                                    preview=".preview"
-                                  
-                                  />
-                                </div>
-                      
-                            </div>
-                                
-                          </v-col> 
-
-                          <!-- <v-col cols="12" sm="4">
-                               <section class="preview-area">
-                                <p>Visualiser</p>
-                                <div class="preview" />
-                                <p>Image coupée</p>
-                                <div class="cropped-image">
-                                  <img
-                                    v-if="cropImg"
-                                    :src="cropImg"
-                                    alt="Cropped Image"
-                                  />
-                                  <div v-else class="crop-placeholder" />
-                                </div>
-                              </section>
-                          </v-col>  -->
-
-                        </v-row>
-
-                    </v-card-text>
-
-                    <v-card-actions class="pa-4">
-                        
-                        <v-btn
-                            color="secondary"
-                            variant="flat"
-                            block
-                            @click="handleImage"
-                            >Recadrer l'image</v-btn
-                        >
-                    </v-card-actions>
-                </v-card>
-            </v-dialog>
-            <!-- End dialogue img -->
-
+        <v-col cols="12" lg="8" md="6" class="text-right ">      
             <v-dialog v-model="dialog" max-width="800">
                 <template v-slot:activator="{ props }">
                     <v-btn color="primary" v-bind="props" flat class="ml-auto">
@@ -362,7 +331,6 @@ const formButton = computed(() => {
                     
 
                     <v-card-text>
-        
                         <v-form ref="form" v-model="valid" lazy-validation>
                             <v-row>
                                 <v-col cols="12" sm="6">
@@ -455,64 +423,74 @@ const formButton = computed(() => {
             </v-dialog>
         </v-col>
     </v-row>
-    <v-table class="mt-5">
-        <thead>
-            <tr>
-                <th class="text-subtitle-1 font-weight-semibold">Id</th>
-                <th class="text-subtitle-1 font-weight-semibold">Article</th>
-                <th class="text-subtitle-1 font-weight-semibold">Prix</th>
-                <th class="text-subtitle-1 font-weight-semibold">Taux</th>
-                <th class="text-subtitle-1 font-weight-semibold">Diviseur</th>
-                <th class="text-subtitle-1 font-weight-semibold">Créé le</th>
-                <th class="text-subtitle-1 font-weight-semibold">Modifié le</th>
-                <th class="text-subtitle-1 font-weight-semibold">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="item in getItems" :key="item.id">
-                <td class="text-subtitle-1">{{ item.ref }}</td>
-                <td>
-                    <div class="d-flex align-center py-4">
-                        <div class="hoverable">        
-                            <v-img :lazy-src="item.image" :src="item.image" width="65px" class="rounded  img-fluid"></v-img>
-                        </div>
 
-                        <div class="ml-5">
-                            <h4 class="text-h6 font-weight-semibold">{{ item.name }}</h4>
-                            <span class="text-subtitle-1 d-block mt-1 textSecondary">{{truncateText(item.description, 20) }}</span>
-                        </div>
-                    </div>
-                </td>
-                <td class="text-subtitle-1">{{ item.price }}</td>
-                <!-- {{ format(new Date(date), 'E, MMM d') }} -->
-                <td class="text-subtitle-1">{{ item.rate_per_days }}</td>
-                <td class="text-subtitle-1">{{ item.divider }}</td>
-                <td class="text-subtitle-1">{{ format(new Date(item.created_at), "dd, MMMM yyyy", { locale }) }}</td>
-                <td class="text-subtitle-1">{{ format(new Date(item.modified_at), "dd, MMMM yyyy", { locale }) }}</td>
-                <!-- <td>
-                    <v-chip :color="item.rolestatus" size="small" label>{{ item.role }}</v-chip>
-                </td> -->
-                <td>
-                    <div class="d-flex align-center">
-                        <v-tooltip text="Edit">
-                            <template v-slot:activator="{ props }">
-                                <v-btn icon flat @click="editItem(item)" v-bind="props"
-                                    ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
-                                /></v-btn>
-                            </template>
-                        </v-tooltip>
-                        <v-tooltip text="Delete">
-                            <template v-slot:activator="{ props }">
-                                <v-btn icon flat @click="remove(item)" v-bind="props"
-                                    ><TrashIcon stroke-width="1.5" size="20" class="text-error"
-                                /></v-btn>
-                            </template>
-                        </v-tooltip>
-                    </div>
-                </td>
-            </tr>
-        </tbody>
-    </v-table>
+    <EasyDataTable
+        :headers="headers"
+        :items="getItems"
+        table-class-name="customize-table"
+        :theme-color="themeColor"
+        :search-field="searchField"
+        :search-value="searchValue"
+        :rows-per-page="5"
+        v-model:items-selected="itemsSelected"
+        >
+
+        <template #item-id="{id}">
+            <div class="player-wrapper">
+                <h5 class="text-h5">{{ id }}</h5>
+            </div>
+        </template>
+        <template #item-ref="{ ref }">
+            <div class="player-wrapper">
+                {{ ref }}
+            </div>
+        </template>
+        <template #item-provider="{ provider}">
+            <div class="player-wrapper">
+                <h5 class="text-h5">{{ provider }}</h5>
+            </div>
+        </template>
+        <template #item-created_at="{ created_at }">
+            <div class="player-wrapper">
+                <h5 class="text-h5">{{created_at}}</h5>
+                
+            </div>
+        </template>
+
+        <template #item-modified_at="{ modified_at }">
+            <div class="player-wrapper">
+                <h5 class="text-h5">{{modified_at}}</h5>  
+            </div>
+        </template>
+        <template #item-status="{ status }">
+            <div class="player-wrapper">
+                <v-chip color="success" v-if="status" size="small"> Activé </v-chip>
+                <v-chip color="error" v-else size="small"> Desactivé</v-chip>
+            </div>
+        </template>
+
+        <template #item-operation="item">
+            <div class="operation-wrapper"><div class="d-flex align-center">
+                <v-tooltip text="Editer">
+                    <template v-slot:activator="{ props }">
+                        <v-btn icon flat @click="editItem(item)" v-bind="props"
+                            ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
+                        /></v-btn>
+                    </template>
+                </v-tooltip>
+                <v-tooltip text="Supprimer">
+                    <template v-slot:activator="{ props }">
+                        <v-btn icon flat @click="remove(item)"  v-bind="props"
+                            ><TrashIcon stroke-width="1.5" size="20" class="text-error"
+                        /></v-btn>
+                    </template>
+                </v-tooltip>
+            </div>
+
+            </div>
+        </template>
+    </EasyDataTable>
+
 </template>
 
 

@@ -8,27 +8,27 @@ import Swal from 'sweetalert2'
 
 
 
-export const useProductsList = defineStore({
-    id: 'productsListStore',
+export const useOrderStore = defineStore({
+    id: 'orderStore',
     state: () => ({
-        items: [],
+        orders: [],
         errors: {
             nameError: null as any,
             nameText: null as any,
         },
     }),
     getters: {
-        getProducts(state) {
-            return state.items;
+        getOrders(state) {
+            return state.orders;
         }
     },
     actions: {
         // Fetch followers from action
-        async fetchItems() {
+        async fetchOrders() {
             try {
                 const response = await new ApiAxios().find(`/items/`);
                 // console.log(response, "Dans try");
-                this.items = response.data.results
+                this.orders = response.data.results
             } catch (error) {
                 alert(error);
                 console.log(error);
@@ -39,7 +39,7 @@ export const useProductsList = defineStore({
         async addOrUpdateProduct(data: any, param?: any) {
             try {
                 if (param) {
-                    const response = await new ApiAxios().updatePartialForm(`/items/${param}/`, data, param);
+                    const response = await new ApiAxios().updatePartialForm(`/orders/${param}/`, data, param);
                     // await this.fetchItems()
 
                     this.$reset()
@@ -65,7 +65,7 @@ export const useProductsList = defineStore({
                         }
                     });
                 } else {
-                    const response = await new ApiAxios().addForm('/items/', data);
+                    const response = await new ApiAxios().addForm('/orders/', data);
                     console.log(response.data);
         
                     this.$reset()
@@ -132,7 +132,7 @@ export const useProductsList = defineStore({
                         icon: "success"
                     });
                     //
-                    this.items = this.items?.filter((user: any) => user.id !== item.id);
+                    this.orders = this.orders?.filter((user: any) => user.id !== item.id);
 
                 } catch (error) {
                     console.log(error);
