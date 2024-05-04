@@ -8,8 +8,13 @@ const page = ref({ title: 'Liste des Articles' });
 
 const breadcrumbs = ref([
     {
-        text: '2 Nouveau articles',
+        text: 'Dashboard',
         disabled: true,
+        href: '#'
+    },
+    {
+        text: 'Les articles',
+        disabled: false,
         href: '#'
     }
 ]);

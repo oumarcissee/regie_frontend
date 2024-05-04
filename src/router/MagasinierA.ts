@@ -98,16 +98,16 @@ const MagasinierA = {
     //         path: '/apps/kanban',
     //         component: () => import('@/views/apps/kanban/Kanban.vue')
     //     },
-    //     {
-    //         name: 'Autocomplete',
-    //         path: '/forms/form-elements/autocomplete',
-    //         component: () => import('@/views/forms/form-elements/VAutocomplete.vue')
-    //     },
-    //     {
-    //         name: 'Combobox',
-    //         path: '/forms/form-elements/combobox',
-    //         component: () => import('@/views/forms/form-elements/Combobox.vue')
-    //     },
+        // {
+        //     name: 'Autocomplete',
+        //     path: '/forms/form-elements/autocomplete',
+        //     component: () => import('@/views/forms/form-elements/VAutocomplete.vue')
+        // },
+        // {
+        //     name: 'Combobox',
+        //     path: '/forms/form-elements/combobox',
+        //     component: () => import('@/views/forms/form-elements/Combobox.vue')
+        // },
     //     {
     //         name: 'File Inputs',
     //         path: '/forms/form-elements/fileinputs',
@@ -123,11 +123,11 @@ const MagasinierA = {
     //         path: '/forms/form-elements/select',
     //         component: () => import('@/views/forms/form-elements/Select.vue')
     //     },
-    //     {
-    //         name: 'Button',
-    //         path: '/forms/form-elements/button',
-    //         component: () => import('@/views/forms/form-elements/VButtons.vue')
-    //     },
+        // {
+        //     name: 'Button',
+        //     path: '/forms/form-elements/button',
+        //     component: () => import('@/views/forms/form-elements/VButtons.vue')
+        // },
     //     {
     //         name: 'Checkbox',
     //         path: '/forms/form-elements/checkbox',
@@ -148,11 +148,11 @@ const MagasinierA = {
     //         path: '/forms/form-elements/slider',
     //         component: () => import('@/views/forms/form-elements/VSlider.vue')
     //     },
-    //     {
-    //         name: 'Switch',
-    //         path: '/forms/form-elements/switch',
-    //         component: () => import('@/views/forms/form-elements/VSwitch.vue')
-    //     },
+        {
+            name: 'Switch',
+            path: '/forms/form-elements/switch',
+            component: () => import('@/views/forms/form-elements/VSwitch.vue')
+        },
     //     {
     //         name: 'Form Layout',
     //         path: '/forms/form-layouts',

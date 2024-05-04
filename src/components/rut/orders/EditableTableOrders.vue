@@ -5,6 +5,7 @@ import {truncateText} from '@/services/utils';
 import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
 
+
 const locale = fr; // or en, or es
 
 import  type { VueCropperMethods }  from 'vue-cropperjs';
@@ -22,10 +23,15 @@ import 'vue3-easy-data-table/dist/style.css';
 import { useProviderStore } from '@/stores/rutStore/providerStore';
 const store = useProviderStore();
 
+// Formulaire de
+import UiChildCard from '@/components/shared/UiChildCard.vue';
+// icons
+import { AccessPointIcon, MailIcon } from 'vue-tabler-icons';
+import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBox.vue';
+
+
 
 const { addOrUpdateProduct, errors } = useOrderStore();
-
-
 
 const { handleSubmit, handleReset , isSubmitting} = useForm({
     validationSchema: {
@@ -128,7 +134,6 @@ function setImage(e: Event) {
   reader.readAsDataURL(file);
 }
 
-
 function handleImage() {
   if (cropper.value) {
       const canvas = cropper.value.getCroppedCanvas({
@@ -146,10 +151,7 @@ function handleImage() {
   }
 }
 
-
-
 const dialogImg = ref(false) as any;
-
 
 
 const name              = useField("name");
@@ -276,7 +278,7 @@ const remove = async (index: any) => {
 
 //Computed Property
 const formTitle = computed(() => {
-    return editedIndex.value === -1 ? 'Nouvel Article' : 'Editer un Article';
+    return editedIndex.value === -1 ? 'Nouvelle Commande' : 'Editer une commande';
 });
 
 //Computed Property
@@ -302,9 +304,13 @@ const themeColor = ref('rgb(var(--v-theme-secondary))');
 
 const itemsSelected = ref<Item[]>([]);
 
+const select = ref();
+const items = ref(["Programming", "Design", "Vue", "Vuetify"]);
+
+
 </script>
 <template>
-    <v-row>
+    <v-row class="mb-4">
         <v-col cols="12" lg="4" md="6">
              <v-text-field
                 type="text"
@@ -320,76 +326,54 @@ const itemsSelected = ref<Item[]>([]);
             <v-dialog v-model="dialog" max-width="800">
                 <template v-slot:activator="{ props }">
                     <v-btn color="primary" v-bind="props" flat class="ml-auto">
-                        <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Ajouter un article
+                        <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Ajouter une commande
                     </v-btn>
                 </template>
+                 <!-- Formulaire de commande -->
                 <v-card>
                     <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
                         <span class="title text-white">{{ formTitle }}</span>
                         <v-icon @click="close()" class="ml-auto">mdi-close</v-icon>
                     </v-card-title>
                     
-
                     <v-card-text>
                         <v-form ref="form" v-model="valid" lazy-validation>
                             <v-row>
+                                <v-col cols="12" >
+                                    
+                                 <CustomComBox/>
+
+                                </v-col>
+                                
+                                   <!-- <v-switch color="primary" :model-value="true" label="Statut" ></v-switch>   -->
                                 <v-col cols="12" sm="6">
-                                    <v-text-field 
-                                        variant="outlined" 
-                                        v-model="name.value.value"
-                                        :error-messages="name.errorMessage.value"  
-                                        label="Libéllé"
-                                    >
-                                    </v-text-field>
+                                     <CustomComBox/>
                                 </v-col>
                                 <v-col cols="12" sm="6">
-                                    <v-file-input
-                                        chips
-                                        label="Importer une image"
-                                        variant="outlined"
-                                        accept=".jpeg,.jpg,.png"
-                                        v-model="image.value.value"
-                                        :error-messages="image.errorMessage.value" 
-                                        @change="setImage"
-                                    ></v-file-input>
-                                       <!-- Cropper -->
-                                   
+                                     <v-row>
+                                        
+                                        <v-col cols="12" sm="6">
+                                            <v-text-field
+                                                variant="outlined"
+                                                v-model="rate_per_days.value.value"
+                                                :error-messages="rate_per_days.errorMessage.value" 
+                                                label="La quantité"
+                                            ></v-text-field>
+                                        </v-col>
+
+                                        <v-col cols="12" sm="6">
+
+                                            <v-btn color="primary" variant="outlined" size="large" block flat>
+                                            Ajouter
+                                        </v-btn>
+                                            
+                                        </v-col>
+                                    </v-row>
                                 </v-col>
-                                <v-col cols="12" sm="6">
-                                    <v-text-field
-                                        variant="outlined"
-                                        v-model="price.value.value"
-                                        :error-messages="price.errorMessage.value" 
-                                        label="Prix unitaire" 
-                                    ></v-text-field>
+                                <v-col cols="12">
+                                     <v-switch color="primary" :model-value="true" label="Statut" ></v-switch>  
                                 </v-col>
-                                <v-col cols="12" sm="6">
-                                    <v-text-field
-                                        variant="outlined"
-                                        v-model="rate_per_days.value.value"
-                                        :error-messages="rate_per_days.errorMessage.value" 
-                                        label="Le taux par jour"
-                                    ></v-text-field>
-                                </v-col>
-                                <v-col cols="12" sm="6">
-                                    <v-text-field
-                                        variant="outlined"
-                                        v-model="divider.value.value"
-                                        :error-messages="divider.errorMessage.value" 
-                                        label="Le diviseur"
-                                       
-                                    ></v-text-field>
-                                </v-col>
-                                <v-col cols="12" sm="6">
-                                    <v-select  
-                                        label="Unité"
-                                        :items="unites" 
-                                        @update:modelValue="changed" 
-                                        single-line variant="outlined" 
-                                        v-model="unite.value.value" 
-                                        :error-messages="unite.errorMessage.value">
-                                    </v-select>
-                                </v-col>
+                               
                                 
                                 <v-col cols="12" sm="12">
                                      <VTextarea
@@ -420,6 +404,7 @@ const itemsSelected = ref<Item[]>([]);
                         >
                     </v-card-actions>
                 </v-card>
+                <!-- END Formulaire de commande -->
             </v-dialog>
         </v-col>
     </v-row>

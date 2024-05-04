@@ -13,5 +13,7 @@ const items = ref([
 ]);
 </script>
 <template>
-    <v-autocomplete v-model="value" :items="items" color="primary" variant="outlined" hide-details></v-autocomplete>
+    <v-autocomplete v-model="value" :items="items" color="primary" variant="outlined" hide-details>
+    
+    </v-autocomplete>
 </template>
