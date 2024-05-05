@@ -1,34 +1,25 @@
 <script setup lang="ts">
 import { ref, computed, onMounted,  onUnmounted} from 'vue';
-import { useOrderStore } from '@/stores/rutStore/orders/orderStore';
-import {truncateText} from '@/services/utils';
+import { truncateText, itemChanged} from '@/services/utils';
 import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
 
-
 const locale = fr; // or en, or es
 
-import  type { VueCropperMethods }  from 'vue-cropperjs';
-import VueCropper from 'vue-cropperjs';
 
 import { useField, useForm } from 'vee-validate';
 
 import type {  Items } from '@/types/rut/ProductsType';
 
-import contact from '@/_mockApis/apps/contact';
-
 import type { Header, Item } from 'vue3-easy-data-table';
 import 'vue3-easy-data-table/dist/style.css';
 
+import { useOrderStore } from '@/stores/rutStore/orders/orderStore';
 import { useProviderStore } from '@/stores/rutStore/providerStore';
-const store = useProviderStore();
+const  userStore = useProviderStore()
+const store = useOrderStore();
 
-// Formulaire de
-import UiChildCard from '@/components/shared/UiChildCard.vue';
-// icons
-import { AccessPointIcon, MailIcon } from 'vue-tabler-icons';
 import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBox.vue';
-
 
 
 const { addOrUpdateProduct, errors } = useOrderStore();
@@ -93,65 +84,24 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
 });
 
 
+
 onMounted(async () => {
-    await refreshTable()
+    await userStore.fetchProviders();
+    providers.value = userStore.getProviders
+    // console.log(providers.value)
+
+    // await refreshTable();
 });
 
-const getItems: any = computed(() => {
-    return store.items
+const getOrders: any = computed(() => {
+    return store.orders
 })
 
 let form : Items  = Object()
 
 const formData = new FormData();
 
-const imageSrc = ref('');
-
 const selected = ref<string | null | undefined | number >(null);
-let cropper = ref<VueCropperMethods | null>(null);
-
-function setImage(e: Event) {
-  dialogImg.value = true
-  const target = e.target as HTMLInputElement;
-  const file = (target.files as FileList)[0];
-
-  if (!file || file.type.indexOf('image/') === -1) {
-        dialogImg.value = false
-        return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    if (event.target && event.target.result) {
-      imageSrc.value = event.target.result.toString();
-      if (cropper.value) {
-          cropper.value.replace(imageSrc.value);
-
-      }
-    }
-  };
-
-  reader.readAsDataURL(file);
-}
-
-function handleImage() {
-  if (cropper.value) {
-      const canvas = cropper.value.getCroppedCanvas({
-        width: 400,
-        height: 400,
-      }).toBlob((blob: any) => {
-        const timestamp = new Date().getTime(); // Obtient un timestamp unique
-        const fileName = `cropped_image_${timestamp}.jpg`; // Nom du fichier avec timestamp
-        formData.append('image', blob, fileName); // Ajoute le blob avec le nom de fichier unique
-       
-    }, 'image/jpg');
-
-    
-    dialogImg.value = false; 
-  }
-}
-
-const dialogImg = ref(false) as any;
 
 
 const name              = useField("name");
@@ -203,16 +153,12 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
 
 // Fonction pour réinitialiser les champs
 const refreshTable = async () => {
-    await store.fetchUsers();
+    await store.fetchOrders();
     close()
 };
 
-const uniteSelected = ref();
+const providers = ref([]);
 
-const changed = (value: string | any[]) => {
-    uniteSelected.value = value
-    return value
-}
 
 
 const unites = ref([
@@ -225,19 +171,7 @@ const unites = ref([
 const valid = ref(true);
 const dialog = ref(false);
 
-const search = ref('');
-const rolesbg = ref(['primary', 'secondary', 'error', 'success', 'warning']);
-const desserts = ref(contact);
 const editedIndex = ref(-1);
-
-
-//Methods
-const filteredList = computed(() => {
-    return getItems.filter((item: any) => {
-        return item.name.toLowerCase().includes(search.value.toLowerCase());
-    });
-});
-
 
 
 function close() {
@@ -246,10 +180,6 @@ function close() {
     handleReset();
 }
 
-function closeImg() {
-    dialogImg.value = false;
-   
-}
 
 // Méthode pour modifier un élément
 const editItem = (index: any) => {
@@ -286,6 +216,24 @@ const formButton = computed(() => {
     return editedIndex.value === -1 ? 'Enregistrer' : 'Modifier';
 });
 
+const srcs = {
+  1: 'https://cdn.vuetifyjs.com/images/lists/1.jpg',
+  2: 'https://cdn.vuetifyjs.com/images/lists/2.jpg',
+  3: 'https://cdn.vuetifyjs.com/images/lists/3.jpg',
+  4: 'https://cdn.vuetifyjs.com/images/lists/4.jpg',
+  5: 'https://cdn.vuetifyjs.com/images/lists/5.jpg',
+}
+
+
+const  proudcuts  = [
+
+    { name: 'Britta Holt', group: 'Group 2', avatar: srcs[4] },
+    { name: 'Jane Smith ', group: 'Group 2', avatar: srcs[5] },
+    { name: 'John Smith', group: 'Group 2', avatar: srcs[1] },
+    { name: 'Sandra Williams', group: 'Group 2', avatar: srcs[3] },
+]
+
+
 
 const searchField = ref(['ref','Destinateur', 'created_at']);
 const searchValue = ref('');
@@ -300,13 +248,11 @@ const headers: Header[] = [
     { text: 'Action', value: 'operation' }
 ];
 
+
+
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 
 const itemsSelected = ref<Item[]>([]);
-
-const select = ref();
-const items = ref(["Programming", "Design", "Vue", "Vuetify"]);
-
 
 </script>
 <template>
@@ -340,14 +286,16 @@ const items = ref(["Programming", "Design", "Vue", "Vuetify"]);
                         <v-form ref="form" v-model="valid" lazy-validation>
                             <v-row>
                                 <v-col cols="12" >
-                                    
-                                 <CustomComBox/>
-
+                                    <CustomComBox 
+                                        :items="providers" 
+                                        :itemSelected="itemsSelected" 
+                                        label="Selectionner un fournisseur (Client)" 
+                                        title="last_name"
+                                    />
                                 </v-col>
                                 
-                                   <!-- <v-switch color="primary" :model-value="true" label="Statut" ></v-switch>   -->
                                 <v-col cols="12" sm="6">
-                                     <CustomComBox/>
+                                     <CustomComBox :items="proudcuts"/>
                                 </v-col>
                                 <v-col cols="12" sm="6">
                                      <v-row>
@@ -373,7 +321,6 @@ const items = ref(["Programming", "Design", "Vue", "Vuetify"]);
                                 <v-col cols="12">
                                      <v-switch color="primary" :model-value="true" label="Statut" ></v-switch>  
                                 </v-col>
-                               
                                 
                                 <v-col cols="12" sm="12">
                                      <VTextarea
@@ -411,12 +358,12 @@ const items = ref(["Programming", "Design", "Vue", "Vuetify"]);
 
     <EasyDataTable
         :headers="headers"
-        :items="getItems"
+        :items="getOrders"
         table-class-name="customize-table"
         :theme-color="themeColor"
         :search-field="searchField"
         :search-value="searchValue"
-        :rows-per-page="5"
+        :rows-per-page="8"
         v-model:items-selected="itemsSelected"
         >
 

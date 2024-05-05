@@ -26,7 +26,7 @@ export const useOrderStore = defineStore({
         // Fetch followers from action
         async fetchOrders() {
             try {
-                const response = await new ApiAxios().find(`/items/`);
+                const response = await new ApiAxios().find(`/orders/`);
                 // console.log(response, "Dans try");
                 this.orders = response.data.results
             } catch (error) {

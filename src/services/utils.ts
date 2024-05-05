@@ -2,6 +2,7 @@ import { useAuthStore } from '@/stores/auth';
 import type { AxiosError } from 'axios';
 import ApiAxios from './ApiAxios';
 import Swal from 'sweetalert2';
+import { ref } from 'vue';
 
 
 /**
@@ -100,8 +101,18 @@ const deleteItem = async (item: any, url: string, data: Array<any> ) => {
     });
 }
 
+
+
+const itemChanged = ref();
+
+const changed = (value: string | any[]) => {
+  itemChanged.value = value;
+  console.log(value);
+  return value
+}
+
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
-  confirmButton
+  confirmButton,changed, itemChanged
 }

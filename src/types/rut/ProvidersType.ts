@@ -87,6 +87,7 @@ export interface UsersStateProps {
     users?: Users[];
    
     items?: Users[] | any;
+    providers?:  Users[] | any;
 
     addresses?: Address[];
     sortBy?: String;

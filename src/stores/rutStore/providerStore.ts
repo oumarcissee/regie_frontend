@@ -18,6 +18,7 @@ export const useProviderStore = defineStore({
     state: (): UsersStateProps => ({
         users: [],
         items: [],
+        providers: [],
 
         isConfirmButton: false,
       
@@ -35,6 +36,11 @@ export const useProviderStore = defineStore({
         getItems(state) {
         // autocompletion! ✨
             return state.items
+        },
+
+        getProviders(state) {
+        // autocompletion! ✨
+            return state.providers
         },
        
     },
@@ -76,6 +82,28 @@ export const useProviderStore = defineStore({
                 return Promise.reject(error);
             }
         },
+        // Fetch followers from action
+        async fetchProviders() {
+            try {
+                const response = await new ApiAxios().find('/u/get-users/providers/');
+                const items: any[] | undefined = []
+                console.log(response)
+                response.data?.results.forEach((item: any) => {
+                    item.role = 'FOURNISSEUR';
+
+                    item.date_joined = format(new Date(item.date_joined),"dd, MMMM yyyy", { locale });
+                    items.push(item);
+                });
+ 
+                this.providers = items;
+                
+            } catch (error) {
+                alert(error);
+                return Promise.reject(error);
+            }
+        },
+        
+
         
 
         /**
