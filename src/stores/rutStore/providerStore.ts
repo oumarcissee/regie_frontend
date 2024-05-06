@@ -87,7 +87,7 @@ export const useProviderStore = defineStore({
             try {
                 const response = await new ApiAxios().find('/u/get-users/providers/');
                 const items: any[] | undefined = []
-                console.log(response)
+                // console.log(response)
                 response.data?.results.forEach((item: any) => {
                     item.role = 'FOURNISSEUR';
 

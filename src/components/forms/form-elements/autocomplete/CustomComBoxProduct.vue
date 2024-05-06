@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { changed } from '@/services/utils';
+import { changed , truncateText} from '@/services/utils';
 
 
-const { items, label, title,isUpdating } = defineProps({
+const { items, label, title } = defineProps({
   items: Array,
   itemSelected: Array,
   isUpdating: Boolean,
@@ -33,7 +33,7 @@ const { items, label, title,isUpdating } = defineProps({
         <v-chip
           v-bind="props"
           :prepend-avatar="item.raw.image"
-          :text="item.raw.first_name + ' ' + item.raw.last_name "
+          :text="item.raw.name + ' ' + item.raw.description "
         ></v-chip>
       </template>
 
@@ -41,8 +41,8 @@ const { items, label, title,isUpdating } = defineProps({
         <v-list-item
           v-bind="props"
           :prepend-avatar="item.raw.image"
-          :subtitle="item.raw.first_name"
-          :title="item.raw.last_name"
+          :subtitle="truncateText(item.raw.name, 10)"
+          :title="item.raw.name "
         ></v-list-item>
       </template>
   </v-autocomplete>
