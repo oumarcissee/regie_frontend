@@ -104,15 +104,20 @@ const deleteItem = async (item: any, url: string, data: Array<any> ) => {
 
 
 const itemChanged = ref();
+const ProductChanged = ref();
 
 const changed = (value: string | any[]) => {
   itemChanged.value = value;
-  console.log(value);
+  return value
+}
+
+const changedProduct = (value: string | any[]) => {
+  ProductChanged.value = value;
   return value
 }
 
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
-  confirmButton,changed, itemChanged
+  confirmButton,changed, itemChanged,changedProduct, ProductChanged
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted,  onUnmounted} from 'vue';
-import { truncateText, itemChanged} from '@/services/utils';
+import { truncateText, itemChanged, ProductChanged} from '@/services/utils';
 import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
 
@@ -18,9 +18,9 @@ import { useOrderStore } from '@/stores/rutStore/orders/orderStore';
 import { useProviderStore } from '@/stores/rutStore/providerStore';
 import { useProductsList } from '@/stores/rutStore/products/productsListStore';
 
-const  useProduct  = useProductsList()
-const  userStore = useProviderStore()
-const store = useOrderStore();
+const   useProduct  = useProductsList()
+const   userStore = useProviderStore()
+const   store = useOrderStore();
 
 import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBox.vue';
 import CustomComBoxProduct from '@/components/forms/form-elements/autocomplete/CustomComBoxProduct.vue';
@@ -33,18 +33,17 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
         
         provider(value: string | any[]) {
             if (value) return true
-            return "Choisissez un fournisseur.";  
+            return "Selectionnez un fournisseur.";  
         },
         products(value: string | any[]) {
             if (value) return true
-            return "Choisissez un le produit.";  
+            return "Selectionnez un article.";  
         },
         quantity(value: string | any[]) {  
             if (!(/^\d+$/.test(value as any))) {
                 // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
                 return "Entrer la quantité en chiffre entier.";
             }
-            
             return true;
         },
 
@@ -52,20 +51,9 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
             
             return true;
         },
-
-       
               
     },
 });
-
-const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => { 
-
-    try {
-        console.log(data);
-    } catch (error) {
-        console.log(error);
-    }
-})
 
 
 
@@ -76,11 +64,50 @@ onMounted(async () => {
 
     // loadingProducts.value = false;
     await useProduct.fetchItems();
-    loadingProducts.value = true;
+    useProduct.items.forEach((item: { unite: string }) => {
+        switch (item.unite) {
+            case 'cardboard':
+                item.unite = 'Carton(s)'
+                break;
+            case 'can':
+                item.unite = 'Bidon(s)'
+                break;
+            case 'bag':
+                item.unite = 'Sac(s)'
+                break;
+            default:
+                item.unite = 'Pas de type'
+                break;
+        }
+    });
+    loadingProducts.value = true
     // console.log(providers.value)
 
-    // await refreshTable();
+  
 });
+
+const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => { 
+
+    try {
+        const product = useProduct.items.find((item: { id?: any }) => item?.id === data.products);
+        const user = userStore.providers.find((item: { id?: any }) => item?.id === data.provider);
+        //Ajout d'un nouveau produit
+        productSelected.value.push({ user: user, product: product, quantity: parseInt(data.quantity) });
+        if (productSelected.value.length >= 0) isSelected.value = true;
+        //Mettre à jour le tableau
+        updateTableData()
+
+    } catch (error) {
+        console.log(error);
+    }
+})
+
+// Ajoutez une fonction pour mettre à jour les données de myTable
+const updateTableData = () => {
+    const tableData = productSelected.value;
+    productSelected.value = tableData;
+};
+
 
 const getOrders: any = computed(() => {
     return store.orders
@@ -97,6 +124,7 @@ const provider  = useField("provider");
 const products  = useField("products");
 const quantity  = useField("quantity");
 const status    = useField("status");
+const quantityItem = ref("")
 
 
 const count = ref(0);
@@ -145,21 +173,16 @@ const refreshTable = async () => {
 };
 
 // const providers = ref([]);
-// const productsList = ref([]);
+const productSelected: Object | any = ref([]);
+const isSelected  = ref(false);
 const loadingProvider = ref(true);
 const loadingProducts = ref(true);
 
 
 
-const unites = ref([
-    {title: 'Sac(s)',    value: 'bag'},
-    {title: 'Bidon(s)', value: 'can' },
-    {title: 'Carton(s)', value: 'cardboard'},
-])
-
-
 const valid = ref(true);
 const dialog = ref(false);
+const QuantityDialog = ref(false)
 
 const editedIndex = ref(-1);
 
@@ -167,6 +190,8 @@ const editedIndex = ref(-1);
 function close() {
     dialog.value = false;
     editedIndex.value = -1
+    productSelected.value = [];
+    isSelected.value = false
     handleReset();
 }
 
@@ -186,12 +211,40 @@ const editItem = (index: any) => {
 };
 
 // Suppression d'un element
-const remove = async (index: any) => {
+const deletion = async (index: any) => {
     try {
         await store.deleteItem(index, 'items');
         await refreshTable(); // Rafraîchir les données après la suppression
     } catch (error) {
         console.error('Erreur lors de la suppression :', error);
+    }
+};
+
+// Méthode pour modifier un élément
+const myIndex = ref()
+const editQuantity = (index: any) => {
+    QuantityDialog.value = true;
+
+    myIndex.value = index;
+    
+    quantityItem.value = index.quantity;
+};
+
+//le changement de quantité
+const submitQuantity = handleSubmit( (data: any, { setErrors }: any) => {
+    
+    myIndex.value.quantity = parseInt(quantityItem.value) > 0 ? quantityItem.value : 1;
+    
+    updateTableData()
+    quantityItem.value = "";
+    QuantityDialog.value = false;
+})
+
+// Suppression d'un element
+const remove = async (index: any) => {
+    const item = productSelected.value.indexOf(index);
+    if (item !== -1) {
+        productSelected.value.splice(item, 1); // Supprime l'élément du tableau productSelected
     }
 };
 
@@ -242,7 +295,7 @@ const itemsSelected = ref<Item[]>([]);
             />
         </v-col>
         <v-col cols="12" lg="8" md="6" class="text-right ">      
-            <v-dialog v-model="dialog" max-width="800">
+            <v-dialog v-model="dialog" max-width="800" persistent class="dialog-mw">
                 <template v-slot:activator="{ props }">
                     <v-btn color="primary" v-bind="props" flat class="ml-auto">
                         <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Ajouter une commande
@@ -263,14 +316,19 @@ const itemsSelected = ref<Item[]>([]);
                                         :items="userStore.getProviders" 
                                         label="Selectionner un fournisseur (Client)" 
                                         title="last_name"
+                                        v-model="provider.value.value" 
+                                        :error-messages="provider.errorMessage.value"
+                                        :isDisabled="isSelected"
                                     />
                                 </v-col>
                                 
                                 <v-col cols="12" sm="6">
                                      <CustomComBoxProduct
                                         :items="useProduct.getProducts"
-h                                        label="Selectionner un article" 
+                                        label="Selectionner un article" 
                                         title="name"
+                                        v-model="products.value.value" 
+                                        :error-messages="products.errorMessage.value"
                                       />
                                 </v-col>
                                 <v-col cols="12" sm="6">
@@ -287,6 +345,7 @@ h                                        label="Selectionner un article"
 
                                         <v-col cols="12" sm="6">
 
+                                            <!-- Méthode pour modifier un élément -->
                                             <v-btn 
                                                 color="primary" 
                                                 variant="outlined"
@@ -295,16 +354,75 @@ h                                        label="Selectionner un article"
                                             >
                                             Ajouter
                                         </v-btn>
-                                            
                                         </v-col>
                                     </v-row>
                                 </v-col>
                                 <v-col cols="12">
-                                     <v-switch color="primary" :model-value="true" label="Statut" ></v-switch>  
+                                     <v-switch color="primary" v-model="status.value.value" label="Statut" ></v-switch>  
                                 </v-col>
                                 
                                 <v-col cols="12" sm="12">
-                                ddddd
+
+                                    <v-table class="mt-5" id="myTable">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-subtitle-1 font-weight-semibold">N°</th>
+                                                <!-- <th class="text-subtitle-1 font-weight-semibold">Réference</th> -->
+                                                <th class="text-subtitle-1 font-weight-semibold">Article</th>
+                                                <th class="text-subtitle-1 font-weight-semibold">Quantité</th>
+                                                <th class="text-subtitle-1 font-weight-semibold">Unité</th>
+                                               
+                                                <th class="text-subtitle-1 font-weight-semibold">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-if="!productSelected">
+                                                <td colspan="4" class="text-subtitle-1 text-center">Aucun article</td>
+                                            </tr>
+                                            <tr v-else v-for="(item, index) in productSelected" :key="index">
+                                                <td class="text-subtitle-1">{{ index+1}}</td>
+                                                <!-- <td class="text-subtitle-1">{{ item.product.ref }}</td> -->
+                                                    
+                                                <td class="text-subtitle-1">
+
+                                                    <div class="d-flex align-center py-4">
+                                                         <div class="hoverable">        
+                                                            <v-img :lazy-src="item.product.image" :src="item.product.image" width="65px" class="rounded  img-fluid"></v-img>
+                                                        </div>
+
+                                                        <div class="ml-5">
+                                                            <h4 class="text-h6 font-weight-semibold">{{ item.product.name }}</h4>
+                                                            <span class="text-subtitle-1 d-block mt-1 textSecondary">{{truncateText(item.product.description, 20) }}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                 <td class="text-subtitle-1">{{ item.quantity }}</td>
+                                                 <td class="text-subtitle-1" >{{ item.product.unite }}</td>
+                                                
+                                                <td>
+                                                    <div class="d-flex align-center">
+                                                        <v-tooltip text="Edit">
+                                                            <template v-slot:activator="{ props }">
+                                                                <v-btn icon flat @click="editQuantity(item)" v-bind="props"
+                                                                    ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
+                                                                /></v-btn>
+                                                            </template>
+                                                        </v-tooltip>
+                                                        <v-tooltip text="Delete">
+                                                            <template v-slot:activator="{ props }">
+                                                                <v-btn icon flat @click="remove(item)" v-bind="props"
+                                                                    ><TrashIcon stroke-width="1.5" size="20" class="text-error"
+                                                                /></v-btn>
+                                                            </template>
+                                                        </v-tooltip>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                           
+                                        </tbody>
+                                    </v-table>  
+
                                 </v-col>
                             </v-row>
                         </v-form>
@@ -323,6 +441,41 @@ h                                        label="Selectionner un article"
                     </v-card-actions>
                 </v-card>
                 <!-- END Formulaire de commande -->
+            </v-dialog>
+            <v-dialog v-model="QuantityDialog" max-width="300" persistent class="dialog-mw">
+                
+                <v-card>
+                    <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
+                        <span class="title text-white">Nouvelle Quantité</span>
+                    </v-card-title>
+                    
+                    <v-card-text>
+                        <v-form ref="form" v-model="valid" lazy-validation>
+                            <v-row>
+                                <v-col cols="12">
+                                    <v-text-field
+                                        variant="outlined"
+                                        v-model="quantityItem"
+                                        label="La quantité"
+                                        type="number"
+                                        block
+                                    ></v-text-field>
+                                </v-col>
+                            </v-row>
+                        </v-form>
+                    </v-card-text>
+
+                    <v-card-actions class="pa-4">                 
+                        <v-btn
+                            color="secondary"
+                            variant="flat"
+                            @click="submitQuantity"
+                            block
+                            >Modifier</v-btn
+                        >
+                    </v-card-actions>
+                </v-card>
+               
             </v-dialog>
         </v-col>
     </v-row>

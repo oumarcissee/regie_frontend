@@ -3,10 +3,10 @@ import { ref } from 'vue';
 import { changed } from '@/services/utils';
 
 
-const { items, label, title,isUpdating } = defineProps({
+const { items, label, title,isDisabled } = defineProps({
   items: Array,
   itemSelected: Array,
-  isUpdating: Boolean,
+  isDisabled: Boolean,
   label: String,
   title: String,
 
@@ -19,7 +19,7 @@ const { items, label, title,isUpdating } = defineProps({
 <template>
   <v-autocomplete
       @update:modelValue="changed" 
-      :disabled="isUpdating"
+      :disabled="isDisabled"
       :items="items"
       :item-title="title"
       :label="label"
