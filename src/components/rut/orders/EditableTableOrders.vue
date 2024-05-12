@@ -9,7 +9,7 @@ const locale = fr; // or en, or es
 
 import { useField, useForm } from 'vee-validate';
 
-import type {  Items } from '@/types/rut/ProductsType';
+import type {  Orders } from '@/types/rut/OrdersType';
 
 import type { Header, Item } from 'vue3-easy-data-table';
 import 'vue3-easy-data-table/dist/style.css';
@@ -26,35 +26,7 @@ import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomCo
 import CustomComBoxProduct from '@/components/forms/form-elements/autocomplete/CustomComBoxProduct.vue';
 
 
-const { addOrUpdateProduct, errors } = useOrderStore();
-
-const { handleSubmit, handleReset , isSubmitting} = useForm({
-    validationSchema: {
-        
-        provider(value: string | any[]) {
-            if (value) return true
-            return "Selectionnez un fournisseur.";  
-        },
-        products(value: string | any[]) {
-            if (value) return true
-            return "Selectionnez un article.";  
-        },
-        quantity(value: string | any[]) {  
-            if (!(/^\d+$/.test(value as any))) {
-                // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
-                return "Entrer la quantité en chiffre entier.";
-            }
-            return true;
-        },
-
-        status(value: string | any[]) {  
-            
-            return true;
-        },
-              
-    },
-});
-
+const { addOrUpdateOrder, errors } = useOrderStore();
 
 
 onMounted(async () => {
@@ -83,8 +55,39 @@ onMounted(async () => {
     loadingProducts.value = true
     // console.log(providers.value)
 
-  
+    status.value.value = true
+
 });
+
+const { handleSubmit, handleReset , isSubmitting} = useForm({
+    validationSchema: {
+        
+        provider(value: string | any[]) {
+            if (value) return true
+            return "Selectionnez un fournisseur.";  
+        },
+        products(value: string | any[]) {
+            if (!value) {
+                return "Selectionnez un article.";  
+            }
+            return true
+        },
+        quantity(value: string | any[]) {  
+            if (!(/^\d+$/.test(value as any))) {
+                // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
+                return "Entrer la quantité en chiffre entier.";
+            }
+            return true;
+        },
+
+        status(value: string | any[]) {  
+            
+            return true;
+        },
+              
+    },
+});
+
 
 const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => { 
 
@@ -92,10 +95,19 @@ const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
         const product = useProduct.items.find((item: { id?: any }) => item?.id === data.products);
         const user = userStore.providers.find((item: { id?: any }) => item?.id === data.provider);
         //Ajout d'un nouveau produit
-        productSelected.value.push({ user: user, product: product, quantity: parseInt(data.quantity) });
+        productSelected.value.push({ user: user, product: product, quantity: parseInt(data.quantity) , status: data.status ? data.status : false});
+
+        //  console.log(useProduct.items, "Avant");
+
+        //Suppression l'lément de produit sélectioné
+        const filterTable = useProduct.items.filter((item: { id: string; }) => item.id !== data.products);
+
+        //Desactivation du champ user
         if (productSelected.value.length >= 0) isSelected.value = true;
         //Mettre à jour le tableau
         updateTableData()
+        useProduct.items = filterTable;
+        products.resetField()
 
     } catch (error) {
         console.log(error);
@@ -113,11 +125,13 @@ const getOrders: any = computed(() => {
     return store.orders
 })
 
-let form : Items  = Object()
+
 
 const formData = new FormData();
 
 const selected = ref<string | null | undefined | number >(null);
+
+const refProduct = ref()
 
 
 const provider  = useField("provider");
@@ -127,44 +141,69 @@ const status    = useField("status");
 const quantityItem = ref("")
 
 
-const count = ref(0);
-
-const submit = handleSubmit(async (data: any, { setErrors }: any) => {
+const submit = async () => {
 
     try {
-
-        formData.append('name', data.name);
-        formData.append('price', data.price);
-        formData.append('unite', data.unite);
-        formData.append('rate_per_days', data.rate_per_days);
-        formData.append('divider', data.divider);
-        formData.append('description', data.description);
-        
-        if (editedIndex.value !== -1) {
-            console.log(selected.value, "selected")
-        //Si un élément est selectioné
-            await addOrUpdateProduct(formData, editedIndex.value);
-            await refreshTable()
+        if (productSelected.value.length === 0 ) {
+            return productsSubmit();
         } else {
-            if(!formData.get('image')) formData.set('image', data.image[0])
-            await addOrUpdateProduct(formData);
-            await refreshTable()
-        }
 
+            const formDataArray: Orders [] = []
+
+            productSelected.value.forEach((item: any) => {
+                formDataArray.push({
+                    provider: item.user,
+                    item: item.product,
+                    quantity: item.quantity,
+                    status: item.status
+                })
+            })
+            productSelected.value = []
+
+            console.log(formDataArray)
+            await addOrUpdateOrder(formDataArray);
+            close()
+        }
+        
     } catch (error) {
-        console.log(error);
-        count.value++;
-        if (count.value >= 5) {
-            // Arrêter l'exécution du script ou effectuer une action appropriée
-            console.log(error);
-            return;
-        }
-
-        submit()
-        return setErrors({ apiError: error });
+        console.log(error)
     }
 
-});
+  
+    // try {
+
+    //     formData.append('name', data.name);
+    //     formData.append('price', data.price);
+    //     formData.append('unite', data.unite);
+    //     formData.append('rate_per_days', data.rate_per_days);
+    //     formData.append('divider', data.divider);
+    //     formData.append('description', data.description);
+        
+    //     if (editedIndex.value !== -1) {
+    //         console.log(selected.value, "selected")
+    //     //Si un élément est selectioné
+    //         await addOrUpdateProduct(formData, editedIndex.value);
+    //         await refreshTable()
+    //     } else {
+    //         if(!formData.get('image')) formData.set('image', data.image[0])
+    //         await addOrUpdateProduct(formData);
+    //         await refreshTable()
+    //     }
+
+    // } catch (error) {
+    //     console.log(error);
+    //     count.value++;
+    //     if (count.value >= 5) {
+    //         // Arrêter l'exécution du script ou effectuer une action appropriée
+    //         console.log(error);
+    //         return;
+    //     }
+
+    //     submit()
+    //     return setErrors({ apiError: error });
+    // }
+
+};
 
 // Fonction pour réinitialiser les champs
 const refreshTable = async () => {
@@ -200,13 +239,6 @@ function close() {
 const editItem = (index: any) => {
     dialog.value = true;
     editedIndex.value = index.id;
-
-    // name.value.value = index.name;
-    // price.value.value = index.price;
-    // unite.value.value = index.unite;
-    // rate_per_days.value.value = index.rate_per_days;
-    // divider.value.value = index.divider;
-    // description.value.value = index.description;
    
 };
 
@@ -231,14 +263,13 @@ const editQuantity = (index: any) => {
 };
 
 //le changement de quantité
-const submitQuantity = handleSubmit( (data: any, { setErrors }: any) => {
-    
+const submitQuantity  = () => {
     myIndex.value.quantity = parseInt(quantityItem.value) > 0 ? quantityItem.value : 1;
-    
     updateTableData()
+
     quantityItem.value = "";
     QuantityDialog.value = false;
-})
+}
 
 // Suppression d'un element
 const remove = async (index: any) => {
@@ -324,6 +355,7 @@ const itemsSelected = ref<Item[]>([]);
                                 
                                 <v-col cols="12" sm="6">
                                      <CustomComBoxProduct
+                                        ref="refProduct"
                                         :items="useProduct.getProducts"
                                         label="Selectionner un article" 
                                         title="name"

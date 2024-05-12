@@ -36,10 +36,10 @@ export const useOrderStore = defineStore({
         },
 
         //Ajout d'un élement
-        async addOrUpdateProduct(data: any, param?: any) {
+        async addOrUpdateOrder(arrayData: any, param?: any) {
             try {
                 if (param) {
-                    const response = await new ApiAxios().updatePartialForm(`/orders/${param}/`, data, param);
+                    // const response = await new ApiAxios().updatePartialForm(`/orders/${param}/`, data, param);
                     // await this.fetchItems()
 
                     this.$reset()
@@ -65,14 +65,16 @@ export const useOrderStore = defineStore({
                         }
                     });
                 } else {
-                    const response = await new ApiAxios().addForm('/orders/', data);
-                    console.log(response.data);
-        
-                    this.$reset()
+                    //Ajout d'un nouvel élement dans
+                    arrayData.forEach(async (item: any) => {
+                        const response = await new ApiAxios().add('/orders/', item);
+                        // this.$reset()
+                    });
+
                     Swal.fire({
                         position: "center",
                         icon: "success",
-                        title: "Enregisrement effectué",
+                        title: "Commande enregistrée avec succès!",
                         showConfirmButton: false,
                         timer: 2000,
                         showClass: {
@@ -91,20 +93,10 @@ export const useOrderStore = defineStore({
                         }
                     });
                 }
+                
              
             } catch (error) {
 
-                if (isAxiosError(error)) {
-                    // console.log(error)
-                    if (error.response && error.response.data) {
-                      
-                        const responseData = error.response.data as { name: string[]};
-                        this.errors.nameError = responseData.name ? "Cet article existe déja." : null;
-                        this.errors.nameText = data.get('name')
-                        
-                      
-                    }
-                }
                 return Promise.reject("Autres erreur");
             }
         },
