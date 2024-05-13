@@ -162,7 +162,7 @@ const submit = async () => {
 
             // console.log(formDataArray)
             await addOrUpdateOrder(formDataArray);
-            close()
+            await refreshTable();
         }
         
     } catch (error) {
@@ -258,7 +258,7 @@ const formButton = computed(() => {
 
 
 
-const searchField = ref(['ref','Destinateur', 'created_at']);
+const searchField = ref(['ref','user', 'created_at']);
 const searchValue = ref('');
 
 const headers: Header[] = [
