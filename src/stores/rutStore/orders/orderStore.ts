@@ -6,6 +6,11 @@ import { router } from '@/router';
 import ApiAxios from '@/services/ApiAxios';
 import Swal from 'sweetalert2'
 
+import fr from 'date-fns/locale/fr';
+import { format } from 'date-fns';
+const locale = fr; // or en, or es
+
+
 
 
 export const useOrderStore = defineStore({
@@ -29,6 +34,12 @@ export const useOrderStore = defineStore({
                 const response = await new ApiAxios().find(`/orders/`);
                 // console.log(response, "Dans try");
                 this.orders = response.data.results
+                this.orders.forEach((item: any) => {
+
+                    item.created_at  = format(new Date(item.created_at), "dd, MMMM yyyy", { locale });
+                    item.modified_at = format(new Date(item.modified_at), "dd, MMMM yyyy", { locale });
+                    item.user = item.provider.first_name + " " + item.provider.last_name;
+                });
             } catch (error) {
                 alert(error);
                 console.log(error);
@@ -68,7 +79,7 @@ export const useOrderStore = defineStore({
                     //Ajout d'un nouvel élement dans
                     arrayData.forEach(async (item: any) => {
                         const response = await new ApiAxios().add('/orders/', item);
-                        // this.$reset()
+                        this.$reset()
                     });
 
                     Swal.fire({
@@ -93,7 +104,7 @@ export const useOrderStore = defineStore({
                         }
                     });
                 }
-                
+
              
             } catch (error) {
 

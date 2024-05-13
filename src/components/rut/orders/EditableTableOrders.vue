@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted,  onUnmounted} from 'vue';
 import { truncateText, itemChanged, ProductChanged} from '@/services/utils';
-import fr from 'date-fns/locale/fr';
-import { format } from 'date-fns';
 
-const locale = fr; // or en, or es
 
 
 import { useField, useForm } from 'vee-validate';
@@ -30,13 +27,16 @@ const { addOrUpdateOrder, errors } = useOrderStore();
 
 
 onMounted(async () => {
+    await store.fetchOrders();
+   
     // loadingProvider.value = false;
     await userStore.fetchProviders();
     loadingProvider.value = true;
 
     // loadingProducts.value = false;
     await useProduct.fetchItems();
-    useProduct.items.forEach((item: { unite: string }) => {
+    useProduct.items.forEach((item: any) => {
+
         switch (item.unite) {
             case 'cardboard':
                 item.unite = 'Carton(s)'
@@ -152,15 +152,15 @@ const submit = async () => {
 
             productSelected.value.forEach((item: any) => {
                 formDataArray.push({
-                    provider: item.user,
-                    item: item.product,
+                    provider: item.user.id,
+                    item: item.product.id,
                     quantity: item.quantity,
                     status: item.status
                 })
             })
             productSelected.value = []
 
-            console.log(formDataArray)
+            // console.log(formDataArray)
             await addOrUpdateOrder(formDataArray);
             close()
         }
@@ -168,40 +168,6 @@ const submit = async () => {
     } catch (error) {
         console.log(error)
     }
-
-  
-    // try {
-
-    //     formData.append('name', data.name);
-    //     formData.append('price', data.price);
-    //     formData.append('unite', data.unite);
-    //     formData.append('rate_per_days', data.rate_per_days);
-    //     formData.append('divider', data.divider);
-    //     formData.append('description', data.description);
-        
-    //     if (editedIndex.value !== -1) {
-    //         console.log(selected.value, "selected")
-    //     //Si un élément est selectioné
-    //         await addOrUpdateProduct(formData, editedIndex.value);
-    //         await refreshTable()
-    //     } else {
-    //         if(!formData.get('image')) formData.set('image', data.image[0])
-    //         await addOrUpdateProduct(formData);
-    //         await refreshTable()
-    //     }
-
-    // } catch (error) {
-    //     console.log(error);
-    //     count.value++;
-    //     if (count.value >= 5) {
-    //         // Arrêter l'exécution du script ou effectuer une action appropriée
-    //         console.log(error);
-    //         return;
-    //     }
-
-    //     submit()
-    //     return setErrors({ apiError: error });
-    // }
 
 };
 
@@ -298,7 +264,7 @@ const searchValue = ref('');
 const headers: Header[] = [
     { text: 'ID', value: 'id' },
     { text: 'Numéro', value: 'ref', sortable: true },
-    { text: 'Destinateur', value: 'provider', sortable: true },
+    { text: 'Destinateur', value: 'user', sortable: true },
     { text: 'Créé le', value: 'created_at', sortable: true },
     { text: 'Modifié le', value: 'modified_at', sortable: true },
     { text: 'Statut', value: 'status' , sortable: true },
@@ -533,9 +499,9 @@ const itemsSelected = ref<Item[]>([]);
                 {{ ref }}
             </div>
         </template>
-        <template #item-provider="{ provider}">
+        <template #item-user="{ user}">
             <div class="player-wrapper">
-                <h5 class="text-h5">{{ provider }}</h5>
+                <h5 class="text-h5">{{ user }}</h5>
             </div>
         </template>
         <template #item-created_at="{ created_at }">
