@@ -28,7 +28,9 @@ const { addOrUpdateOrder, errors } = useOrderStore();
 
 onMounted(async () => {
     await store.fetchOrders();
-   
+    //Les lignes de commande
+    store.fetchOrdersLine();
+
     // loadingProvider.value = false;
     await userStore.fetchProviders();
     loadingProvider.value = true;
@@ -94,20 +96,24 @@ const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
     try {
         const product = useProduct.items.find((item: { id?: any }) => item?.id === data.products);
         const user = userStore.providers.find((item: { id?: any }) => item?.id === data.provider);
+
+        //Utilisateur 
+      
+        OrderStatus = data.status ? data.status : false
         //Ajout d'un nouveau produit
-        productSelected.value.push({ user: user, product: product, quantity: parseInt(data.quantity) , status: data.status ? data.status : false});
+        productSelected.value.push({ item: product, quantity: parseInt(data.quantity) });
 
         //  console.log(useProduct.items, "Avant");
 
-        //Suppression l'lément de produit sélectioné
+        //Filtrer les produits non selectionés
         const filterTable = useProduct.items.filter((item: { id: string; }) => item.id !== data.products);
 
         //Desactivation du champ user
         if (productSelected.value.length >= 0) isSelected.value = true;
         //Mettre à jour le tableau
-        updateTableData()
+        updateTableData();
         useProduct.items = filterTable;
-        products.resetField()
+        products.resetField();
 
     } catch (error) {
         console.log(error);
@@ -125,7 +131,8 @@ const getOrders: any = computed(() => {
     return store.orders
 })
 
-
+// Le statut de la commande
+let OrderStatus = ref(false);
 
 const formData = new FormData();
 
@@ -148,20 +155,20 @@ const submit = async () => {
             return productsSubmit();
         } else {
 
-            const formDataArray: Orders [] = []
+            const order = {
+                provider: itemChanged.value,
+                status: OrderStatus
+            };
 
-            productSelected.value.forEach((item: any) => {
-                formDataArray.push({
-                    provider: item.user.id,
-                    item: item.product.id,
-                    quantity: item.quantity,
-                    status: item.status
-                })
-            })
+            const data = {
+                order: order,
+                orderLine: productSelected.value
+            }
+
             productSelected.value = []
 
             // console.log(formDataArray)
-            await addOrUpdateOrder(formDataArray);
+            await addOrUpdateOrder(data);
             await refreshTable();
         }
         
@@ -174,14 +181,20 @@ const submit = async () => {
 // Fonction pour réinitialiser les champs
 const refreshTable = async () => {
     await store.fetchOrders();
+    //Les lignes des commandes
+    store.fetchOrdersLine();
     close()
 };
 
+// les champs de l'utilisateur
+
+let userSeletected: Object;
+
 // const providers = ref([]);
-const productSelected: Object | any = ref([]);
+let productSelected: Object | any = ref([]);
 const isSelected  = ref(false);
-const loadingProvider = ref(true);
-const loadingProducts = ref(true);
+const loadingProvider = ref(false);
+const loadingProducts = ref(false);
 
 
 
@@ -202,9 +215,26 @@ function close() {
 
 
 // Méthode pour modifier un élément
+let itemsOfOrder: any = ref([])
 const editItem = (index: any) => {
     dialog.value = true;
     editedIndex.value = index.id;
+    isSelected.value = true;
+
+    //Recuperation des articles liées à la commande
+    const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === index.id);
+    // console.log("C",ordersLine, "Produits:", useProduct.items);
+
+    //filtrer les articles non selectonés
+    const itemIds = ordersLine.map((item: any) => item.item.id);
+    const filteredArticles = useProduct.items.filter((item: any) => !itemIds.includes(item.id));
+
+    useProduct.items = filteredArticles
+
+    productSelected.value = ordersLine;
+
+    updateTableData();
+   
    
 };
 
@@ -258,17 +288,18 @@ const formButton = computed(() => {
 
 
 
-const searchField = ref(['ref','user', 'created_at']);
+const searchField = ref(['ref','last_name', 'created_at']);
 const searchValue = ref('');
 
 const headers: Header[] = [
-    { text: 'ID', value: 'id' },
-    { text: 'Numéro', value: 'ref', sortable: true },
-    { text: 'Destinateur', value: 'user', sortable: true },
-    { text: 'Créé le', value: 'created_at', sortable: true },
+    { text: 'Référence', value: 'ref' },
+    { text: '', value: 'image', sortable: true },
+    { text: 'Destinateur', value: 'last_name', sortable: true },
+    { text: 'Contact', value: 'contact', sortable: true },
+    { text: 'Fait le', value: 'created_at', sortable: true },
     { text: 'Modifié le', value: 'modified_at', sortable: true },
     { text: 'Statut', value: 'status' , sortable: true },
-    { text: 'Action', value: 'operation' }
+    { text: 'Actions', value: 'operation' }
 ];
 
 
@@ -385,18 +416,18 @@ const itemsSelected = ref<Item[]>([]);
 
                                                     <div class="d-flex align-center py-4">
                                                          <div class="hoverable">        
-                                                            <v-img :lazy-src="item.product.image" :src="item.product.image" width="65px" class="rounded  img-fluid"></v-img>
+                                                            <v-img :lazy-src="item.item.image" :src="item.item.image" width="65px" class="rounded  img-fluid"></v-img>
                                                         </div>
 
                                                         <div class="ml-5">
-                                                            <h4 class="text-h6 font-weight-semibold">{{ item.product.name }}</h4>
-                                                            <span class="text-subtitle-1 d-block mt-1 textSecondary">{{truncateText(item.product.description, 20) }}</span>
+                                                            <h4 class="text-h6 font-weight-semibold">{{ item.item.name }}</h4>
+                                                            <span class="text-subtitle-1 d-block mt-1 textSecondary">{{truncateText(item.item.description, 20) }}</span>
                                                         </div>
                                                     </div>
                                                 </td>
 
                                                  <td class="text-subtitle-1">{{ item.quantity }}</td>
-                                                 <td class="text-subtitle-1" >{{ item.product.unite }}</td>
+                                                 <td class="text-subtitle-1" >{{ item.item.unite }}</td>
                                                 
                                                 <td>
                                                     <div class="d-flex align-center">
@@ -440,8 +471,8 @@ const itemsSelected = ref<Item[]>([]);
                 </v-card>
                 <!-- END Formulaire de commande -->
             </v-dialog>
-            <v-dialog v-model="QuantityDialog" max-width="300" persistent class="dialog-mw">
-                
+
+            <v-dialog v-model="QuantityDialog" max-width="300" persistent class="dialog-mw">     
                 <v-card>
                     <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
                         <span class="title text-white">Nouvelle Quantité</span>
@@ -473,7 +504,6 @@ const itemsSelected = ref<Item[]>([]);
                         >
                     </v-card-actions>
                 </v-card>
-               
             </v-dialog>
         </v-col>
     </v-row>
@@ -489,21 +519,40 @@ const itemsSelected = ref<Item[]>([]);
         v-model:items-selected="itemsSelected"
         >
 
-        <template #item-id="{id}">
-            <div class="player-wrapper">
-                <h5 class="text-h5">{{ id }}</h5>
-            </div>
-        </template>
+      
         <template #item-ref="{ ref }">
             <div class="player-wrapper">
                 {{ ref }}
             </div>
         </template>
-        <template #item-user="{ user}">
+
+        <template #item-image="{ image }">
+            <div class="player-wrapper">
+                <img alt="user" width="70" class="rounded-circle img-fluid" :src="image" />
+            </div>
+        </template>
+
+        <template #item-last_name="{first_name, last_name}">
+            <div class="player-wrapper">
+                <h5 class="text-h5">{{ last_name }}</h5>
+                <span class="text-subtitle-1 d-block mt-1 textSecondary">{{ first_name }}</span>
+            </div>
+        </template>
+
+        <template #item-contact="{contact, email}">
+            <div class="player-wrapper">
+                <h5 class="text-h5">{{ contact }}</h5>
+                <span class="text-subtitle-1 d-block mt-1 textSecondary">{{ email }}</span>
+            </div>
+        </template>
+
+
+
+        <!-- <template #item-user="{ user}">
             <div class="player-wrapper">
                 <h5 class="text-h5">{{ user }}</h5>
             </div>
-        </template>
+        </template> -->
         <template #item-created_at="{ created_at }">
             <div class="player-wrapper">
                 <h5 class="text-h5">{{created_at}}</h5>
@@ -532,6 +581,14 @@ const itemsSelected = ref<Item[]>([]);
                         /></v-btn>
                     </template>
                 </v-tooltip>
+
+                 <v-tooltip text="Voir">
+                    <template v-slot:activator="{ props }">
+                        <v-btn icon flat @click="" v-bind="props"
+                            ><ListIcon stroke-width="1.5" size="20" class="text-primary"
+                        /></v-btn>
+                    </template>
+                </v-tooltip>
                 <v-tooltip text="Supprimer">
                     <template v-slot:activator="{ props }">
                         <v-btn icon flat @click="remove(item)"  v-bind="props"
@@ -539,6 +596,7 @@ const itemsSelected = ref<Item[]>([]);
                         /></v-btn>
                     </template>
                 </v-tooltip>
+               
             </div>
 
             </div>

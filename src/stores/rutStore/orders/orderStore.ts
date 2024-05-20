@@ -17,6 +17,7 @@ export const useOrderStore = defineStore({
     id: 'orderStore',
     state: () => ({
         orders: [],
+        ordersLine: [],
         errors: {
             nameError: null as any,
             nameText: null as any,
@@ -28,7 +29,7 @@ export const useOrderStore = defineStore({
         }
     },
     actions: {
-        // Fetch followers from action
+       // Fetch followers from action
         async fetchOrders() {
             try {
                 const response = await new ApiAxios().find(`/orders/`);
@@ -38,7 +39,12 @@ export const useOrderStore = defineStore({
 
                     item.created_at  = format(new Date(item.created_at), "dd, MMMM yyyy", { locale });
                     item.modified_at = format(new Date(item.modified_at), "dd, MMMM yyyy", { locale });
-                    item.user = item.provider.first_name + " " + item.provider.last_name;
+                    // item.user = item.provider.first_name + " " + item.provider.last_name;
+                    item.image = item.provider.image;
+                    item.first_name = item.provider.first_name;
+                    item.last_name = item.provider.last_name;
+                    item.contact  = item.provider.phone_number;
+                    item.email   = item.provider.email;
                 });
             } catch (error) {
                 alert(error);
@@ -46,8 +52,21 @@ export const useOrderStore = defineStore({
             }
         },
 
+         //Cette fonction retourne les lingnes de commande
+        async fetchOrdersLine() {
+            try {
+                const response = await new ApiAxios().find(`/orders-line/`);
+                // console.log(response, "Commande line: ");
+                this.ordersLine = response.data.results
+               
+            } catch (error) {
+                alert(error);
+                console.log(error);
+            }
+        },
+
         //Ajout d'un élement
-        async addOrUpdateOrder(arrayData: any, param?: any) {
+        async addOrUpdateOrder(data: any, param?: any) {
             try {
                 if (param) {
                     // const response = await new ApiAxios().updatePartialForm(`/orders/${param}/`, data, param);
@@ -76,12 +95,15 @@ export const useOrderStore = defineStore({
                         }
                     });
                 } else {
-                    //Ajout d'un nouvel élement dans
-                    arrayData.forEach(async (item: any) => {
-                        const response = await new ApiAxios().add('/orders/', item);
-                        this.$reset()
+                    
+                    //Ajout de la commande
+                    const OrderResponse = await new ApiAxios().add('/orders/', data.order);
+                    //Ajout de la ligne de commande
+                    data.orderLine.forEach(async (item: any) => {
+                        const response = await new ApiAxios().add('/orders-line/', {quantity: item.quantity,item: item.item.id, order: OrderResponse.data.id});
                     });
-
+                    this.$reset()
+                    
                     Swal.fire({
                         position: "center",
                         icon: "success",

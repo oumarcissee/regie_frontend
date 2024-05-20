@@ -168,12 +168,12 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
         formData.append('description', data.description);
         
         if (editedIndex.value !== -1) {
-            console.log(selected.value, "selected")
+            console.log(selected.value, "selected");
         //Si un élément est selectioné
             await addOrUpdateProduct(formData, editedIndex.value);
             await refreshTable()
         } else {
-            if(!formData.get('image')) formData.set('image', data.image[0])
+            if (!formData.get('image')) formData.set('image', data.image[0]);
             await addOrUpdateProduct(formData);
             await refreshTable()
         }
@@ -458,7 +458,8 @@ const formButton = computed(() => {
     <v-table class="mt-5">
         <thead>
             <tr>
-                <th class="text-subtitle-1 font-weight-semibold">Id</th>
+                <th class="text-subtitle-1 font-weight-semibold">#</th>
+                <th class="text-subtitle-1 font-weight-semibold">Référence</th>
                 <th class="text-subtitle-1 font-weight-semibold">Article</th>
                 <th class="text-subtitle-1 font-weight-semibold">Prix</th>
                 <th class="text-subtitle-1 font-weight-semibold">Taux</th>
@@ -469,8 +470,9 @@ const formButton = computed(() => {
             </tr>
         </thead>
         <tbody>
-            <tr v-for="item in getItems" :key="item.id">
-                <td class="text-subtitle-1">{{ item.ref }}</td>
+            <tr v-for="(item, index) in getItems" :key="item.id">
+                <td class="text-subtitle-1">{{ index+1}}</td>
+                <td class="text-subtitle-1">{{ item.ref}}</td>
                 <td>
                     <div class="d-flex align-center py-4">
                         <div class="hoverable">        
