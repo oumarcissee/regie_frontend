@@ -112,6 +112,7 @@ const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
         if (productSelected.value.length >= 0) isSelected.value = true;
         //Mettre à jour le tableau
         updateTableData();
+
         useProduct.items = filterTable;
         products.resetField();
 
@@ -215,7 +216,6 @@ function close() {
 
 
 // Méthode pour modifier un élément
-let itemsOfOrder: any = ref([])
 const editItem = (index: any) => {
     dialog.value = true;
     editedIndex.value = index.id;
@@ -223,7 +223,7 @@ const editItem = (index: any) => {
 
     //Recuperation des articles liées à la commande
     const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === index.id);
-    // console.log("C",ordersLine, "Produits:", useProduct.items);
+    console.log("C",ordersLine, "Produits:", useProduct.items);
 
     //filtrer les articles non selectonés
     const itemIds = ordersLine.map((item: any) => item.item.id);
@@ -269,10 +269,18 @@ const submitQuantity  = () => {
 
 // Suppression d'un element
 const remove = async (index: any) => {
-    const item = productSelected.value.indexOf(index);
+    const item = await productSelected.value.findIndex((item: { id: any; }) => item.id === index.id);
     if (item !== -1) {
-        productSelected.value.splice(item, 1); // Supprime l'élément du tableau productSelected
+        console.log(productSelected.value, "Avant");
+        productSelected.value.splice(index, 1);
+        updateTableData();
+        console.log(`Item with id ${index.id} removed successfully.`);
+    } else {
+        console.log(`Item with id ${index.id} not found.`);
     }
+
+     console.log(productSelected.value, "Après");
+    
 };
 
 
@@ -591,7 +599,7 @@ const itemsSelected = ref<Item[]>([]);
                 </v-tooltip>
                 <v-tooltip text="Supprimer">
                     <template v-slot:activator="{ props }">
-                        <v-btn icon flat @click="remove(item)"  v-bind="props"
+                        <v-btn icon flat @click=""  v-bind="props"
                             ><TrashIcon stroke-width="1.5" size="20" class="text-error"
                         /></v-btn>
                     </template>
