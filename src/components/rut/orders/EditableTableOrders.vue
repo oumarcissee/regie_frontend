@@ -90,9 +90,9 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
     },
 });
 
-
+let increment = 0;
 const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => { 
-
+        increment++
     try {
         const product = useProduct.items.find((item: { id?: any }) => item?.id === data.products);
         const user = userStore.providers.find((item: { id?: any }) => item?.id === data.provider);
@@ -101,19 +101,14 @@ const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
       
         OrderStatus = data.status ? data.status : false
         //Ajout d'un nouveau produit
-        productSelected.value.push({ item: product, quantity: parseInt(data.quantity) });
-
-        //  console.log(useProduct.items, "Avant");
-
-        //Filtrer les produits non selectionés
-        const filterTable = useProduct.items.filter((item: { id: string; }) => item.id !== data.products);
+        productSelected.value.push({id: increment, item: product, quantity: parseInt(data.quantity) });
 
         //Desactivation du champ user
         if (productSelected.value.length >= 0) isSelected.value = true;
         //Mettre à jour le tableau
         updateTableData();
-
-        useProduct.items = filterTable;
+        // console.log(productSelected.value)
+        useProduct.items = useProduct.items.filter((item: { id: string; }) => item.id !== data.products);
         products.resetField();
 
     } catch (error) {
@@ -123,8 +118,7 @@ const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
 
 // Ajoutez une fonction pour mettre à jour les données de myTable
 const updateTableData = () => {
-    const tableData = productSelected.value;
-    productSelected.value = tableData;
+    productSelected.value = productSelected.value;
 };
 
 
@@ -166,10 +160,23 @@ const submit = async () => {
                 orderLine: productSelected.value
             }
 
-            productSelected.value = []
-
             // console.log(formDataArray)
-            await addOrUpdateOrder(data);
+            if (editedIndex.value != -1) {
+                //modificaiton
+                console.log(productSelected.value, "modifiée");
+
+                //Recuperation des articles liées à la commande
+                const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === editedIndex.value);
+                console.log(ordersLine)
+                //filtrer les articles non selectonés
+                const itemIds = ordersLine.map((item: any) => item.item.id);
+                const filteredArticles = useProduct.items.filter((item: any) => !itemIds.includes(item.id));
+
+
+            } else {
+                await addOrUpdateOrder(data);
+
+            }
             await refreshTable();
         }
         
@@ -221,9 +228,10 @@ const editItem = (index: any) => {
     editedIndex.value = index.id;
     isSelected.value = true;
 
+    // console.log(index);
+
     //Recuperation des articles liées à la commande
     const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === index.id);
-    console.log("C",ordersLine, "Produits:", useProduct.items);
 
     //filtrer les articles non selectonés
     const itemIds = ordersLine.map((item: any) => item.item.id);
@@ -234,7 +242,6 @@ const editItem = (index: any) => {
     productSelected.value = ordersLine;
 
     updateTableData();
-   
    
 };
 
@@ -268,21 +275,17 @@ const submitQuantity  = () => {
 }
 
 // Suppression d'un element
-const remove = async (index: any) => {
-    const item = await productSelected.value.findIndex((item: { id: any; }) => item.id === index.id);
-    if (item !== -1) {
-        console.log(productSelected.value, "Avant");
-        productSelected.value.splice(index, 1);
-        updateTableData();
-        console.log(`Item with id ${index.id} removed successfully.`);
-    } else {
-        console.log(`Item with id ${index.id} not found.`);
-    }
+const remove = async (item: any) => {
+    // console.log(item)
+    //Suppression de l'élement supprimé
+    productSelected.value = productSelected.value.filter((i: any) => i.id !== item?.id);
 
-     console.log(productSelected.value, "Après");
-    
+    console.log(productSelected.value);//
+
+    //Mettre à jour le tableau
+    useProduct.items.push(item.item); // Add the removed item back to the product list
+    updateTableData();
 };
-
 
 //Computed Property
 const formTitle = computed(() => {
@@ -293,7 +296,6 @@ const formTitle = computed(() => {
 const formButton = computed(() => {
     return editedIndex.value === -1 ? 'Enregistrer' : 'Modifier';
 });
-
 
 
 const searchField = ref(['ref','last_name', 'created_at']);
@@ -424,7 +426,7 @@ const itemsSelected = ref<Item[]>([]);
 
                                                     <div class="d-flex align-center py-4">
                                                          <div class="hoverable">        
-                                                            <v-img :lazy-src="item.item.image" :src="item.item.image" width="65px" class="rounded  img-fluid"></v-img>
+                                                            <v-img :lazy-src="item?.item?.image" :src="item?.item?.image" width="65px" class="rounded  img-fluid"></v-img>
                                                         </div>
 
                                                         <div class="ml-5">
@@ -439,14 +441,14 @@ const itemsSelected = ref<Item[]>([]);
                                                 
                                                 <td>
                                                     <div class="d-flex align-center">
-                                                        <v-tooltip text="Edit">
+                                                        <v-tooltip text="Editer">
                                                             <template v-slot:activator="{ props }">
                                                                 <v-btn icon flat @click="editQuantity(item)" v-bind="props"
                                                                     ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
                                                                 /></v-btn>
                                                             </template>
                                                         </v-tooltip>
-                                                        <v-tooltip text="Delete">
+                                                        <v-tooltip text="Retirer">
                                                             <template v-slot:activator="{ props }">
                                                                 <v-btn icon flat @click="remove(item)" v-bind="props"
                                                                     ><TrashIcon stroke-width="1.5" size="20" class="text-error"

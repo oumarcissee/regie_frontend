@@ -11,7 +11,7 @@ import Swal from 'sweetalert2'
 export const useProductsList = defineStore({
     id: 'productsListStore',
     state: () => ({
-        items: [],
+        items: [] as any,
         errors: {
             nameError: null as any,
             nameText: null as any,
