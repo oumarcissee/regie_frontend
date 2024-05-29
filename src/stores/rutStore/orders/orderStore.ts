@@ -144,8 +144,8 @@ export const useOrderStore = defineStore({
             icon: "warning",
             showCancelButton: true,
             cancelButtonText: "Annuler",
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
             confirmButtonText: "Oui, Je le supprime!"
             }).then(async (result) => {
             if (result.isConfirmed) {

@@ -95,7 +95,7 @@ const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
         increment++
     try {
         const product = useProduct.items.find((item: { id?: any }) => item?.id === data.products);
-        const user = userStore.providers.find((item: { id?: any }) => item?.id === data.provider);
+        // const user = userStore.providers.find((item: { id?: any }) => item?.id === data.provider);
 
         //Utilisateur 
       
@@ -160,20 +160,20 @@ const submit = async () => {
                 orderLine: productSelected.value
             }
 
-            // console.log(formDataArray)
             if (editedIndex.value != -1) {
-                //modificaiton
+                //modification
                 console.log(productSelected.value, "modifiée");
 
                 //Recuperation des articles liées à la commande
-                const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === editedIndex.value);
-                console.log(ordersLine)
-                //filtrer les articles non selectonés
-                const itemIds = ordersLine.map((item: any) => item.item.id);
-                const filteredArticles = useProduct.items.filter((item: any) => !itemIds.includes(item.id));
+                // const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === editedIndex.value);
+                // console.log(ordersLine)
+                // //filtrer les articles non selectonés
+                // const itemIds = ordersLine.map((item: any) => item.item.id);
+                // const filteredArticles = useProduct.items.filter((item: any) => !itemIds.includes(item.id));
 
 
             } else {
+                //
                 await addOrUpdateOrder(data);
 
             }
@@ -221,34 +221,30 @@ function close() {
     handleReset();
 }
 
-
 // Méthode pour modifier un élément
 const editItem = (index: any) => {
-    dialog.value = true;
+    dialog.value      = true;
     editedIndex.value = index.id;
-    isSelected.value = true;
+    isSelected.value  = true;
 
-    // console.log(index);
+    //Selection de fournisseur.
+    provider.value.value = index.provider.id;
 
     //Recuperation des articles liées à la commande
     const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === index.id);
+    productSelected.value = ordersLine;
 
     //filtrer les articles non selectonés
     const itemIds = ordersLine.map((item: any) => item.item.id);
-    const filteredArticles = useProduct.items.filter((item: any) => !itemIds.includes(item.id));
-
-    useProduct.items = filteredArticles
-
-    productSelected.value = ordersLine;
+    useProduct.items = useProduct.items.filter((item: any) => !itemIds.includes(item.id));
 
     updateTableData();
-   
 };
 
 // Suppression d'un element
 const deletion = async (index: any) => {
     try {
-        await store.deleteItem(index, 'items');
+        await store.deleteItem(index, 'orders');
         await refreshTable(); // Rafraîchir les données après la suppression
     } catch (error) {
         console.error('Erreur lors de la suppression :', error);
@@ -601,7 +597,7 @@ const itemsSelected = ref<Item[]>([]);
                 </v-tooltip>
                 <v-tooltip text="Supprimer">
                     <template v-slot:activator="{ props }">
-                        <v-btn icon flat @click=""  v-bind="props"
+                        <v-btn icon flat @click="deletion(item)"  v-bind="props"
                             ><TrashIcon stroke-width="1.5" size="20" class="text-error"
                         /></v-btn>
                     </template>
