@@ -86,7 +86,7 @@ const customizer = useCustomizerStore();
                         >
                             <SettingsIcon />
                         </v-btn>
-                    </div>
+                    </div>  
                 </v-container>
                 
             </v-main>

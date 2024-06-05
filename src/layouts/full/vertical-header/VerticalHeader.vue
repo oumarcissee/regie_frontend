@@ -65,9 +65,16 @@ const getCart = computed(() => {
         <!-- Mega menu -->
         <!-- ---------------------------------------------- -->
         <div class="hidden-md-and-down">
+           
             <Navigations />
+
+            
         </div>
         <v-spacer />
+            <div>Le mois en cours : {{ new Date().getFullYear() }}</div>
+        <v-spacer />
+
+
         <!-- ---------------------------------------------- -->
         <!---right part -->
         <!-- ---------------------------------------------- -->

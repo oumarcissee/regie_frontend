@@ -101,6 +101,24 @@ const deleteItem = async (item: any, url: string, data: Array<any> ) => {
     });
 }
 
+const get_full_role = (role: string) => {
+
+  let selected_role = role;
+  switch (role) {
+    case 'manager_a':
+      selected_role = "Regisseur des Unités Territoriales";
+      break;
+    case 'manager_b':
+      selected_role = "Regisseur des Centres de formations et OPEX";
+      break;
+    default:
+      selected_role= "Autre role"
+      break;
+  }
+
+  return selected_role;
+}
+
 
 
 const itemChanged = ref();
@@ -119,5 +137,5 @@ const changedProduct = (value: string | any[]) => {
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
-  confirmButton,changed, itemChanged,changedProduct, ProductChanged
+  confirmButton,changed, itemChanged,changedProduct, ProductChanged, get_full_role
 }

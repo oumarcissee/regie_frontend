@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth';
+import { get_full_role } from '@/services/utils';
 
 const authStore = useAuthStore();
 </script>
@@ -11,8 +12,8 @@ const authStore = useAuthStore();
                 <img src="@/assets/images/profile/user-1.jpg" alt="user" height="40" />
             </v-avatar>
             <div class="ml-4">
-                <h4 class="mb-n1 text-h6 textPrimary">Mathew</h4>
-                <span class="text-subtitle-2 textSecondary">Designer</span>
+                <h4 class="mb-n1 text-h6 textPrimary">{{ authStore.user.get_short_name }}</h4>
+                <span class="text-subtitle-2 textSecondary">{{get_full_role(authStore.user.role)}}</span>
             </div>
             <div class="ml-auto">
                 <v-btn variant="text" icon rounded="md" color="primary" @click="authStore.logout()">

@@ -51,6 +51,8 @@ const sidebarMenuManagerA = shallowRef(sidebarItemsMangerA);
         <perfect-scrollbar class="scrollnavbar">
             <v-list class="pa-6">
                 <!---Menu Loop -->
+
+                <!-- SI L'UTILISATEUR EST LE RUT -->
                <template v-if="isAuthenticated && user?.role === 'manager_a'">
                     <template v-for="(item, i) in sidebarMenuManagerA">
                         <!---Item Sub Header -->
@@ -62,9 +64,16 @@ const sidebarMenuManagerA = shallowRef(sidebarItemsMangerA);
                         <!---End Single Item-->
                     </template>
                </template>
+               <!-- END RUT -->
+
+
+               <!-- SI L'UTILISATEUR EST LE CHEF DE L'ECOLE -->
                <template v-if="isAuthenticated && user?.role === 'manger_b'">
                 
                </template>
+               <!-- END ECOLE CHEF DE L'ECOLE -->
+
+               <!-- SI L'UTILISATEUR EST LE SUPER ADMINISTRATEUR -->
                <template v-if="isAuthenticated && user?.role === 'admin'">
                     <template v-for="(item, i) in sidebarMenu">
                         <!---Item Sub Header -->
@@ -76,7 +85,7 @@ const sidebarMenuManagerA = shallowRef(sidebarItemsMangerA);
                         <!---End Single Item-->
                     </template>
                </template>
-
+               <!-- END SUPER ADMIN -->
     
             </v-list>
             <div class="pa-6 userbottom">

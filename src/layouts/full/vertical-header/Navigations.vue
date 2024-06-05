@@ -54,4 +54,8 @@ import { HelpIcon, ChevronDownIcon } from 'vue-tabler-icons';
     <router-link to="/apps/notes" class="text-decoration-none">
         <v-btn variant="text" color="primary">Notes </v-btn>
     </router-link>
+
+   
 </template>
+
+
