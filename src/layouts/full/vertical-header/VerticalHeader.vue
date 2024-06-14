@@ -71,9 +71,9 @@ const items  = ref(['March 2023', 'April 2023', 'May 2023']);
         <!-- ---------------------------------------------- -->
         <!-- <div class="hidden-md-and-down">
            
-            <Navigations />
-
             
+            
+            <Navigations />
         </div> -->
         <v-spacer />
             <!-- <div>Le mois en cours :  -->
