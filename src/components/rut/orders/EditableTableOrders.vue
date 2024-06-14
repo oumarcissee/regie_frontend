@@ -97,8 +97,7 @@ const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
         const product = useProduct.items.find((item: { id?: any }) => item?.id === data.products);
         // const user = userStore.providers.find((item: { id?: any }) => item?.id === data.provider);
 
-        //Utilisateur 
-      
+        // provider = data.provider
         OrderStatus = data.status ? data.status : false
         //Ajout d'un nouveau produit
         productSelected.value.push({id: increment, item: product, quantity: parseInt(data.quantity) });
@@ -154,7 +153,7 @@ const submit = async () => {
                 provider: itemChanged.value,
                 status: OrderStatus
             };
-
+         
             const data = {
                 order: order,
                 orderLine: productSelected.value
@@ -167,15 +166,13 @@ const submit = async () => {
                 //Recuperation des articles liées à la commande
                 // const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === editedIndex.value);
                 // console.log(ordersLine)
-                // //filtrer les articles non selectonés
+                //filtrer les articles non selectonés
                 // const itemIds = ordersLine.map((item: any) => item.item.id);
                 // const filteredArticles = useProduct.items.filter((item: any) => !itemIds.includes(item.id));
 
 
             } else {
-                //
                 await addOrUpdateOrder(data);
-
             }
             await refreshTable();
         }
@@ -195,7 +192,6 @@ const refreshTable = async () => {
 };
 
 // les champs de l'utilisateur
-
 let userSeletected: Object;
 
 // const providers = ref([]);

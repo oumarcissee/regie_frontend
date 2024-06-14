@@ -26,6 +26,11 @@ const store = useEcomStore();
 const getCart = computed(() => {
     return store.cart;
 });
+
+
+const select = ref('March 2023');
+const items  = ref(['March 2023', 'April 2023', 'May 2023']);
+
 </script>
 
 <template>
@@ -55,23 +60,30 @@ const getCart = computed(() => {
         <!-- ---------------------------------------------- -->
         <!-- Search part -->
         <!-- ---------------------------------------------- -->
-        <v-sheet>
+        <!-- <v-sheet>
             <Searchbar />
-        </v-sheet>
+        </v-sheet> -->
 
         <!---/Search part -->
 
         <!-- ---------------------------------------------- -->
         <!-- Mega menu -->
         <!-- ---------------------------------------------- -->
-        <div class="hidden-md-and-down">
+        <!-- <div class="hidden-md-and-down">
            
             <Navigations />
 
             
-        </div>
+        </div> -->
         <v-spacer />
-            <div>Le mois en cours : {{ new Date().getFullYear() }}</div>
+            <!-- <div>Le mois en cours :  -->
+                
+            <span class="my-sm-0 my-2" title="Le mois en cours d'utilisation">
+                <v-select v-model="select" :items="items" variant="underlined" hide-details update:modelValue="" density="compact"></v-select>
+            </span>
+
+           
+            <!-- </div> -->
         <v-spacer />
 
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { MailIcon } from 'vue-tabler-icons';
 import { profileDD } from '@/_mockApis/headerData';
+import { get_full_role } from '@/services/utils';
 
 import { useAuthStore } from '@/stores/auth';
 
@@ -28,7 +29,7 @@ const authStore = useAuthStore();
                     </v-avatar>
                     <div class="ml-3">
                         <h6 class="text-h6 mb-n1">{{authStore.user.get_full_name}}</h6>
-                        <span class="text-subtitle-1 font-weight-regular textSecondary" v-if="authStore.user.role === 'manager_a'">Regisseur des Unites Territoriales</span>
+                        <span class="text-subtitle-1 font-weight-regular textSecondary"> {{ get_full_role(authStore.user.role) }}</span>
                         <div class="d-flex align-center mt-1">
                             <MailIcon size="18" stroke-width="1.5" />
                             <span class="text-subtitle-1 font-weight-regular textSecondary ml-2">{{authStore.user.email}}</span>
@@ -63,7 +64,7 @@ const authStore = useAuthStore();
                 </div>
             </div> -->
             <div class="pt-4 pb-6 px-8 text-center">
-                <v-btn color="primary" variant="outlined" block @click="authStore.logout()">Logout</v-btn>
+                <v-btn color="primary" variant="outlined" block @click="authStore.logout()">Déconnexion</v-btn>
             </div>
         </v-sheet>
     </v-menu>

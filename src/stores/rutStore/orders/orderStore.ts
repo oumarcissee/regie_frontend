@@ -29,11 +29,14 @@ export const useOrderStore = defineStore({
         }
     },
     actions: {
-       // Fetch followers from action
+        // Fetch followers from action
+        
         async fetchOrders() {
             try {
                 const response = await new ApiAxios().find(`/orders/`);
+
                 // console.log(response, "Dans try");
+                // return;
                 this.orders = response.data.results
                 this.orders.forEach((item: any) => {
 
@@ -97,11 +100,18 @@ export const useOrderStore = defineStore({
                 } else {
                     
                     //Ajout de la commande
+                    console.log(data.order);
                     const OrderResponse = await new ApiAxios().add('/orders/', data.order);
-                    //Ajout de la ligne de commande
+                    console.log(OrderResponse.data);
+                    // return;
+                    //Ajout des articles dans la commande
                     data.orderLine.forEach(async (item: any) => {
                         const response = await new ApiAxios().add('/orders-line/', {quantity: item.quantity,item: item.item.id, order: OrderResponse.data.id});
                     });
+                    //Archive da la commande
+                    
+                    // const archiveResponse = await new ApiAxios().add('/archives/', OrderResponse);
+
                     this.$reset()
                     
                     Swal.fire({
