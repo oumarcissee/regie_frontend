@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { isAxiosError } from '@/services/utils';
 import { router } from '@/router';
 import { fetchWrapper } from '@/utils/helpers/fetch-wrapper';
+import { useOrderStore } from '@/stores/rutStore/orders/orderStore';
 
 import ApiAxios from '@/services/ApiAxios';
 
@@ -17,7 +18,10 @@ export const useAuthStore = defineStore({
         user: Object(),
         isAuthenticated: false,
         accessToken: null,
-        refreshToken:null,
+        refreshToken: null,
+        
+        dates: [] as any,
+        
     }),
     actions: {
         async login(username: string, password: string) {
@@ -37,6 +41,9 @@ export const useAuthStore = defineStore({
         
                 const userConnected = await new ApiAxios().find('/users/me/');
                 this.user = userConnected.data;
+
+                //Chargement des dates
+                this.dates = await useOrderStore().getUniqueMonth();
                 
                 if (this.user?.role === 'admin') {
                     this.dashboard = 'ModernDashboard';

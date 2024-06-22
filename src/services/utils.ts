@@ -40,17 +40,13 @@ const formatSlug = (chaine: string) => {
     return chaine;
 }
 
-
-
 // Fonction utilitaire pour vérifier si c'est une erreur Axios
 function isAxiosError(error: any): error is AxiosError {
     return (error as AxiosError).isAxiosError !== undefined;
 }
 
-
 let selected: any;
 let confirmButton = false;
-
 
 function setItemSelected(item: any): void { 
   selected = item;
@@ -120,6 +116,14 @@ const get_full_role = (role: string) => {
 }
 
 
+//Cette fonctin qui affiche les données a travers les mois selectionés
+const dateSelected = ref();
+
+const dateChanged = (value: string | any[]) => {
+  dateSelected.value = value;
+  return dateSelected;
+}
+
 
 const itemChanged = ref();
 const ProductChanged = ref();
@@ -137,5 +141,5 @@ const changedProduct = (value: string | any[]) => {
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
-  confirmButton,changed, itemChanged,changedProduct, ProductChanged, get_full_role
+  confirmButton,changed, itemChanged,changedProduct, ProductChanged, get_full_role, dateChanged,dateSelected
 }

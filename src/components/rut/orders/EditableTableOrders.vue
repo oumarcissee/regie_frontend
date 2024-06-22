@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted,  onUnmounted} from 'vue';
-import { truncateText, itemChanged, ProductChanged} from '@/services/utils';
+import { truncateText, itemChanged, ProductChanged, dateSelected} from '@/services/utils';
 
 
 
@@ -115,14 +115,14 @@ const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
     }
 })
 
-// Ajoutez une fonction pour mettre à jour les données de myTable
+//La fonction pour mettre à jour les données de myTable
 const updateTableData = () => {
     productSelected.value = productSelected.value;
 };
 
 
 const getOrders: any = computed(() => {
-    return store.orders
+    return store.orders.filter((item: any)  => item.created_at.includes(dateSelected.value));
 })
 
 // Le statut de la commande
@@ -389,7 +389,7 @@ const itemsSelected = ref<Item[]>([]);
                                     </v-row>
                                 </v-col>
                                 <v-col cols="12">
-                                     <v-switch color="primary" v-model="status.value.value" label="Statut" ></v-switch>  
+                                     <v-switch color="primary" label="Statut" ></v-switch>  
                                 </v-col>
                                 
                                 <v-col cols="12" sm="12">

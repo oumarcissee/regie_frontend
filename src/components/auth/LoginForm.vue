@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
+
 import { Form, useField, useForm } from 'vee-validate';
 
 /*Social icons*/

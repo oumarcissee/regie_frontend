@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 // project imports
-import { isAxiosError } from '@/services/utils';
+import { isAxiosError, dateSelected } from '@/services/utils';
+
 import { router } from '@/router';
 
 import ApiAxios from '@/services/ApiAxios';
@@ -18,6 +19,7 @@ export const useOrderStore = defineStore({
     state: () => ({
         orders: [],
         ordersLine: [],
+        months: [] as any,
         errors: {
             nameError: null as any,
             nameText: null as any,
@@ -25,7 +27,11 @@ export const useOrderStore = defineStore({
     }),
     getters: {
         getOrders(state) {
+            
             return state.orders;
+        },
+        getMonths(state) {
+            return state.months;
         }
     },
     actions: {
@@ -67,6 +73,30 @@ export const useOrderStore = defineStore({
                 console.log(error);
             }
         },
+        //
+        async getUniqueMonth() {
+            try {
+                const archives = await new ApiAxios().find('/archives/');
+
+                const uniqueMonths = new Set();
+  
+                archives.data.results.forEach((item: any) => {
+                    uniqueMonths.add(format(new Date(item.date), "MMMM yyyy", { locale }));
+                });
+               
+                Array.from(uniqueMonths).forEach((item: any) => {
+                    this.months.push(item);
+                });
+                
+                dateSelected.value = dateSelected.value ?? this.months[0];
+      
+                
+                return this.months
+
+            } catch (error) {
+                alert(error+ "Erreur d'uniqueMonths date");
+            }
+        },
 
         //Ajout d'un élement
         async addOrUpdateOrder(data: any, param?: any) {
@@ -102,15 +132,15 @@ export const useOrderStore = defineStore({
                     //Ajout de la commande
                     console.log(data.order);
                     const OrderResponse = await new ApiAxios().add('/orders/', data.order);
-                    console.log(OrderResponse.data);
                     // return;
                     //Ajout des articles dans la commande
                     data.orderLine.forEach(async (item: any) => {
                         const response = await new ApiAxios().add('/orders-line/', {quantity: item.quantity,item: item.item.id, order: OrderResponse.data.id});
                     });
-                    //Archive da la commande
+                    //Enregistrement de la date
+                    const archiveResponse = await new ApiAxios().add('/archives/', {order: OrderResponse.data.id});
+                   this.getUniqueMonth()
                     
-                    // const archiveResponse = await new ApiAxios().add('/archives/', OrderResponse);
 
                     this.$reset()
                     
@@ -136,7 +166,6 @@ export const useOrderStore = defineStore({
                         }
                     });
                 }
-
              
             } catch (error) {
 

@@ -10,6 +10,13 @@ import Searchbar from './Searchbar.vue';
 import RightMobileSidebar from './RightMobileSidebar.vue';
 import Navigations from './Navigations.vue';
 
+import { dateChanged , dateSelected} from '@/services/utils';
+
+import { useAuthStore } from '@/stores/auth';
+import { useOrderStore } from '@/stores/rutStore/orders/orderStore';
+
+const orderStore = useOrderStore()
+
 const customizer = useCustomizerStore();
 const showSearch = ref(false);
 const appsdrawer = ref(false);
@@ -27,9 +34,10 @@ const getCart = computed(() => {
     return store.cart;
 });
 
+const cartCount = computed(() => {
+    return getCart.value.length;
+});
 
-const select = ref('March 2023');
-const items  = ref(['March 2023', 'April 2023', 'May 2023']);
 
 </script>
 
@@ -79,9 +87,16 @@ const items  = ref(['March 2023', 'April 2023', 'May 2023']);
             <!-- <div>Le mois en cours :  -->
                 
             <span class="my-sm-0 my-2" title="Le mois en cours d'utilisation">
-                <v-select v-model="select" :items="items" variant="underlined" hide-details update:modelValue="" density="compact"></v-select>
+                <v-select 
+                    @update:modelValue="dateChanged"
+                    v-model="dateSelected" 
+                    :items="orderStore.getMonths"
+                    label="Le mois en cours d'utilisation" 
+                    hide-details 
+        
+                ></v-select>
             </span>
-
+        
            
             <!-- </div> -->
         <v-spacer />
