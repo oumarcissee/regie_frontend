@@ -149,11 +149,7 @@ const submit = async () => {
                 const itemIds = ordersLine.map((item: any) => item.item.id);
                 useProduct.items.filter((item: any) => !itemIds.includes(item.id));
 
-                //Modification de la commmande courante
-                // close();
-
-                // console.log(data,data.orderLine[0].order.id)
-                // return;
+                //Modification de commande
                 await addOrUpdateOrder(data, data.orderLine[0].order.id);
                 
 
@@ -257,10 +253,14 @@ const submitQuantity  = () => {
 // Suppression d'un element
 const remove = async (item: any) => {
     // console.log(item)
-    //Suppression de l'élement supprimé
-    productSelected.value = productSelected.value.filter((i: any) => i.id !== item?.id);
+    //Si le conteneur des articles n'est pas vide
+    if (productSelected.value.length > 1) {
+        //Suppression de l'élement supprimé
+        productSelected.value = productSelected.value.filter((i: any) => i.id !== item?.id);
+    }
 
-    console.log(productSelected.value);//
+
+    // console.log(productSelected.value);//
 
     //Mettre à jour le tableau
     useProduct.items.push(item.item); // Add the removed item back to the product list

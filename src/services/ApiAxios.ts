@@ -83,11 +83,11 @@ class ApiAxios {
   /**
    * Exécute une réquête de selection par valeur d'un parametre
    * @param {String} url
-   * @param {Integer} id?
+   * @param {Integer} order?
    */
-  find(url: string, id?: any){
+  find(url: string, order?: any){
     return this.axiosInstance().get(url, {
-      params: {id}
+      params: {order}
     })
   }
 

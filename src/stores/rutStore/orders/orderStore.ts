@@ -102,11 +102,21 @@ export const useOrderStore = defineStore({
         async addOrUpdateOrder(data: any, param?: any) {
       
             try {
+
+                //Si c'est une modification
                 if (param) {
                
                     const OrderResponse = await new ApiAxios().updatePartialForm(`/orders/${param}/`, {status: data.order.status}, param);
                     
-                     //Ajout des articles dans la commande
+                    //Suppression des anciennes commande
+                    const response = await new ApiAxios().find(`/orders-line/?order=${param}`);
+                  
+                    response.data.results.forEach(async (item: any) => {
+                        await new ApiAxios().delete(`/orders-line/${item.id}/`, item.id);
+                    });
+
+                
+                    //Ajout des articles dans la commande
                     data.orderLine.forEach(async (item: any) => {
                         const response = await new ApiAxios().add('/orders-line/', {quantity: item.quantity,item: item.item.id, order: OrderResponse.data.id});
                     });
