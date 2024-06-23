@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted,  onUnmounted} from 'vue';
-import { truncateText, itemChanged, ProductChanged, dateSelected} from '@/services/utils';
-
+import { truncateText, currentUser, currentProduct, currentMonth, get_full_unite} from '@/services/utils';
 
 
 import { useField, useForm } from 'vee-validate';
 
-import type {  Orders } from '@/types/rut/OrdersType';
 
 import type { Header, Item } from 'vue3-easy-data-table';
 import 'vue3-easy-data-table/dist/style.css';
@@ -37,29 +35,17 @@ onMounted(async () => {
 
     // loadingProducts.value = false;
     await useProduct.fetchItems();
-    useProduct.items.forEach((item: any) => {
-
-        switch (item.unite) {
-            case 'cardboard':
-                item.unite = 'Carton(s)'
-                break;
-            case 'can':
-                item.unite = 'Bidon(s)'
-                break;
-            case 'bag':
-                item.unite = 'Sac(s)'
-                break;
-            default:
-                item.unite = 'Pas de type'
-                break;
-        }
-    });
+   
     loadingProducts.value = true
     // console.log(providers.value)
 
-    status.value.value = true
 
 });
+
+const getStatus = (value: any) => {
+    status.value = value
+    return value
+}
 
 const { handleSubmit, handleReset , isSubmitting} = useForm({
     validationSchema: {
@@ -81,11 +67,6 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
             }
             return true;
         },
-
-        status(value: string | any[]) {  
-            
-            return true;
-        },
               
     },
 });
@@ -93,14 +74,13 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
 let increment = 0;
 const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => { 
         increment++
+    
     try {
         const product = useProduct.items.find((item: { id?: any }) => item?.id === data.products);
         // const user = userStore.providers.find((item: { id?: any }) => item?.id === data.provider);
 
-        // provider = data.provider
-        OrderStatus = data.status ? data.status : false
         //Ajout d'un nouveau produit
-        productSelected.value.push({id: increment, item: product, quantity: parseInt(data.quantity) });
+        productSelected.value.push({ id: increment, item: product, quantity: parseInt(data.quantity) });
 
         //Desactivation du champ user
         if (productSelected.value.length >= 0) isSelected.value = true;
@@ -121,12 +101,10 @@ const updateTableData = () => {
 };
 
 
+//Affichage des commandes en fonction de mois 
 const getOrders: any = computed(() => {
-    return store.orders.filter((item: any)  => item.created_at.includes(dateSelected.value));
+    return store.orders.filter((item: any)  => item.created_at.includes(currentMonth.value) || item.modified_at.includes(currentMonth.value));
 })
-
-// Le statut de la commande
-let OrderStatus = ref(false);
 
 const formData = new FormData();
 
@@ -137,41 +115,50 @@ const refProduct = ref()
 
 const provider  = useField("provider");
 const products  = useField("products");
-const quantity  = useField("quantity");
-const status    = useField("status");
-const quantityItem = ref("")
+const quantity = useField("quantity");
+
+const status = ref(false);
+
+const quantityItem = ref("");
 
 
 const submit = async () => {
 
     try {
-        if (productSelected.value.length === 0 ) {
+        if (productSelected.value.length === 0) {
+            //Si rin n'est selectioné
             return productsSubmit();
         } else {
 
             const order = {
-                provider: itemChanged.value,
-                status: OrderStatus
+                provider: provider.value.value,
+                status: status.value,
             };
-         
+
             const data = {
                 order: order,
                 orderLine: productSelected.value
             }
 
             if (editedIndex.value != -1) {
-                //modification
-                console.log(productSelected.value, "modifiée");
 
                 //Recuperation des articles liées à la commande
-                // const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === editedIndex.value);
+                const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === editedIndex.value);
                 // console.log(ordersLine)
                 //filtrer les articles non selectonés
-                // const itemIds = ordersLine.map((item: any) => item.item.id);
-                // const filteredArticles = useProduct.items.filter((item: any) => !itemIds.includes(item.id));
+                const itemIds = ordersLine.map((item: any) => item.item.id);
+                useProduct.items.filter((item: any) => !itemIds.includes(item.id));
 
+                //Modification de la commmande courante
+                // close();
+
+                // console.log(data,data.orderLine[0].order.id)
+                // return;
+                await addOrUpdateOrder(data, data.orderLine[0].order.id);
+                
 
             } else {
+                //Ajout d'une nouvelle de la commande
                 await addOrUpdateOrder(data);
             }
             await refreshTable();
@@ -225,6 +212,7 @@ const editItem = (index: any) => {
 
     //Selection de fournisseur.
     provider.value.value = index.provider.id;
+    status.value = index.status;
 
     //Recuperation des articles liées à la commande
     const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === index.id);
@@ -389,7 +377,7 @@ const itemsSelected = ref<Item[]>([]);
                                     </v-row>
                                 </v-col>
                                 <v-col cols="12">
-                                     <v-switch color="primary" label="Statut" ></v-switch>  
+                                    <v-switch color="primary" @update:modelValue="getStatus" v-model="status"  label="Statut" ></v-switch>  
                                 </v-col>
                                 
                                 <v-col cols="12" sm="12">
@@ -418,7 +406,7 @@ const itemsSelected = ref<Item[]>([]);
 
                                                     <div class="d-flex align-center py-4">
                                                          <div class="hoverable">        
-                                                            <v-img :lazy-src="item?.item?.image" :src="item?.item?.image" width="65px" class="rounded  img-fluid"></v-img>
+                                                            <v-img :lazy-src="item?.item?.image" :src="item?.item?.image" :title="item.item.name" width="65px" class="rounded  img-fluid"></v-img>
                                                         </div>
 
                                                         <div class="ml-5">
@@ -429,7 +417,7 @@ const itemsSelected = ref<Item[]>([]);
                                                 </td>
 
                                                  <td class="text-subtitle-1">{{ item.quantity }}</td>
-                                                 <td class="text-subtitle-1" >{{ item.item.unite }}</td>
+                                                 <td class="text-subtitle-1" >{{ get_full_unite(item.item.unite)}}</td>
                                                 
                                                 <td>
                                                     <div class="d-flex align-center">

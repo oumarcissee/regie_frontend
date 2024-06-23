@@ -97,6 +97,8 @@ const deleteItem = async (item: any, url: string, data: Array<any> ) => {
     });
 }
 
+
+//Affichge des rôles des utilisateurs
 const get_full_role = (role: string) => {
 
   let selected_role = role;
@@ -115,31 +117,51 @@ const get_full_role = (role: string) => {
   return selected_role;
 }
 
+//Affichge de type des produits
+const get_full_unite = (unite: any): string => {
+  switch (unite) {
+    case 'cardboard':
+        unite = 'Carton(s)'
+        break;
+    case 'can':
+        unite = 'Bidon(s)'
+        break;
+    case 'bag':
+        unite = 'Sac(s)'
+        break;
+    default:
+        unite = 'Pas de type'
+        break;
+  }
 
-//Cette fonctin qui affiche les données a travers les mois selectionés
-const dateSelected = ref();
-
-const dateChanged = (value: string | any[]) => {
-  dateSelected.value = value;
-  return dateSelected;
+  return unite;
 }
 
 
-const itemChanged = ref();
-const ProductChanged = ref();
+const currentMonth = ref();
 
-const changed = (value: string | any[]) => {
-  itemChanged.value = value;
+const getCurrentMonth = (value: string | any[]) => {
+  currentMonth.value = value;
+  return currentMonth;
+}
+
+
+const currentUser = ref();
+const currentProduct = ref();
+
+const getCurrentUser = (value: string | any[]) => {
+  currentUser.value = value;
   return value
 }
 
-const changedProduct = (value: string | any[]) => {
-  ProductChanged.value = value;
+const getCurrentProduct = (value: string | any[]) => {
+  currentProduct.value = value;
   return value
 }
 
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
-  confirmButton,changed, itemChanged,changedProduct, ProductChanged, get_full_role, dateChanged,dateSelected
+  confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getCurrentMonth, currentMonth,
+  get_full_unite
 }

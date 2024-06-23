@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { changedProduct , truncateText} from '@/services/utils';
+import { getCurrentProduct , truncateText} from '@/services/utils';
 
 
 const { items, label, title } = defineProps({
@@ -18,7 +18,7 @@ const { items, label, title } = defineProps({
 </script>
 <template>
   <v-autocomplete
-      @update:modelValue="changedProduct" 
+      @update:modelValue="getCurrentProduct" 
       :disabled="isUpdating"
       :items="items"
       :item-title="title"

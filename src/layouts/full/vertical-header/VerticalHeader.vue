@@ -10,7 +10,7 @@ import Searchbar from './Searchbar.vue';
 import RightMobileSidebar from './RightMobileSidebar.vue';
 import Navigations from './Navigations.vue';
 
-import { dateChanged , dateSelected} from '@/services/utils';
+import { getCurrentMonth , currentMonth} from '@/services/utils';
 
 import { useAuthStore } from '@/stores/auth';
 import { useOrderStore } from '@/stores/rutStore/orders/orderStore';
@@ -84,21 +84,17 @@ const cartCount = computed(() => {
             <Navigations />
         </div> -->
         <v-spacer />
-            <!-- <div>Le mois en cours :  -->
-                
-            <span class="my-sm-0 my-2" title="Le mois en cours d'utilisation">
-                <v-select 
-                    @update:modelValue="dateChanged"
-                    v-model="dateSelected" 
-                    :items="orderStore.getMonths"
-                    label="Le mois en cours d'utilisation" 
-                    hide-details 
-        
-                ></v-select>
-            </span>
-        
-           
-            <!-- </div> -->
+
+        <!-- Le mois courrant -->
+        <v-select 
+            @update:modelValue="getCurrentMonth"
+            v-model="currentMonth" 
+            :items="orderStore.getMonths"
+            label="Le mois en cours d'utilisation" 
+            hide-details 
+        ></v-select>
+        <!-- Le mois courrant -->
+         
         <v-spacer />
 
 

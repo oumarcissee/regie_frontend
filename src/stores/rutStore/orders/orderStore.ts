@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 // project imports
-import { isAxiosError, dateSelected } from '@/services/utils';
+import { isAxiosError, currentMonth } from '@/services/utils';
 
 import { router } from '@/router';
 
@@ -88,7 +88,7 @@ export const useOrderStore = defineStore({
                     this.months.push(item);
                 });
                 
-                dateSelected.value = dateSelected.value ?? this.months[0];
+                currentMonth.value = currentMonth.value ?? this.months[0];
       
                 
                 return this.months
@@ -100,16 +100,24 @@ export const useOrderStore = defineStore({
 
         //Ajout d'un élement
         async addOrUpdateOrder(data: any, param?: any) {
+      
             try {
                 if (param) {
-                    // const response = await new ApiAxios().updatePartialForm(`/orders/${param}/`, data, param);
-                    // await this.fetchItems()
+               
+                    const OrderResponse = await new ApiAxios().updatePartialForm(`/orders/${param}/`, {status: data.order.status}, param);
+                    
+                     //Ajout des articles dans la commande
+                    data.orderLine.forEach(async (item: any) => {
+                        const response = await new ApiAxios().add('/orders-line/', {quantity: item.quantity,item: item.item.id, order: OrderResponse.data.id});
+                    });
+                    //Enregistrement de la date
+                    const archiveResponse = await new ApiAxios().add('/archives/', {order: OrderResponse.data.id});
+                   this.getUniqueMonth()
 
-                    this.$reset()
                     Swal.fire({
                         position: "center",
                         icon: "success",
-                        title: "Modification effectué",
+                        title: "Commande modifiée avec succès!",
                         showConfirmButton: false,
                         timer: 2000,
                         showClass: {
@@ -130,9 +138,8 @@ export const useOrderStore = defineStore({
                 } else {
                     
                     //Ajout de la commande
-                    console.log(data.order);
                     const OrderResponse = await new ApiAxios().add('/orders/', data.order);
-                    // return;
+                  
                     //Ajout des articles dans la commande
                     data.orderLine.forEach(async (item: any) => {
                         const response = await new ApiAxios().add('/orders-line/', {quantity: item.quantity,item: item.item.id, order: OrderResponse.data.id});
@@ -169,7 +176,7 @@ export const useOrderStore = defineStore({
              
             } catch (error) {
 
-                return Promise.reject("Autres erreur");
+                return Promise.reject(error + "Autres erreur");
             }
         },
          /**
