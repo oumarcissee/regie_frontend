@@ -90,7 +90,6 @@ export const useOrderStore = defineStore({
                 
                 currentMonth.value = currentMonth.value ?? this.months[0];
       
-                
                 return this.months
 
             } catch (error) {
@@ -147,6 +146,8 @@ export const useOrderStore = defineStore({
                     });
                 } else {
                     
+                    // console.log(data.order);
+                    // return;
                     //Ajout de la commande
                     const OrderResponse = await new ApiAxios().add('/orders/', data.order);
                   

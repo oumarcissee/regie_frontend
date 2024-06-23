@@ -30,6 +30,7 @@ onMounted(async () => {
     store.fetchOrdersLine();
 
     // loadingProvider.value = false;
+    //Chargement des fournisseurs
     await userStore.fetchProviders();
     loadingProvider.value = true;
 
@@ -102,6 +103,15 @@ const updateTableData = () => {
 
 
 //Affichage des commandes en fonction de mois 
+const providers: any = computed(() => {
+    const orders = store.orders.filter((item: any) => item.created_at.includes(currentMonth.value) || item.modified_at.includes(currentMonth.value));
+    const providersIds = orders.map((item: any) => item.provider.id);
+
+    //Ignore les fournissseur ayant une commande
+    return userStore.getProviders.filter((item: any)  =>  !providersIds.includes(item.id));
+})
+
+//Affichage des commandes en fonction de mois 
 const getOrders: any = computed(() => {
     return store.orders.filter((item: any)  => item.created_at.includes(currentMonth.value) || item.modified_at.includes(currentMonth.value));
 })
@@ -138,25 +148,25 @@ const submit = async () => {
             const data = {
                 order: order,
                 orderLine: productSelected.value
-            }
+            };
 
             if (editedIndex.value != -1) {
 
                 //Recuperation des articles liées à la commande
                 const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === editedIndex.value);
-                // console.log(ordersLine)
+     
                 //filtrer les articles non selectonés
                 const itemIds = ordersLine.map((item: any) => item.item.id);
                 useProduct.items.filter((item: any) => !itemIds.includes(item.id));
 
                 //Modification de commande
                 await addOrUpdateOrder(data, data.orderLine[0].order.id);
-                
 
             } else {
                 //Ajout d'une nouvelle de la commande
                 await addOrUpdateOrder(data);
             }
+
             await refreshTable();
         }
         
@@ -225,6 +235,7 @@ const editItem = (index: any) => {
 const deletion = async (index: any) => {
     try {
         await store.deleteItem(index, 'orders');
+
         await refreshTable(); // Rafraîchir les données après la suppression
     } catch (error) {
         console.error('Erreur lors de la suppression :', error);
@@ -331,7 +342,7 @@ const itemsSelected = ref<Item[]>([]);
                             <v-row>
                                 <v-col cols="12" >
                                     <CustomComBox 
-                                        :items="userStore.getProviders" 
+                                        :items="providers" 
                                         label="Selectionner un fournisseur (Client)" 
                                         title="last_name"
                                         v-model="provider.value.value" 
