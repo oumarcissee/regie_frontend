@@ -40,7 +40,6 @@ onMounted(async () => {
     loadingProducts.value = true
     // console.log(providers.value)
 
-
 });
 
 const getStatus = (value: any) => {
@@ -75,7 +74,6 @@ const { handleSubmit, handleReset , isSubmitting} = useForm({
 let increment = 0;
 const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => { 
         increment++
-    
     try {
         const product = useProduct.items.find((item: { id?: any }) => item?.id === data.products);
         // const user = userStore.providers.find((item: { id?: any }) => item?.id === data.provider);
@@ -103,13 +101,16 @@ const updateTableData = () => {
 
 
 //Affichage des commandes en fonction de mois 
-const providers: any = computed(() => {
+const providers = ref();
+
+const providersFiltred: any = computed(() => {
     const orders = store.orders.filter((item: any) => item.created_at.includes(currentMonth.value) || item.modified_at.includes(currentMonth.value));
     const providersIds = orders.map((item: any) => item.provider.id);
 
     //Ignore les fournissseur ayant une commande
-    return userStore.getProviders.filter((item: any)  =>  !providersIds.includes(item.id));
+    return userStore.getProviders.filter((item: any) => !providersIds.includes(item.id));
 })
+
 
 //Affichage des commandes en fonction de mois 
 const getOrders: any = computed(() => {
@@ -125,7 +126,7 @@ const refProduct = ref()
 
 const provider  = useField("provider");
 const products  = useField("products");
-const quantity = useField("quantity");
+const quantity  = useField("quantity");
 
 const status = ref(false);
 
@@ -133,7 +134,6 @@ const quantityItem = ref("");
 
 
 const submit = async () => {
-
     try {
         if (productSelected.value.length === 0) {
             //Si rin n'est selectioné
@@ -201,7 +201,6 @@ const QuantityDialog = ref(false)
 
 const editedIndex = ref(-1);
 
-
 function close() {
     dialog.value = false;
     editedIndex.value = -1
@@ -211,13 +210,15 @@ function close() {
 }
 
 // Méthode pour modifier un élément
-const editItem = (index: any) => {
-    dialog.value      = true;
-    editedIndex.value = index.id;
-    isSelected.value  = true;
+const editItem = async(index: any) => {
+    provider.value.value = index.provider?.id || null;
+
+
+    dialog.value        = true;
+    editedIndex.value   = index.id;
+    isSelected.value    = true;
 
     //Selection de fournisseur.
-    provider.value.value = index.provider.id;
     status.value = index.status;
 
     //Recuperation des articles liées à la commande
@@ -342,7 +343,7 @@ const itemsSelected = ref<Item[]>([]);
                             <v-row>
                                 <v-col cols="12" >
                                     <CustomComBox 
-                                        :items="providers" 
+                                        :items="editedIndex === -1 ?  providersFiltred : userStore.getProviders" 
                                         label="Selectionner un fournisseur (Client)" 
                                         title="last_name"
                                         v-model="provider.value.value" 
