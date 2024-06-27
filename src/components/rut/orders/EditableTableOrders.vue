@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted,  onUnmounted} from 'vue';
+import { ref, computed, onMounted,  onUnmounted, watch} from 'vue';
 import { truncateText, currentUser, currentProduct, currentMonth, get_full_unite} from '@/services/utils';
 
 
@@ -101,7 +101,6 @@ const updateTableData = () => {
 
 
 //Affichage des commandes en fonction de mois 
-const providers = ref();
 
 const providersFiltred: any = computed(() => {
     const orders = store.orders.filter((item: any) => item.created_at.includes(currentMonth.value) || item.modified_at.includes(currentMonth.value));
@@ -189,7 +188,7 @@ let userSeletected: Object;
 
 // const providers = ref([]);
 let productSelected: Object | any = ref([]);
-const isSelected  = ref(false);
+const isSelected      = ref(false);
 const loadingProvider = ref(false);
 const loadingProducts = ref(false);
 
@@ -212,7 +211,6 @@ function close() {
 // Méthode pour modifier un élément
 const editItem = async(index: any) => {
     provider.value.value = index.provider?.id || null;
-
 
     dialog.value        = true;
     editedIndex.value   = index.id;
@@ -305,10 +303,10 @@ const headers: Header[] = [
 ];
 
 
-
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 
 const itemsSelected = ref<Item[]>([]);
+
 
 </script>
 <template>
@@ -326,11 +324,32 @@ const itemsSelected = ref<Item[]>([]);
         </v-col>
         <v-col cols="12" lg="8" md="6" class="text-right ">      
             <v-dialog v-model="dialog" max-width="800" persistent class="dialog-mw">
-                <template v-slot:activator="{ props }">
-                    <v-btn color="primary" v-bind="props" flat class="ml-auto">
-                        <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Ajouter une commande
-                    </v-btn>
+               <template v-slot:activator="{ props }">
+                    <v-col v-if="itemsSelected.length">
+                        <v-btn  flat class="ml-auto">
+                            <div class="d-flex gap-2 justify-end">
+                                <v-btn icon variant="text" >
+                                    <CopyIcon size="20" />
+                                </v-btn>
+                                <v-btn icon variant="text" >
+                                    <PrinterIcon size="20" />
+                                </v-btn>
+                                <!-- <v-btn icon variant="text" >
+                                    <FilterIcon size="20" />
+                                </v-btn> -->
+                            </div>
+                        </v-btn>
+                    </v-col>
+
+                    <v-col v-else>
+                        <v-btn color="primary" v-bind="props" flat class="ml-auto" >
+                            <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Ajouter une commande
+                        </v-btn>
+                    </v-col>
                 </template>
+
+                
+
                  <!-- Formulaire de commande -->
                 <v-card>
                     <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
@@ -519,37 +538,35 @@ const itemsSelected = ref<Item[]>([]);
         :search-value="searchValue"
         :rows-per-page="8"
         v-model:items-selected="itemsSelected"
+        show-index
         >
 
-      
         <template #item-ref="{ ref }">
             <div class="player-wrapper">
                 {{ ref }}
             </div>
         </template>
-
+        
         <template #item-image="{ image }">
             <div class="player-wrapper">
                 <img alt="user" width="70" class="rounded-circle img-fluid" :src="image" />
             </div>
         </template>
-
+        
         <template #item-last_name="{first_name, last_name}">
             <div class="player-wrapper">
                 <h5 class="text-h5">{{ last_name }}</h5>
                 <span class="text-subtitle-1 d-block mt-1 textSecondary">{{ first_name }}</span>
             </div>
         </template>
-
+        
         <template #item-contact="{contact, email}">
             <div class="player-wrapper">
                 <h5 class="text-h5">{{ contact }}</h5>
                 <span class="text-subtitle-1 d-block mt-1 textSecondary">{{ email }}</span>
             </div>
         </template>
-
-
-
+        
         <!-- <template #item-user="{ user}">
             <div class="player-wrapper">
                 <h5 class="text-h5">{{ user }}</h5>
@@ -561,50 +578,51 @@ const itemsSelected = ref<Item[]>([]);
                 
             </div>
         </template>
-
+        
         <template #item-modified_at="{ modified_at }">
             <div class="player-wrapper">
                 <h5 class="text-h5">{{modified_at}}</h5>  
             </div>
         </template>
+        
         <template #item-status="{ status }">
             <div class="player-wrapper">
                 <v-chip color="success" v-if="status" size="small"> Activé </v-chip>
                 <v-chip color="error" v-else size="small"> Desactivé</v-chip>
             </div>
         </template>
-
+        
         <template #item-operation="item">
             <div class="operation-wrapper"><div class="d-flex align-center">
                 <v-tooltip text="Editer">
                     <template v-slot:activator="{ props }">
                         <v-btn icon flat @click="editItem(item)" v-bind="props"
-                            ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
+                        ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
                         /></v-btn>
                     </template>
                 </v-tooltip>
 
-                 <v-tooltip text="Voir">
-                    <template v-slot:activator="{ props }">
-                        <v-btn icon flat @click="" v-bind="props"
-                            ><ListIcon stroke-width="1.5" size="20" class="text-primary"
-                        /></v-btn>
-                    </template>
-                </v-tooltip>
-                <v-tooltip text="Supprimer">
-                    <template v-slot:activator="{ props }">
-                        <v-btn icon flat @click="deletion(item)"  v-bind="props"
+                 <!-- <v-tooltip text="Voir">
+                     <template v-slot:activator="{ props }">
+                         <v-btn icon flat @click="" v-bind="props"
+                         ><ListIcon stroke-width="1.5" size="20" class="text-primary"
+                         /></v-btn>
+                        </template>
+                    </v-tooltip> -->
+                    <v-tooltip text="Supprimer">
+                        <template v-slot:activator="{ props }">
+                            <v-btn icon flat @click="deletion(item)"  v-bind="props"
                             ><TrashIcon stroke-width="1.5" size="20" class="text-error"
-                        /></v-btn>
-                    </template>
-                </v-tooltip>
-               
-            </div>
-
+                            /></v-btn>
+                        </template>
+                    </v-tooltip>
+                    
+                </div>
+                
             </div>
         </template>
-    </EasyDataTable>
 
+    </EasyDataTable>
 </template>
 
 
