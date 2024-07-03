@@ -53,8 +53,12 @@ export const useOrderStore = defineStore({
                     item.first_name = item.provider.first_name;
                     item.last_name = item.provider.last_name;
                     item.contact  = item.provider.phone_number;
-                    item.email   = item.provider.email;
+                    item.email = item.provider.email;
+                    item.id = item.id;
+                 
                 });
+
+
             } catch (error) {
                 alert(error);
                 console.log(error);

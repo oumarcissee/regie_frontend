@@ -20,14 +20,16 @@ const   store = useOrderStore();
 import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBox.vue';
 import CustomComBoxProduct from '@/components/forms/form-elements/autocomplete/CustomComBoxProduct.vue';
 
+import { jsPDF } from "jspdf";
+
 
 const { addOrUpdateOrder, errors } = useOrderStore();
 
 
 onMounted(async () => {
+    await store.fetchOrdersLine();
     await store.fetchOrders();
     //Les lignes de commande
-    store.fetchOrdersLine();
 
     // loadingProvider.value = false;
     //Chargement des fournisseurs
@@ -114,6 +116,10 @@ const providersFiltred: any = computed(() => {
 //Affichage des commandes en fonction de mois 
 const getOrders: any = computed(() => {
     return store.orders.filter((item: any)  => item.created_at.includes(currentMonth.value) || item.modified_at.includes(currentMonth.value));
+})
+
+const getOrdersLine: any = computed(() => {
+    return store.ordersLine;
 })
 
 const formData = new FormData();
@@ -296,8 +302,8 @@ const headers: Header[] = [
     { text: '', value: 'image', sortable: true },
     { text: 'Destinateur', value: 'last_name', sortable: true },
     { text: 'Contact', value: 'contact', sortable: true },
-    { text: 'Fait le', value: 'created_at', sortable: true },
-    { text: 'Modifié le', value: 'modified_at', sortable: true },
+    { text: 'Faite le', value: 'created_at', sortable: true },
+    { text: 'Modifiée le', value: 'modified_at', sortable: true },
     { text: 'Statut', value: 'status' , sortable: true },
     { text: 'Actions', value: 'operation' }
 ];
@@ -307,6 +313,40 @@ const themeColor = ref('rgb(var(--v-theme-secondary))');
 
 const itemsSelected = ref<Item[]>([]);
 
+// Print Preview and Print Functionality
+const printPreviewDialog = ref(false);
+
+const openPrintPreview = () => {
+  printPreviewDialog.value = true;
+};
+
+const printContent = () => {
+  const printDiv = document.getElementById('printableArea');
+  const newWin = window.open('');
+  newWin!.document.write('<html><head><title>Print</title></head><body>');
+  newWin!.document.write(printDiv!.outerHTML);
+  newWin!.document.write('</body></html>');
+  newWin!.document.close();
+  newWin!.print();
+  newWin!.close();
+};
+
+
+const savePDF = () => {
+    // Landscape export, 2×4 inches
+    const doc = new jsPDF({
+        // orientation: "landscape",
+       
+    });
+
+    doc.text("Hello world!", 10, 10);
+    doc.save("two-by-four.pdf");
+
+    // Create a Blob URL and open it
+    const blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+    window.open(url);
+}
 
 </script>
 <template>
@@ -320,30 +360,31 @@ const itemsSelected = ref<Item[]>([]);
                 density="compact"
                 hide-details
                 prepend-inner-icon="mdi-magnify"
+                class="ml-auto"
             />
         </v-col>
         <v-col cols="12" lg="8" md="6" class="text-right ">      
             <v-dialog v-model="dialog" max-width="800" persistent class="dialog-mw">
                <template v-slot:activator="{ props }">
                     <v-col v-if="itemsSelected.length">
-                        <v-btn  flat class="ml-auto">
-                            <div class="d-flex gap-2 justify-end">
-                                <v-btn icon variant="text" >
-                                    <CopyIcon size="20" />
-                                </v-btn>
-                                <v-btn icon variant="text" >
-                                    <PrinterIcon size="20" />
-                                </v-btn>
-                                <!-- <v-btn icon variant="text" >
-                                    <FilterIcon size="20" />
-                                </v-btn> -->
-                            </div>
-                        </v-btn>
+                        
+                        <div class="d-flex gap-2 justify-end">
+                            <!-- <v-btn icon variant="text" >
+                                <CopyIcon size="20" />
+                            </v-btn> -->
+                            <v-btn icon variant="text" @click="openPrintPreview()" flat class="ml-auto"> 
+                                <PrinterIcon size="20" />
+                            </v-btn>
+                            <v-btn icon variant="text" @click="savePDF">
+                                <FilterIcon size="20" />
+                            </v-btn>
+                        </div>
+                
                     </v-col>
 
                     <v-col v-else>
                         <v-btn color="primary" v-bind="props" flat class="ml-auto" >
-                            <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Ajouter une commande
+                            <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Passer une commande
                         </v-btn>
                     </v-col>
                 </template>
@@ -528,7 +569,7 @@ const itemsSelected = ref<Item[]>([]);
             </v-dialog>
         </v-col>
     </v-row>
-
+    <!-- Liste des commandes par mois -->
     <EasyDataTable
         :headers="headers"
         :items="getOrders"
@@ -539,6 +580,8 @@ const itemsSelected = ref<Item[]>([]);
         :rows-per-page="8"
         v-model:items-selected="itemsSelected"
         show-index
+        buttons-pagination
+        itemKey="ref"
         >
 
         <template #item-ref="{ ref }">
@@ -566,12 +609,7 @@ const itemsSelected = ref<Item[]>([]);
                 <span class="text-subtitle-1 d-block mt-1 textSecondary">{{ email }}</span>
             </div>
         </template>
-        
-        <!-- <template #item-user="{ user}">
-            <div class="player-wrapper">
-                <h5 class="text-h5">{{ user }}</h5>
-            </div>
-        </template> -->
+      
         <template #item-created_at="{ created_at }">
             <div class="player-wrapper">
                 <h5 class="text-h5">{{created_at}}</h5>
@@ -587,8 +625,8 @@ const itemsSelected = ref<Item[]>([]);
         
         <template #item-status="{ status }">
             <div class="player-wrapper">
-                <v-chip color="success" v-if="status" size="small"> Activé </v-chip>
-                <v-chip color="error" v-else size="small"> Desactivé</v-chip>
+                <v-chip color="success" v-if="status" size="small"> En cours </v-chip>
+                <v-chip color="error" v-else size="small"> Cloturée</v-chip>
             </div>
         </template>
         
@@ -623,6 +661,32 @@ const itemsSelected = ref<Item[]>([]);
         </template>
 
     </EasyDataTable>
+
+        <!-- Print Preview Dialog -->
+    <v-dialog v-model="printPreviewDialog" max-width="600px">
+        <v-card>
+        <v-card-title>Print Preview</v-card-title>
+        <v-card-text>
+            <div id="printableArea">
+                <div v-for="item in itemsSelected" :key="item.id">
+                <h3>Commande Details</h3>
+                <p>Référence: {{ item.ref }}</p>
+                <p>Destinateur: {{ item.last_name }}</p>
+                <p>Contact: {{ item.contact }}</p>
+                <p>Faite le: {{ item.created_at }}</p>
+                <p>Modifiée le: {{ item.modified_at }}</p>
+                <p>Statut: {{ item.status ? 'Cloturée' : 'En cours' }}</p>
+            </div>
+            </div>
+        </v-card-text>
+        <v-card-actions>
+            <v-btn color="primary" @click="printContent">Print</v-btn>
+            <v-btn @click="printPreviewDialog = false">Close</v-btn>
+        </v-card-actions>
+        </v-card>
+    </v-dialog>
 </template>
 
+<style>
 
+</style>
