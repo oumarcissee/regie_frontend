@@ -38,6 +38,7 @@ export const useOrderStore = defineStore({
         // Fetch followers from action
         
         async fetchOrders() {
+            await this.fetchOrdersLine()//Récuperation des lignes de commandes
             try {
                 const response = await new ApiAxios().find(`/orders/`);
 
@@ -55,6 +56,8 @@ export const useOrderStore = defineStore({
                     item.contact  = item.provider.phone_number;
                     item.email = item.provider.email;
                     item.id = item.id;
+
+                    item.orders =  this.ordersLine.filter((itemLine: { order?: any }) => itemLine?.order?.id === item.id);
                  
                 });
 
