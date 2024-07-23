@@ -280,7 +280,7 @@ const searchField = ref(['ref', 'last_name', 'created_at']);
 const searchValue = ref('');
 
 const headers: Header[] = [
-    { text: 'Référence', value: 'ref' },
+    // { text: 'Référence', value: 'ref' },
     { text: '', value: 'image', sortable: true },
     { text: 'Destinateur', value: 'last_name', sortable: true },
     { text: 'Contact', value: 'contact', sortable: true },
@@ -301,7 +301,22 @@ const openPrintPreview = () => {
     printPreviewDialog.value = true;
 };
 
-const printableArea = ref('');
+const closePrintPreviewDialog = () => {
+
+    itemsSelected.value = [];
+
+    printPreviewDialog.value = false
+}
+
+const Preview = (item: any) => {
+
+    itemsSelected.value.push(item);
+    openPrintPreview();
+ 
+}
+
+
+const printableArea = ref();
 
 const printContent = () => {
     const printDiv = document.getElementById('printableArea');
@@ -316,15 +331,24 @@ const printContent = () => {
 
 const heading = ref('TEST_heading');
 
-const genererPDF = () => {
+const genererPDF = async () => {
     const doc = new jsPDF({
         // orientation: 'landscape',
         unit: 'in',
         format: 'letter' //[2, 4]
     });
 
-    //Definition de l'entête
-    doc.setFontSize(16).text(heading.value, 0.5, 1.0);
+    
+
+    // const element = printableArea;
+    // const canvas = await html2canvas(element, { scale: 2 });
+    // const imgData = canvas.toDataURL('image/png');
+    // const imgProps = doc.getImageProperties(imgData);
+    // const pdfWidth = doc.internal.pageSize.getWidth();
+    // const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    // doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    // doc.save('Aperçu_Impression.pdf');
     
 
     //Enregistrement
@@ -335,7 +359,7 @@ const genererPDF = () => {
     // const url = URL.createObjectURL(blob);
     // window.open(url);
 
-    doc.save(`${heading.value}.pdf`);
+    // doc.save(`${heading.value}.pdf`);
 };
 
 const savePDF = () => {
@@ -359,6 +383,8 @@ const savePDF = () => {
     window.open(url);
 };
 </script>
+
+
 <template>
     <v-row class="mb-4">
         <v-col cols="12" lg="4" md="6">
@@ -384,7 +410,7 @@ const savePDF = () => {
                             <v-btn icon variant="text" @click="openPrintPreview()" flat class="ml-auto">
                                 <PrinterIcon size="20" />
                             </v-btn>
-                            <v-btn icon variant="text" @click="genererPDF">
+                            <v-btn icon variant="text" @click="printContent">
                                 <FilterIcon size="20" />
                             </v-btn>
                         </div>
@@ -572,11 +598,6 @@ const savePDF = () => {
         buttons-pagination
         itemKey="ref"
     >
-        <template #item-ref="{ ref }">
-            <div class="player-wrapper">
-                {{ ref }}
-            </div>
-        </template>
 
         <template #item-image="{ image }">
             <div class="player-wrapper">
@@ -628,13 +649,13 @@ const savePDF = () => {
                         </template>
                     </v-tooltip>
 
-                    <!-- <v-tooltip text="Voir">
+                    <v-tooltip text="Voir">
                      <template v-slot:activator="{ props }">
-                         <v-btn icon flat @click="" v-bind="props"
-                         ><ListIcon stroke-width="1.5" size="20" class="text-primary"
+                         <v-btn icon flat @click="Preview(item)" v-bind="props"
+                         ><PrinterIcon stroke-width="1.5" size="20" class="text-primary"
                          /></v-btn>
                         </template>
-                    </v-tooltip> -->
+                    </v-tooltip>
                     <v-tooltip text="Supprimer">
                         <template v-slot:activator="{ props }">
                             <v-btn icon flat @click="deletion(item)" v-bind="props"
@@ -648,7 +669,7 @@ const savePDF = () => {
     </EasyDataTable>
 
     <!-- Print Preview Dialog -->
-    <v-dialog v-model="printPreviewDialog" max-width="800px">
+    <v-dialog v-model="printPreviewDialog" max-width="800px" persistent>
         <v-card>
             <v-card-title class="h2">Aperçu de l'impression</v-card-title>
             <v-card-text>
@@ -683,7 +704,7 @@ const savePDF = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                           
+                                            
                                             <tr v-for="(order, index) in item.orders" :key="index">
                                                 <td class="text-subtitle-1">{{ index + 1 }}</td>
                                                 <!-- <td class="text-subtitle-1">{{ item.product.ref }}</td> -->
@@ -728,8 +749,8 @@ const savePDF = () => {
                 </div>
             </v-card-text>
             <v-card-actions>
-                <v-btn color="primary" @click="printContent">Print</v-btn>
-                <v-btn @click="printPreviewDialog = false">Close</v-btn>
+                <v-btn color="primary" @click="genererPDF">Print</v-btn>
+                <v-btn @click="closePrintPreviewDialog">Close</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
