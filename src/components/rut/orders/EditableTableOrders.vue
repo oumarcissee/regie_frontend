@@ -331,57 +331,39 @@ const printContent = () => {
 
 const heading = ref('TEST_heading');
 
-const genererPDF = async () => {
+const genererPDF =  () => {
     const doc = new jsPDF({
         // orientation: 'landscape',
         unit: 'in',
         format: 'letter' //[2, 4]
     });
 
-    
+    // doc.text("Bonjour", 1, 1);
 
-    // const element = printableArea;
-    // const canvas = await html2canvas(element, { scale: 2 });
-    // const imgData = canvas.toDataURL('image/png');
-    // const imgProps = doc.getImageProperties(imgData);
-    // const pdfWidth = doc.internal.pageSize.getWidth();
-    // const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    itemsSelected.value.forEach((item, index) => {
+        doc.text(`Reference: ${item.ref}`, 1, 1);
+        doc.text(`Nom du destinateur: ${item.last_name}`, 1, 2);
+        doc.text(`Contact: ${item.contact}`, 1, 3);
+        doc.text(`Crée le: ${item.created_at}`, 1, 4);
+        doc.text(`Modifiée le: ${item.modified_at}`, 1, 5);
+        doc.text(`Statut: ${item.status}`, 1, 6);
 
-    // doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    // doc.save('Aperçu_Impression.pdf');
-    
+        if (index < itemsSelected.value.length - 1) {
+            doc.addPage();
+        }
+    });
 
-    //Enregistrement
-    // doc.autoPrint();
-
-    // Create a Blob URL and open it
-    // const blob = doc.output('blob');
-    // const url = URL.createObjectURL(blob);
-    // window.open(url);
-
-    // doc.save(`${heading.value}.pdf`);
-};
-
-const savePDF = () => {
-    // Landscape export, 2×4 inches
-    const doc = new jsPDF();
-
-    const margins = {
-        top: 80,
-        bottom: 60,
-        left: 40,
-        width: 522
-    };
-
-    doc.html(printableArea.value);
-
-    doc.save('MYDOC.pdf');
 
     // Create a Blob URL and open it
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);
     window.open(url);
+
+    doc.save(`${heading.value}.pdf`);
 };
+
+
+
 </script>
 
 
