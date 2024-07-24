@@ -19,6 +19,8 @@ import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomCo
 import CustomComBoxProduct from '@/components/forms/form-elements/autocomplete/CustomComBoxProduct.vue';
 
 import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
 import html2canvas from 'html2canvas';
 
 const { addOrUpdateOrder, errors } = useOrderStore();
@@ -348,9 +350,23 @@ const genererPDF =  () => {
         doc.text(`Modifiée le: ${item.modified_at}`, 1, 5);
         doc.text(`Statut: ${item.status}`, 1, 6);
 
+        // console.log(item);
+
+
+        // autoTable(doc, { html: '#myTabledd' })
+
+        autoTable(doc, {
+            head: [['N°', 'Article', 'Quantité', 'Unité']],
+            body: item.orders.map((value: any, i: number) => [i + 1, value.item.name, value.quantity,  get_full_unite(value.item.unite)]),
+         })
+       
+
+
         if (index < itemsSelected.value.length - 1) {
             doc.addPage();
         }
+
+        
     });
 
 
@@ -361,6 +377,7 @@ const genererPDF =  () => {
 
     doc.save(`${heading.value}.pdf`);
 };
+
 
 
 
@@ -674,7 +691,7 @@ const genererPDF =  () => {
 
                         <v-row>
                             <v-col>
-                                <v-table class="mt-5" id="myTable">
+                                <v-table class="mt-5" id="myTabledd">
                                         <thead>
                                             <tr>
                                                 <th class="text-subtitle-1 font-weight-semibold">N°</th>
