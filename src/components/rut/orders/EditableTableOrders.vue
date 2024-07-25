@@ -333,50 +333,136 @@ const printContent = () => {
 
 const heading = ref('TEST_heading');
 
-const genererPDF =  () => {
+const genererPDF = () => {
     const doc = new jsPDF({
-        // orientation: 'landscape',
         unit: 'in',
-        format: 'letter' //[2, 4]
+        format: 'a4'
     });
 
-    // doc.text("Bonjour", 1, 1);
+    const totalPages = itemsSelected.value.length;
+
+    const header = () => {
+    const pageWidth = doc.internal.pageSize.width;
+
+    doc.setFontSize(10);
+    doc.text("République de Guinée", pageWidth - 0.5, 0.5, { align: 'right' }); // Texte aligné à droite
+
+    doc.setFontSize(10);
+    doc.setTextColor(255, 0, 0); // Rouge
+    doc.text("Travail", pageWidth - 1.5, 0.75, { align: 'right' }); // Texte aligné à droite
+    
+    const travailWidth = doc.getTextWidth("Travail-");
+    doc.setTextColor(255, 255, 0); // Jaune
+    doc.text("Justice", pageWidth - 1.4 + travailWidth, 0.75, { align: 'right' }); // Texte aligné à droite
+    
+    const justiceWidth = doc.getTextWidth("Justice- ");
+    doc.setTextColor(0, 255, 0); // Vert
+    doc.text("Solidarité", pageWidth - 1.3 + travailWidth + justiceWidth, 0.75, { align: 'right' }); // Texte aligné à droite
+
+    doc.setTextColor(0, 0, 0); // Noir
+    doc.text("Ministère de la Défense Nationale", 0.5, 0.5); // Texte aligné à gauche
+    
+    doc.setFontSize(10);
+    doc.text("Direction Générale de l'Intendance Militaire", 0.5, 0.75); // Texte aligné à gauche
+
+    doc.setFontSize(10);
+    doc.text("Régie des Unités Territoriales", 0.5, 1);
+
+    doc.setFontSize(10);
+    doc.text("No______/Régie UT/2024", 0.5, 1.25);
+
+    // doc.setFontSize(16);
+    // doc.text("Bon de Commande", pageWidth / 2, 1, { align: 'center' });
+    };
+
+
+
+    const footer = (pageNumber: number) => {
+        doc.setFontSize(10);
+        doc.text(`Page ${pageNumber} of ${totalPages}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 0.5, {
+            align: 'center'
+        });
+    };
 
     itemsSelected.value.forEach((item, index) => {
-        doc.text(`Reference: ${item.ref}`, 1, 1);
-        doc.text(`Nom du destinateur: ${item.last_name}`, 1, 2);
-        doc.text(`Contact: ${item.contact}`, 1, 3);
-        doc.text(`Crée le: ${item.created_at}`, 1, 4);
-        doc.text(`Modifiée le: ${item.modified_at}`, 1, 5);
-        doc.text(`Statut: ${item.status}`, 1, 6);
-
-        // console.log(item);
-
-
-        // autoTable(doc, { html: '#myTabledd' })
-
-        autoTable(doc, {
-            head: [['N°', 'Article', 'Quantité', 'Unité']],
-            body: item.orders.map((value: any, i: number) => [i + 1, value.item.name, value.quantity,  get_full_unite(value.item.unite)]),
-         })
-       
-
-
-        if (index < itemsSelected.value.length - 1) {
+        if (index > 0) {
             doc.addPage();
         }
-
         
+        header();
+        footer(index + 1);
+
+        let yCoord = 2.75; // Initial y coordinate after header
+        doc.setFontSize(12);
+        doc.text(`Reference: ${item.ref}`, 1, yCoord);
+        yCoord += 0.5; // Adjust the increment to fit your layout
+
+        doc.text(`Nom du destinateur: ${item.last_name}`, 1, yCoord);
+        yCoord += 0.5;
+
+        doc.text(`Contact: ${item.contact}`, 1, yCoord);
+        yCoord += 0.5;
+
+        doc.text(`Crée le: ${item.created_at}`, 1, yCoord);
+        yCoord += 0.5;
+
+        doc.text(`Modifiée le: ${item.modified_at}`, 1, yCoord);
+        yCoord += 0.5;
+
+        const body = item.orders.map((value: { item: { name: any; unite: any; }; quantity: any; }, i: number) => {
+            return [
+                i + 1,
+                {
+                    content: '',
+                    styles: {
+                        cellWidth: 1,
+                        cellHeight: 0.5
+                    }
+                },
+                value.item.name,
+                value.quantity,
+                get_full_unite(value.item.unite),
+            ];
+        });
+
+        autoTable(doc, {
+            startY: yCoord, // Start the table below the text
+            head: [['N°', 'Image', 'Article', 'Quantité', 'Unité', 'Obs']],
+            body: body,
+            styles: {
+                fontSize: 16 // Increase the font size as needed
+            },
+            didDrawCell: function(data) {
+                if (data.column.index === 1 && data.cell.section === 'body') {
+                    const value = item.orders[data.row.index];
+                    const imgData = value.item.image;
+
+                    if (imgData) {
+                        const padding = 0.1;
+                        const cellHeight = data.cell.height - padding * 2;
+                        const cellWidth = data.cell.width - padding * 2;
+                        let imgWidth = cellWidth;
+                        let imgHeight = cellHeight;
+
+                        // Calculate x and y to center the image in the cell
+                        const xOffset = (data.cell.width - imgWidth) / 2;
+                        const yOffset = (data.cell.height - imgHeight) / 2;
+
+                        doc.addImage(imgData, 'PNG', data.cell.x + xOffset, data.cell.y + yOffset, imgWidth, imgHeight);
+                    }
+                }
+            }
+        });
     });
 
-
-    // Create a Blob URL and open it
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);
     window.open(url);
 
     doc.save(`${heading.value}.pdf`);
 };
+
+
 
 
 
