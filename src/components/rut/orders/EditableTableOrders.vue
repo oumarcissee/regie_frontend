@@ -21,7 +21,9 @@ import CustomComBoxProduct from '@/components/forms/form-elements/autocomplete/C
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-import html2canvas from 'html2canvas';
+// import html2pdf from 'html2pdf.js';
+
+
 
 const { addOrUpdateOrder, errors } = useOrderStore();
 
@@ -334,6 +336,7 @@ const printContent = () => {
 const heading = ref('TEST_heading');
 
 const genererPDF = () => {
+
     const doc = new jsPDF({
         unit: 'in',
         format: 'a4'
@@ -342,40 +345,46 @@ const genererPDF = () => {
     const totalPages = itemsSelected.value.length;
 
     const header = () => {
-    const pageWidth = doc.internal.pageSize.width;
+        const pageWidth = doc.internal.pageSize.width;
 
-    doc.setFontSize(10);
-    doc.text("République de Guinée", pageWidth - 0.5, 0.5, { align: 'right' }); // Texte aligné à droite
+        doc.setFontSize(10);
+        doc.text("République de Guinée", pageWidth - 0.5, 0.5, { align: 'right' }); // Texte aligné à droite
 
-    doc.setFontSize(10);
-    doc.setTextColor(255, 0, 0); // Rouge
-    doc.text("Travail", pageWidth - 1.5, 0.75, { align: 'right' }); // Texte aligné à droite
+        doc.setFontSize(10);
+        doc.setTextColor(255, 0, 0); // Rouge
+        doc.text("Travail", pageWidth - 1.5, 0.75, { align: 'right' }); // Texte aligné à droite
+        
+        const travailWidth = doc.getTextWidth("Travail-");
+        doc.setTextColor(255, 255, 0); // Jaune
+        doc.text("Justice", pageWidth - 1.4 + travailWidth, 0.75, { align: 'right' }); // Texte aligné à droite
+        
+        const justiceWidth = doc.getTextWidth("Justice- ");
+        doc.setTextColor(0, 255, 0); // Vert
+        doc.text("Solidarité", pageWidth - 1.3 + travailWidth + justiceWidth, 0.75, { align: 'right' }); // Texte aligné à droite
+
+        doc.setTextColor(0, 0, 0); // Noir
+        doc.text("Ministère de la Défense Nationale", 0.5, 0.5); // Texte aligné à gauche
+        
+        doc.setFontSize(10);
+        doc.text("Direction Générale de l'Intendance Militaire", 0.5, 0.75); // Texte aligné à gauche
+
+
+        const img = '../../../public/assets/apps/armoirie-guinée-1024x513.png';
+        const imgWidth = 1.75; // Largeur de l'image en unités
+        const imgX = (pageWidth - imgWidth) / 2; // Calcul de la position x pour centrer l'image
+
+        doc.addImage(img, "PNG", imgX , 0.3, imgWidth, 1); // Image centrée
     
-    const travailWidth = doc.getTextWidth("Travail-");
-    doc.setTextColor(255, 255, 0); // Jaune
-    doc.text("Justice", pageWidth - 1.4 + travailWidth, 0.75, { align: 'right' }); // Texte aligné à droite
-    
-    const justiceWidth = doc.getTextWidth("Justice- ");
-    doc.setTextColor(0, 255, 0); // Vert
-    doc.text("Solidarité", pageWidth - 1.3 + travailWidth + justiceWidth, 0.75, { align: 'right' }); // Texte aligné à droite
 
-    doc.setTextColor(0, 0, 0); // Noir
-    doc.text("Ministère de la Défense Nationale", 0.5, 0.5); // Texte aligné à gauche
-    
-    doc.setFontSize(10);
-    doc.text("Direction Générale de l'Intendance Militaire", 0.5, 0.75); // Texte aligné à gauche
+        doc.setFontSize(10);
+        doc.text("Régie des Unités Territoriales", 0.5, 1);
 
-    doc.setFontSize(10);
-    doc.text("Régie des Unités Territoriales", 0.5, 1);
-
-    doc.setFontSize(10);
-    doc.text("No______/Régie UT/2024", 0.5, 1.25);
+        doc.setFontSize(10);
+        doc.text("No______/Régie UT/2024", 0.5, 1.25);
 
     // doc.setFontSize(16);
     // doc.text("Bon de Commande", pageWidth / 2, 1, { align: 'center' });
     };
-
-
 
     const footer = (pageNumber: number) => {
         doc.setFontSize(10);
@@ -461,7 +470,6 @@ const genererPDF = () => {
 
     doc.save(`${heading.value}.pdf`);
 };
-
 
 
 
