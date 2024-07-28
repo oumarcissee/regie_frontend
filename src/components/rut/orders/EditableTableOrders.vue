@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { truncateText, currentUser, currentProduct, currentMonth, get_full_unite } from '@/services/utils';
+import { orderFormPdf } from '@/utils/helpers/pdfForms/orderFormPdf';
 
 import { useField, useForm } from 'vee-validate';
 
@@ -283,6 +284,7 @@ const formButton = computed(() => {
 const searchField = ref(['ref', 'last_name', 'created_at']);
 const searchValue = ref('');
 
+
 const headers: Header[] = [
     // { text: 'Référence', value: 'ref' },
     { text: '', value: 'image', sortable: true },
@@ -303,7 +305,8 @@ const printPreviewDialog = ref(false);
 
 const openPrintPreview = () => {
     printPreviewDialog.value = true;
-};
+}
+
 
 const closePrintPreviewDialog = () => {
 
@@ -312,15 +315,18 @@ const closePrintPreviewDialog = () => {
     printPreviewDialog.value = false
 }
 
+
 const Preview = (item: any) => {
 
     itemsSelected.value.push(item);
     openPrintPreview();
- 
 }
 
 
+
 const printableArea = ref();
+
+
 
 const printContent = () => {
     const printDiv = document.getElementById('printableArea');
@@ -331,145 +337,43 @@ const printContent = () => {
     newWin!.document.close();
     newWin!.print();
     newWin!.close();
-};
-
-const heading = ref('TEST_heading');
-
-const genererPDF = () => {
-
-    const doc = new jsPDF({
-        unit: 'in',
-        format: 'a4'
-    });
-
-    const totalPages = itemsSelected.value.length;
-
-    const header = () => {
-        const pageWidth = doc.internal.pageSize.width;
-
-        doc.setFontSize(10);
-        doc.text("République de Guinée", pageWidth - 0.5, 0.5, { align: 'right' }); // Texte aligné à droite
-
-        doc.setFontSize(10);
-        doc.setTextColor(255, 0, 0); // Rouge
-        doc.text("Travail", pageWidth - 1.5, 0.75, { align: 'right' }); // Texte aligné à droite
-        
-        const travailWidth = doc.getTextWidth("Travail-");
-        doc.setTextColor(255, 255, 0); // Jaune
-        doc.text("Justice", pageWidth - 1.4 + travailWidth, 0.75, { align: 'right' }); // Texte aligné à droite
-        
-        const justiceWidth = doc.getTextWidth("Justice- ");
-        doc.setTextColor(0, 255, 0); // Vert
-        doc.text("Solidarité", pageWidth - 1.3 + travailWidth + justiceWidth, 0.75, { align: 'right' }); // Texte aligné à droite
-
-        doc.setTextColor(0, 0, 0); // Noir
-        doc.text("Ministère de la Défense Nationale", 0.5, 0.5); // Texte aligné à gauche
-        
-        doc.setFontSize(10);
-        doc.text("Direction Générale de l'Intendance Militaire", 0.5, 0.75); // Texte aligné à gauche
+}
 
 
-        const img = '../../../public/assets/apps/armoirie-guinée-1024x513.png';
-        const imgWidth = 1.75; // Largeur de l'image en unités
-        const imgX = (pageWidth - imgWidth) / 2; // Calcul de la position x pour centrer l'image
 
-        doc.addImage(img, "PNG", imgX , 0.3, imgWidth, 1); // Image centrée
+const heading = ref('');
+
+
+
+const isSubmittingPdf = ref();
+
+
+
+// //Création du pdf
+// const doPdf = async () => {
+//     isSubmittingPdf.value = true;
+
+//     await orderFormPdf(heading.value, itemsSelected.value);
+
+//     isSubmittingPdf.value = false;
+//     closePrintPreviewDialog();
+// };
+
+const doPdf = async () => {
+    isSubmittingPdf.value = true;
     
-
-        doc.setFontSize(10);
-        doc.text("Régie des Unités Territoriales", 0.5, 1);
-
-        doc.setFontSize(10);
-        doc.text("No______/Régie UT/2024", 0.5, 1.25);
-
-    // doc.setFontSize(16);
-    // doc.text("Bon de Commande", pageWidth / 2, 1, { align: 'center' });
-    };
-
-    const footer = (pageNumber: number) => {
-        doc.setFontSize(10);
-        doc.text(`Page ${pageNumber} of ${totalPages}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 0.5, {
-            align: 'center'
-        });
-    };
-
-    itemsSelected.value.forEach((item, index) => {
-        if (index > 0) {
-            doc.addPage();
-        }
-        
-        header();
-        footer(index + 1);
-
-        let yCoord = 2.75; // Initial y coordinate after header
-        doc.setFontSize(12);
-        doc.text(`Reference: ${item.ref}`, 1, yCoord);
-        yCoord += 0.5; // Adjust the increment to fit your layout
-
-        doc.text(`Nom du destinateur: ${item.last_name}`, 1, yCoord);
-        yCoord += 0.5;
-
-        doc.text(`Contact: ${item.contact}`, 1, yCoord);
-        yCoord += 0.5;
-
-        doc.text(`Crée le: ${item.created_at}`, 1, yCoord);
-        yCoord += 0.5;
-
-        doc.text(`Modifiée le: ${item.modified_at}`, 1, yCoord);
-        yCoord += 0.5;
-
-        const body = item.orders.map((value: { item: { name: any; unite: any; }; quantity: any; }, i: number) => {
-            return [
-                i + 1,
-                {
-                    content: '',
-                    styles: {
-                        cellWidth: 1,
-                        cellHeight: 0.5
-                    }
-                },
-                value.item.name,
-                value.quantity,
-                get_full_unite(value.item.unite),
-            ];
-        });
-
-        autoTable(doc, {
-            startY: yCoord, // Start the table below the text
-            head: [['N°', 'Image', 'Article', 'Quantité', 'Unité', 'Obs']],
-            body: body,
-            styles: {
-                fontSize: 16 // Increase the font size as needed
-            },
-            didDrawCell: function(data) {
-                if (data.column.index === 1 && data.cell.section === 'body') {
-                    const value = item.orders[data.row.index];
-                    const imgData = value.item.image;
-
-                    if (imgData) {
-                        const padding = 0.1;
-                        const cellHeight = data.cell.height - padding * 2;
-                        const cellWidth = data.cell.width - padding * 2;
-                        let imgWidth = cellWidth;
-                        let imgHeight = cellHeight;
-
-                        // Calculate x and y to center the image in the cell
-                        const xOffset = (data.cell.width - imgWidth) / 2;
-                        const yOffset = (data.cell.height - imgHeight) / 2;
-
-                        doc.addImage(imgData, 'PNG', data.cell.x + xOffset, data.cell.y + yOffset, imgWidth, imgHeight);
-                    }
-                }
-            }
-        });
-    });
-
-    const blob = doc.output('blob');
-    const url = URL.createObjectURL(blob);
-    window.open(url);
-
-    doc.save(`${heading.value}.pdf`);
+    try {
+        await orderFormPdf(heading.value, itemsSelected.value);
+        closePrintPreviewDialog();
+    } catch (error) {
+        console.error("Une erreur est survenue lors de la création du PDF : ", error);
+        // Vous pouvez également afficher un message d'erreur à l'utilisateur ici
+    } finally {
+        isSubmittingPdf.value = false;
+    }
 };
+
+
 
 
 
@@ -842,8 +746,9 @@ const genererPDF = () => {
                 </div>
             </v-card-text>
             <v-card-actions>
-                <v-btn color="primary" @click="genererPDF">Print</v-btn>
-                <v-btn @click="closePrintPreviewDialog">Close</v-btn>
+                <!-- <v-btn color="primary" @click="doPdf">Print</v-btn> -->
+                <v-btn color="secondary" variant="flat" @click="doPdf" block :loading="isSubmittingPdf">Impression</v-btn>
+                <!-- <v-btn @click="closePrintPreviewDialog">Close</v-btn> -->
             </v-card-actions>
         </v-card>
     </v-dialog>
