@@ -16,7 +16,7 @@ const orderFormPdf = async (heading: string, data: any []) => {
         format: 'a4'
     });
 
-    data.forEach((item: { ref: any; last_name: any; contact: any; created_at: any; modified_at: any; orders: any[]; }, index: number) => {
+    data.forEach((item: { ref: any; last_name: any; contact: any; created_at: any; modified_at: any; address: any; orders: any[]; }, index: number) => {
         if (index > 0) {
             doc.addPage();
         }
@@ -40,10 +40,11 @@ const orderFormPdf = async (heading: string, data: any []) => {
         doc.text(`Contact: ${item.contact}`, 1, yCoord);
         yCoord += 0.30;
 
-        doc.text(`Crée le: ${item.created_at}`, 1, yCoord);
-        yCoord += 0.30;
+        doc.text(`Adresse: ${item.address}`, 1, yCoord);
+        yCoord += 0.50;
 
-        doc.text(`Modifiée le: ${item.modified_at}`, 1, yCoord);
+        doc.setFontSize(14);
+        doc.text(`Fourniture(s) :`, 1, yCoord);
         yCoord += 0.30;
 
         const body = item.orders.map((value: { item: { name: any; unite: any; }; quantity: any; }, i: number) => {
@@ -63,13 +64,18 @@ const orderFormPdf = async (heading: string, data: any []) => {
             ];
         });
 
+       
+
         autoTable(doc, {
             startY: yCoord, // Start the table below the text
             head: [['N°', 'Image', 'Article', 'Quantité', 'Unité', 'Obs']],
             body: body,
             styles: {
-                fontSize: 12 // Increase the font size as needed
+                fontSize: 12 // Increase the font size as needed,
+                
             },
+            // theme: "plain",
+
             didDrawCell: function(data) {
                 if (data.column.index === 1 && data.cell.section === 'body') {
                     const value = item.orders[data.row.index];

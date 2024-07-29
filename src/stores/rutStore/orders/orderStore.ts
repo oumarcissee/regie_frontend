@@ -55,6 +55,8 @@ export const useOrderStore = defineStore({
                     item.last_name = item.provider.last_name;
                     item.contact  = item.provider.phone_number;
                     item.email = item.provider.email;
+                    item.address = item.provider.address;
+                    
                     item.id = item.id;
 
                     item.orders =  this.ordersLine.filter((itemLine: { order?: any }) => itemLine?.order?.id === item.id);

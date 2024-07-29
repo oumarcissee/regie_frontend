@@ -3,6 +3,7 @@ import { getCurrentMonth , currentMonth} from '@/services/utils';
 
 const headerPortrait = (doc: jsPDF, title: string) => {
         const pageWidth = doc.internal.pageSize.width;
+        const pageHeight = doc.internal.pageSize.height;
 
         doc.setFontSize(10);
         doc.text("République de Guinée", pageWidth - 0.5, 0.5, { align: 'right' }); // Texte aligné à droite
@@ -43,6 +44,10 @@ const headerPortrait = (doc: jsPDF, title: string) => {
 
         doc.setFontSize(15);
         doc.text(`${currentMonth.value}`, pageWidth / 2, 2, { align: 'center' });
+
+
+        
+
         
 };
 
