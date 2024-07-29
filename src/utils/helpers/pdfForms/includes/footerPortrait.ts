@@ -45,7 +45,6 @@ const footerPortrait = (doc: jsPDF, data: any,  pageNumber: number, totalPages: 
     doc.restoreGraphicsState();
 
 
-
     //Si c'est pas du tableau
     if (data.length > 1) {
         

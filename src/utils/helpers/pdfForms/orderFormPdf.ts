@@ -93,6 +93,41 @@ const orderFormPdf = async (heading: string, data: any []) => {
             
         })
 
+        // const imgSrc = '../../../public/assets/apps/armoirie-guinée-1024x513.png';
+        // const imgWidth = 12; // Width of the image in units
+        // const imgHeight = 5; // Height of the image in units
+
+        // const pageWidth = doc.internal.pageSize.getWidth();
+        // const imgX = (pageWidth - imgWidth) / 2; // Calculate the x position to center the image
+
+        // // Create a canvas to draw the image with reduced opacity
+        // const canvas = document.createElement('canvas');
+        // const ctx = canvas.getContext('2d') 
+        // const img = new Image();
+
+        // img.onload = function() {
+        //     // Set canvas dimensions to match the image
+        //     canvas.width = img.width;
+        //     canvas.height = img.height;
+
+        //     // Draw the image on the canvas with reduced opacity
+        //     ctx.globalAlpha = 0.05; // Set the opacity (0.05 = 5% opacity)
+        //     ctx.drawImage(img, 0, 0);
+
+        //     // Convert the canvas to a data URL
+        //     const imgData = canvas.toDataURL('image/png');
+
+        //     // Add the image to the PDF
+        //     doc.addImage(imgData, 'PNG', imgX, 4, imgWidth, imgHeight);
+
+        //     // Save and open the PDF
+        //     const blob = doc.output('blob');
+        //     const url = URL.createObjectURL(blob);
+        //     window.open(url);
+        // };
+
+        // img.src = imgSrc;
+
         //Section de la signature
         signature(doc);
 

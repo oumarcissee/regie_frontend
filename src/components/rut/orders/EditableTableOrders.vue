@@ -79,6 +79,11 @@ const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
         const product = useProduct.items.find((item: { id?: any }) => item?.id === data.products);
         // const user = userStore.providers.find((item: { id?: any }) => item?.id === data.provider);
 
+        if (productSelected.value.length > 14) { 
+            setErrors({ products: 'Le maximum de produits sélectionnés est atteint.' });
+            return;
+        }
+
         //Ajout d'un nouveau produit
         productSelected.value.push({ id: increment, item: product, quantity: parseInt(data.quantity) });
 
