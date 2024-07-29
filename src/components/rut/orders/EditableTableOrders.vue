@@ -349,29 +349,29 @@ const isSubmittingPdf = ref();
 
 
 
-// //Création du pdf
-// const doPdf = async () => {
-//     isSubmittingPdf.value = true;
-
-//     await orderFormPdf(heading.value, itemsSelected.value);
-
-//     isSubmittingPdf.value = false;
-//     closePrintPreviewDialog();
-// };
-
+//Création du pdf
 const doPdf = async () => {
     isSubmittingPdf.value = true;
-    
-    try {
-        await orderFormPdf(heading.value, itemsSelected.value);
-        closePrintPreviewDialog();
-    } catch (error) {
-        console.error("Une erreur est survenue lors de la création du PDF : ", error);
-        // Vous pouvez également afficher un message d'erreur à l'utilisateur ici
-    } finally {
-        isSubmittingPdf.value = false;
-    }
+
+    await orderFormPdf(heading.value, itemsSelected.value);
+
+    isSubmittingPdf.value = false;
+    closePrintPreviewDialog();
 };
+
+// const doPdf = async () => {
+//     isSubmittingPdf.value = true;
+    
+//     try {
+//         await orderFormPdf(heading.value, itemsSelected.value);
+//         closePrintPreviewDialog();
+//     } catch (error) {
+//         console.error("Une erreur est survenue lors de la création du PDF : ", error);
+//         // Vous pouvez également afficher un message d'erreur à l'utilisateur ici
+//     } finally {
+//         isSubmittingPdf.value = false;
+//     }
+// };
 
 
 

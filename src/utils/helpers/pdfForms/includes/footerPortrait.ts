@@ -3,11 +3,15 @@ import jsPDF from "jspdf";
 const footerPortrait = (doc: jsPDF, data: any,  pageNumber: number, totalPages: number) => {
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
+
+     // Ajouter le texte "DOC CONFIDENTIEL"
+   
     
     // Dessiner la ligne horizontale
     doc.setDrawColor(150); // Couleur gris clair pour le filigrane
     doc.setLineWidth(0.05); // Largeur de la ligne
-    doc.line(0.5, pageHeight - 1, pageWidth - 0.5, pageHeight - 1); // Ligne horizontale au début du pied de page
+    const lineYOffset = 0.5; // Adjust this value to move the line down
+    doc.line(0.5, pageHeight - 1 + lineYOffset, pageWidth - 0.5, pageHeight - 1 + lineYOffset); // Ligne horizontale au début du pied de page
 
     const domain = window.location.hostname; // Capturer le domaine dynamiquement
 
@@ -18,7 +22,7 @@ const footerPortrait = (doc: jsPDF, data: any,  pageNumber: number, totalPages: 
     const date = now.toLocaleDateString();
     const time = now.toLocaleTimeString();
     doc.setFontSize(10);
-    doc.text(`${date} ${time}`, 0.5, pageHeight - 0.5, { align: 'left' });
+    doc.text(`${date} ${time}`, 0.2, pageHeight - 0.2, { align: 'left' });
 
     
 
@@ -47,14 +51,14 @@ const footerPortrait = (doc: jsPDF, data: any,  pageNumber: number, totalPages: 
         
         // Ajouter le texte de la page
         doc.setFontSize(10);
-        doc.text(`Page ${pageNumber} sur ${totalPages}`, pageWidth / 2, pageHeight - 0.5, {
+        doc.text(`Page ${pageNumber} sur ${totalPages}`, pageWidth / 2, pageHeight - 0.2, {
             align: 'center'
         });
     }
 
     // Ajouter le texte "DOC CONFIDENTIEL"
     doc.setFontSize(10);
-    doc.text(`${domain}`, pageWidth - 0.5, pageHeight - 0.5, {
+    doc.text(`${domain}`, pageWidth - 0.2, pageHeight - 0.2, {
         align: 'right'
     });
 };

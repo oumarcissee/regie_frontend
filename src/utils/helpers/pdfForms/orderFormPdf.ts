@@ -1,9 +1,11 @@
-import { jsPDF } from 'jspdf';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import autoTable from 'jspdf-autotable';
 
-import { truncateText, get_full_unite } from '@/services/utils';
+import {  get_full_unite } from '@/services/utils';
 import headerPortrait from './includes/headerPortrait';
 import footerPortrait from './includes/footerPortrait';
+import signature from './includes/signature';
 
 
 
@@ -20,35 +22,32 @@ const orderFormPdf = async (heading: string, data: any []) => {
         }
         
         //Entête du page
-        headerPortrait(doc);
+        headerPortrait(doc, "Bon de Commande");
         //Pie du page
         footerPortrait(doc, data, index + 1, data.length);
 
+
         //Contenu de page
 
-        let yCoord = 2.75; // Initial y coordinate after header
+        let yCoord = 2.5; // Initial y coordinate after header
         doc.setFontSize(12);
         doc.text(`Reference: ${item.ref}`, 1, yCoord);
-        yCoord += 0.5; // Adjust the increment to fit your layout
+        yCoord += 0.30; // Adjust the increment to fit your layout
 
         doc.text(`Nom du destinateur: ${item.last_name}`, 1, yCoord);
-        yCoord += 0.5;
+        yCoord += 0.30;
 
         doc.text(`Contact: ${item.contact}`, 1, yCoord);
-        yCoord += 0.5;
+        yCoord += 0.30;
 
         doc.text(`Crée le: ${item.created_at}`, 1, yCoord);
-        yCoord += 0.5;
+        yCoord += 0.30;
 
         doc.text(`Modifiée le: ${item.modified_at}`, 1, yCoord);
-        yCoord += 0.5;
-
-
-       
-        
-        yCoord += 0.5;
+        yCoord += 0.30;
 
         const body = item.orders.map((value: { item: { name: any; unite: any; }; quantity: any; }, i: number) => {
+        
             return [
                 i + 1,
                 {
@@ -69,7 +68,7 @@ const orderFormPdf = async (heading: string, data: any []) => {
             head: [['N°', 'Image', 'Article', 'Quantité', 'Unité', 'Obs']],
             body: body,
             styles: {
-                fontSize: 14 // Increase the font size as needed
+                fontSize: 12 // Increase the font size as needed
             },
             didDrawCell: function(data) {
                 if (data.column.index === 1 && data.cell.section === 'body') {
@@ -90,8 +89,13 @@ const orderFormPdf = async (heading: string, data: any []) => {
                         doc.addImage(imgData, 'PNG', data.cell.x + xOffset, data.cell.y + yOffset, imgWidth, imgHeight);
                     }
                 }
-            }
-        });
+            },
+            
+        })
+
+        //Section de la signature
+        signature(doc);
+
  
     });
 

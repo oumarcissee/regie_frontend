@@ -1,6 +1,7 @@
 import type jsPDF from "jspdf";
+import { getCurrentMonth , currentMonth} from '@/services/utils';
 
-const headerPortrait = (doc: jsPDF) => {
+const headerPortrait = (doc: jsPDF, title: string) => {
         const pageWidth = doc.internal.pageSize.width;
 
         doc.setFontSize(10);
@@ -24,7 +25,6 @@ const headerPortrait = (doc: jsPDF) => {
         doc.setFontSize(10);
         doc.text("Direction Générale de l'Intendance Militaire", 0.5, 0.75); // Texte aligné à gauche
 
-
         const img = '../../../public/assets/apps/armoirie-guinée-1024x513.png';
         const imgWidth = 1.75; // Largeur de l'image en unités
         const imgX = (pageWidth - imgWidth) / 2; // Calcul de la position x pour centrer l'image
@@ -38,9 +38,12 @@ const headerPortrait = (doc: jsPDF) => {
         doc.setFontSize(10);
         doc.text("No______/Régie UT/2024", 0.5, 1.25);
 
-        doc.setFontSize(25);
+        doc.setFontSize(20);
+        doc.text(`${title}`, pageWidth / 2, 1.75, { align: 'center' });
+
+        doc.setFontSize(15);
+        doc.text(`${currentMonth.value}`, pageWidth / 2, 2, { align: 'center' });
         
-        doc.text("Bon de Commande", pageWidth / 2, 2, { align: 'center' });
 };
 
 export default headerPortrait;
