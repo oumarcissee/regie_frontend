@@ -37,11 +37,19 @@ const ManagerARoutes = {
             component: () => import('@/views/rut/products/ProductsList.vue')
         },
 
-         //Les urls des commandes
+         //Les urls des commandes /rut/settings
         {
             name: 'OrdersList',
             path: '/rut/orders/list',
             component: () => import('@/views/rut/orders/OrderList.vue')
+        },
+
+
+        /**LA GESTION DE PARAMETRE */
+        {
+            name: 'SettingsRUT',
+            path: '/rut/settings',
+            component: () => import('@/views/rut/settings/SettingsDashboard.vue')
         },
         
        
