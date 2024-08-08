@@ -33,4 +33,14 @@ type topCards={
     textcolor: string;
 };
 
-export type{userCard, weeklyStats,topProjects,topCards}
+/*Top Cards*/
+type paramsCards={
+    img: string;
+    title: string;
+    number: string;
+    bgcolor: string;
+    textcolor: string;
+    url: string;
+};
+
+export type{userCard, weeklyStats,topProjects,topCards, paramsCards}

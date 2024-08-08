@@ -1,4 +1,4 @@
-import type { userCard, weeklyStats,topProjects,topCards } from '@/types/components/dashboard/modernDashboard';
+import type { userCard, weeklyStats,topProjects,topCards , paramsCards} from '@/types/components/dashboard/modernDashboard';
 
 import user1 from "@/assets/images/profile/user-1.jpg";
 import user2 from "@/assets/images/profile/user-2.jpg";
@@ -136,4 +136,51 @@ const topCardsData: topCards[] = [
     }
 ]
 
-export { userCardData, weeklyStatsData, topProjectsData,topCardsData}
+/*--Top Cards --*/
+const paramsCardsData: paramsCards[] = [
+    {
+        img: card_icon1,
+        title: "Signateurs",
+        number: "",
+        bgcolor: "lightprimary",
+        textcolor: "primary",
+        url: "/rut/settings/signateurs"
+    },
+    // {
+    //     img: card_icon2,
+    //     title: "Clients",
+    //     number: "3,650",
+    //     bgcolor: "lightwarning",
+    //     textcolor: "warning"
+    // },
+    // {
+    //     img: card_icon3,
+    //     title: "Projects",
+    //     number: "356",
+    //     bgcolor: "lightsecondary",
+    //     textcolor: "secondary"
+    // },
+    // {
+    //     img: card_icon4,
+    //     title: "Events",
+    //     number: "696",
+    //     bgcolor: "lighterror",
+    //     textcolor: "error"
+    // },
+    // {
+    //     img: card_icon5,
+    //     title: "Payroll",
+    //     number: "$96k",
+    //     bgcolor: "lightsuccess",
+    //     textcolor: "success"
+    // },
+    // {
+    //     img: card_icon6,
+    //     title: "Reports",
+    //     number: "59",
+    //     bgcolor: "lightprimary",
+    //     textcolor: "primary"
+    // }
+]
+
+export { userCardData, weeklyStatsData, topProjectsData,topCardsData, paramsCardsData}

@@ -37,7 +37,7 @@ const ManagerARoutes = {
             component: () => import('@/views/rut/products/ProductsList.vue')
         },
 
-         //Les urls des commandes /rut/settings
+        //Les urls des commandes /rut/settings
         {
             name: 'OrdersList',
             path: '/rut/orders/list',
@@ -49,8 +49,18 @@ const ManagerARoutes = {
         {
             name: 'SettingsRUT',
             path: '/rut/settings',
-            component: () => import('@/views/rut/settings/SettingsDashboard.vue')
+            component: () => import('@/views/rut/settings/SettingsDashboard.vue'),
         },
+
+         /**LA GESTION DE PARAMETRE */
+        {
+            name: 'SettingsRUTSignateurs',
+            path: '/rut/settings/signateurs',
+            component: () => import('@/views/rut/settings/Signators.vue'),
+            
+        }
+
+
         
        
     ]
