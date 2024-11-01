@@ -19,10 +19,10 @@ const dialog = ref(false);
         >
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="green darken-1" text @click="dialog = false" flat>
+          <v-btn color="green darken-1"  @click="dialog = false" flat>
             Disagree
           </v-btn>
-          <v-btn color="green darken-1" text @click="dialog = false" flat>
+          <v-btn color="green darken-1" @click="dialog = false" flat>
             Agree
           </v-btn>
         </v-card-actions>

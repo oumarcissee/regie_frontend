@@ -5,6 +5,8 @@ import {truncateText} from '@/services/utils';
 import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
 
+
+
 const locale = fr; // or en, or es
 
 import  type { VueCropperMethods }  from 'vue-cropperjs';
@@ -15,6 +17,12 @@ import { useField, useForm } from 'vee-validate';
 import type {  Items } from '@/types/rut/ProductsType';
 
 import contact from '@/_mockApis/apps/contact';
+
+
+
+const image = ref<File[] | null>(null);
+const { errorMessage } = useField("image"); // On conserve uniquement le message d'erreur
+
 
 
 const { addOrUpdateProduct, errors } = useProductsList();
@@ -98,30 +106,52 @@ const imageSrc = ref('');
 const selected = ref<string | null | undefined | number >(null);
 let cropper = ref<VueCropperMethods | null>(null);
 
-function setImage(e: Event) {
-  dialogImg.value = true
-  const target = e.target as HTMLInputElement;
-  const file = (target.files as FileList)[0];
+// function setImage(e: Event) {
+//   dialogImg.value = true
+//   const target = e.target as HTMLInputElement;
+//   const file = (target.files as FileList)[0];
 
-  if (!file || file.type.indexOf('image/') === -1) {
-        dialogImg.value = false
-        return;
-  }
+//   if (!file || file.type.indexOf('image/') === -1) {
+//         dialogImg.value = false
+//         return;
+//   }
 
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    if (event.target && event.target.result) {
-      imageSrc.value = event.target.result.toString();
-      if (cropper.value) {
+//   const reader = new FileReader();
+//   reader.onload = (event) => {
+//     if (event.target && event.target.result) {
+//       imageSrc.value = event.target.result.toString();
+//       if (cropper.value) {
+//           cropper.value.replace(imageSrc.value);
+
+//       }
+//     }
+//   };
+
+//   reader.readAsDataURL(file);
+// }
+
+
+// La fonction `setImage` pour assigner l'image sélectionnée
+function setImage(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
+  if (files && files[0]?.type.startsWith('image/')) {
+    image.value = Array.from(files); // On stocke les fichiers dans un tableau
+    dialogImg.value = true;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target && e.target.result) {
+        imageSrc.value = e.target.result.toString();
+        if (cropper.value) {
           cropper.value.replace(imageSrc.value);
-
+        }
       }
-    }
-  };
-
-  reader.readAsDataURL(file);
+    };
+    reader.readAsDataURL(files[0]);
+  } else {
+    dialogImg.value = false;
+  }
 }
-
 
 function handleImage() {
   if (cropper.value) {
@@ -147,7 +177,7 @@ const dialogImg = ref(false) as any;
 
 
 const name              = useField("name");
-const image             = useField("image");
+
 const price             = useField("price");
 const unite             = useField("unite");
 const rate_per_days     = useField("rate_per_days");
@@ -201,7 +231,7 @@ const refreshTable = async () => {
 
 const uniteSelected = ref();
 
-const changed = (value: string | any[]) => {
+const changed = (value: string | any) => {
     uniteSelected.value = value
     return value
 }
@@ -380,8 +410,8 @@ const formButton = computed(() => {
                                         label="Importer une image"
                                         variant="outlined"
                                         accept=".jpeg,.jpg,.png"
-                                        v-model="image.value.value"
-                                        :error-messages="image.errorMessage.value" 
+                                        v-model="image"
+                                        :error-messages="errorMessage" 
                                         @change="setImage"
                                     ></v-file-input>
                                        <!-- Cropper -->

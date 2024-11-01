@@ -1,5 +1,7 @@
-<script setup lang="ts">
+<!-- <script setup lang="ts">
 import { ref } from 'vue';
+
+
 const slider1 = ref(50);
 const slider2 = ref(70);
 const slider3 = ref(80);
@@ -38,9 +40,10 @@ const slider = ref(45);
     <v-slider :ticks="tickLabels" :max="3" step="1" color="primary" show-ticks="always" tick-size="4"></v-slider>
 
     <v-slider v-model="slider" color="primary" thumb-label="always" class="mt-6" hide-details>
-      <template v-slot:thumb-label="{ modelValue }">
-        {{ satisfactionEmojis[Math.min(Math.floor(modelValue / 10), 9)] }}
-      </template>
-    </v-slider>
+  <template v-slot:thumb-label="{ modelValue }">
+    {{ satisfactionEmojis[Math.min(Math.floor((modelValue ?? 0) / 10), 9)] }}
+  </template>
+</v-slider>
+
   </div>
-</template>
+</template> -->

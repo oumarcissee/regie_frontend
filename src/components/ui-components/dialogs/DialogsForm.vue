@@ -78,10 +78,10 @@ const dialog = ref(false);
         
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="error" text @click="dialog = false" flat>
+          <v-btn color="error"  @click="dialog = false" flat>
             Close
           </v-btn>
-          <v-btn color="success" text @click="dialog = false" flat>
+          <v-btn color="success"  @click="dialog = false" flat>
             Save
           </v-btn>
         </v-card-actions>

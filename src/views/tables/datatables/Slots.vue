@@ -18,13 +18,26 @@ const breadcrumbs = ref([
 ]);
 
 /*Header Data*/
-const headers = ref([
-    { title: 'Name', align: 'start', key: 'name', sortable: false, },
+interface TableHeader {
+  title: string;
+  align?: 'start' | 'center' | 'end';
+  key: string;
+}
+
+interface TableHeaderExpand extends TableHeader {
+    sortable?: boolean;
+}
+
+/* Header Data */
+const headers = ref<readonly TableHeader[]>([
+    { title: 'Name', align: 'start', key: 'name' },
     { title: 'Project Name', align: 'start', key: 'project' },
     { title: 'Post', align: 'start', key: 'post' },
     { title: 'Status', align: 'start', key: 'status' },
     { title: 'Budget', align: 'end', key: 'budget' },
-])
+] as const);
+
+
 </script>
 <template>
     <BaseBreadcrumb :title="page.title" :breadcrumbs="breadcrumbs"></BaseBreadcrumb>

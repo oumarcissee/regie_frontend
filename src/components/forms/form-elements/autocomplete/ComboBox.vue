@@ -5,7 +5,7 @@ const value = ref("March 2023");
 const items = ref(['March 2023', 'April 2023', 'May 2023']);
 </script>
 <template>
-    <v-autocomplete v-model="value" :items="items" color="primary" variant="inlined" hide-details>
+    <v-autocomplete v-model="value" :items="items" color="primary" variant="filled" hide-details>
     
     </v-autocomplete>
 </template>

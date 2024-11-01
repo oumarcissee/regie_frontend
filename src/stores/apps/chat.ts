@@ -41,7 +41,7 @@ export const useChatStore = defineStore({
                 id: itemID,
                 msg: item,
                 type: 'text',
-                attachments: [],
+                attachments: [] as any,
                 createdAt: sub(new Date(), { seconds: 1 }),
                 senderId: itemID
             };

@@ -12,7 +12,7 @@ import { ref } from 'vue';
  * @returns
  */
 
-const truncateText = (text: string | any[], limit: number) => {
+const truncateText = (text: string | any, limit: number) => {
   if (text.length > limit) {
     let truncated = text.slice(0, limit);
     // Trouver l'index du dernier espace dans la partie tronquée du texte

@@ -32,17 +32,18 @@ const { items, label, title } = defineProps({
       <template v-slot:chip="{ props, item }">
         <v-chip
           v-bind="props"
-          :prepend-avatar="item.raw.image"
-          :text="item.raw.name + ' ' + item.raw.description "
+          :prepend-avatar="(item as any).raw.image"
+          :text="(item as any).raw.name + ' ' + (item as any).raw.description "
         ></v-chip>
       </template>
-
+      
+      //@ts-ignore
       <template v-slot:item="{ props, item }">
         <v-list-item
           v-bind="props"
-          :prepend-avatar="item.raw.image"
-          :subtitle="truncateText(item.raw.name, 10)"
-          :title="item.raw.name "
+          :prepend-avatar="(item as any).raw.image"
+          :subtitle="truncateText((item as any).raw.name, 10)"
+          :title="(item as any).raw.name "
         ></v-list-item>
       </template>
   </v-autocomplete>

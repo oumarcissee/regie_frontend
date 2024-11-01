@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import BaseBreadcrumb from '@/components/shared/BaseBreadcrumb.vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
-import { BasicDatatables } from '@/_mockApis/components/datatable/dataTable';
+import { BasicDatatables} from '@/_mockApis/components/datatable/dataTable';
 const page = ref({ title: 'Basic Data Tables' });
 const breadcrumbs = ref([
     {
@@ -17,24 +17,36 @@ const breadcrumbs = ref([
     }
 ]);
 
-/*Header Data*/
-const headers = ref([
+
+interface TableHeader {
+  title: string;
+  align?: 'start' | 'center' | 'end';
+  key: string;
+}
+
+interface TableHeaderExpand extends TableHeader {
+    sortable?: boolean;
+}
+
+/* Header Data */
+const headers = ref<readonly TableHeader[]>([
     { title: 'Name', align: 'start', key: 'name' },
     { title: 'Project Name', align: 'start', key: 'project' },
     { title: 'Post', align: 'start', key: 'post' },
     { title: 'Status', align: 'start', key: 'status' },
     { title: 'Budget', align: 'end', key: 'budget' },
-])
+] as const);
 
 const expanded = ref();
-const headersExpand = ref([
-    { title: 'Name', align: 'start', key: 'name', sortable: false, },
+
+const headersExpand = ref<readonly TableHeaderExpand[]>([
+    { title: 'Name', align: 'start', key: 'name', sortable: false },
     { title: 'Project Name', align: 'start', key: 'project' },
     { title: 'Post', align: 'start', key: 'post' },
     { title: 'Status', align: 'start', key: 'status' },
     { title: 'Budget', align: 'end', key: 'budget' },
     { title: '', key: 'data-table-expand' },
-])
+] as const);
 
 
 /*for status color*/

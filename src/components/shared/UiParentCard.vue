@@ -1,10 +1,10 @@
-<script setup lang="ts">
+<script setup>
 const props = defineProps({
     title: String
 });
 </script>
 
-// ===============================|| Ui Parent Card||=============================== //
+
 <template>
     <v-card elevation="10" >
         <v-card-item class="py-4 px-6">

@@ -17,8 +17,11 @@ import VueRecaptcha from 'vue3-recaptcha-v2';
 import Maska from 'maska';
 // print
 // import print from 'vue3-print-nb';
-// Table
+
+// @ts-ignore
 import Vue3EasyDataTable from 'vue3-easy-data-table';
+
+
 import 'vue3-easy-data-table/dist/style.css';
 //i18
 import { createI18n } from 'vue-i18n';
@@ -45,6 +48,7 @@ fakeBackend();
 
 app.use(router);
 app.component('EasyDataTable', Vue3EasyDataTable);
+
 app.use(PerfectScrollbar);
 // app.use(VueDragscroll);
 app.use(createPinia());

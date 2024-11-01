@@ -11,8 +11,8 @@ const items = ref([
     'Pulp Fiction'
 ]);
 const value = ref(['The Dark Knight']);
-const cap_value = ref(['demo@company.com']);
-const cap_value2 = ref(['demo@company.com']);
+const cap_value = ref(['demo@company.com']) as any;
+const cap_value2 = ref(['demo@company.com'])as any;
 const multi_value = ref(['The Dark Knight', 'Fight Club']);
 </script>
 <template>

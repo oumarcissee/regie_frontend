@@ -45,7 +45,7 @@ const select = ref([
           </v-btn>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="error" text @click="dialog = false" flat> Close </v-btn>
+          <v-btn color="error"  @click="dialog = false" flat> Close </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -59,7 +59,7 @@ const select = ref([
           </v-btn>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="error" text @click="dialog2 = false" flat> Close </v-btn>
+          <v-btn color="error" @click="dialog2 = false" flat> Close </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -70,7 +70,7 @@ const select = ref([
           <span>Dialog 3</span>
         </v-card-title>
         <v-card-actions>
-          <v-btn color="error" text @click="dialog3 = false" flat> Close </v-btn>
+          <v-btn color="error"  @click="dialog3 = false" flat> Close </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

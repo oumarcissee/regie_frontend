@@ -3,8 +3,8 @@ import { ref } from 'vue';
 import { getCurrentUser } from '@/services/utils';
 
 
-const { items, label, title,isDisabled } = defineProps({
-  items: Array,
+const { items, label, title, isDisabled } = defineProps({
+  items: Array as any,
   itemSelected: Array,
   isDisabled: Boolean,
   label: String,
@@ -32,17 +32,18 @@ const { items, label, title,isDisabled } = defineProps({
       <template v-slot:chip="{ props, item }">
         <v-chip
           v-bind="props"
-          :prepend-avatar="item.raw.image"
-          :text="item.raw.first_name + ' ' + item.raw.last_name "
+          :prepend-avatar="(item as any).raw.image"
+          :text="(item as any).raw.first_name + ' ' + (item as any).raw.last_name"
         ></v-chip>
+
       </template>
 
       <template v-slot:item="{ props, item }">
         <v-list-item
           v-bind="props"
-          :prepend-avatar="item.raw.image"
-          :subtitle="item.raw.first_name"
-          :title="item.raw.last_name"
+          :prepend-avatar="(item as any).raw.image"
+          :subtitle="(item as any).raw.first_name"
+          :title="(item as any).raw.last_name"
         ></v-list-item>
       </template>
   </v-autocomplete>

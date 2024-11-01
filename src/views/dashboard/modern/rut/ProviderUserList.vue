@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup >
 import { ref, computed, onMounted } from 'vue';
 import { router } from '@/router';
 import { setItemSelected , deleteItem, confirmButton} from '@/services/utils';
@@ -11,7 +11,6 @@ import UiParentCard from '@/components/shared/UiParentCard.vue';
 import type { Header, Item } from 'vue3-easy-data-table';
 
 import 'vue3-easy-data-table/dist/style.css';
-
 
 onMounted(async() => {
     refreshTable();

@@ -2,8 +2,11 @@
 import { ref } from 'vue';
 import BaseBreadcrumb from '@/components/shared/BaseBreadcrumb.vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
-import {BasicDatatables} from '@/_mockApis/components/datatable/dataTable';
+import { BasicDatatables } from '@/_mockApis/components/datatable/dataTable';
+
+
 const page = ref({ title: 'Data Tables Grouping' });
+
 const breadcrumbs = ref([
     {
         text: 'Dashboard',
@@ -16,25 +19,46 @@ const breadcrumbs = ref([
         href: '#'
     }
 ]);
+interface TableHeader {
+  title: string;
+  align?: 'start' | 'center' | 'end';
+  key: string;
+}
 
-/*Header Data*/
-const sortBy = ref([
-    { key: 'name', order: 'asc' }
-])
-const groupBy = ref([
-    { key: 'status', order: 'asc' }
-])
-const headers = ref([
-    { title: 'Name', align: 'start', key: 'name', groupable: false, },
+interface TableHeaderExpand extends TableHeader {
+    sortable?: boolean;
+}
+
+/* Header Data */
+const headers = ref<readonly TableHeader[]>([
+    { title: 'Name', align: 'start', key: 'name' },
     { title: 'Project Name', align: 'start', key: 'project' },
     { title: 'Post', align: 'start', key: 'post' },
     { title: 'Status', align: 'start', key: 'status' },
     { title: 'Budget', align: 'end', key: 'budget' },
-])
+] as const);
+
+const expanded = ref();
+
+const headersExpand = ref<readonly TableHeaderExpand[]>([
+    { title: 'Name', align: 'start', key: 'name', sortable: false },
+    { title: 'Project Name', align: 'start', key: 'project' },
+    { title: 'Post', align: 'start', key: 'post' },
+    { title: 'Status', align: 'start', key: 'status' },
+    { title: 'Budget', align: 'end', key: 'budget' },
+    { title: '', key: 'data-table-expand' },
+] as const);
+
+
+/*Header Data*/
+// Use generic typing for `sortBy` and `groupBy`
+const sortBy = ref([{ key: 'name', order: 'asc' as const }])
+const groupBy = ref([{ key: 'status', order: 'asc' as const }])
+
 </script>
 <template>
     <BaseBreadcrumb :title="page.title" :breadcrumbs="breadcrumbs"></BaseBreadcrumb>
-    <v-row>
+    <v-row>:
         <v-col cols="12">
             <UiParentCard title="Grouping">
                 <v-data-table items-per-page="5" :headers="headers" :items="BasicDatatables" item-value="name"

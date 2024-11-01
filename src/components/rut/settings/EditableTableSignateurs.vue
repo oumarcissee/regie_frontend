@@ -178,7 +178,7 @@ const refreshTable = async () => {
 
 const uniteSelected = ref();
 
-const changed = (value: string | any[]) => {
+const changed = (value: string | any) => {
     uniteSelected.value = value
     return value
 }

@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";  
+import type jsPDF from "jspdf";  
 
 const footerPortrait = (doc: jsPDF, data: any,  pageNumber: number, totalPages: number) => {
     const pageWidth = doc.internal.pageSize.width;

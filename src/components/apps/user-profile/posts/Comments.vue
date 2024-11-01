@@ -25,7 +25,7 @@ const onSubmit = async (id: any, commentid: any, reply: string) => {
                 like: false,
                 value: 0
             },
-            replies: []
+            replies: [] as any
         }
     };
     store.addReply(id, commentid, newReply);

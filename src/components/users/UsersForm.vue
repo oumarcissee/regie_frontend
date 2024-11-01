@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<!-- <script setup lang="ts">
 import { router } from '@/router';
 import { useField, useForm } from 'vee-validate';
 import { ref } from 'vue';
@@ -155,4 +155,4 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
 
         </v-row>
     </v-form>
-</template>
+</template> -->

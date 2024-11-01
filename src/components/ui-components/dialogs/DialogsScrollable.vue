@@ -37,10 +37,10 @@ const dialog = ref(false);
         </v-card-text>
         <v-divider></v-divider>
         <v-card-actions>
-          <v-btn color="error" text @click="dialog = false">
+          <v-btn color="error"  @click="dialog = false">
             Close
           </v-btn>
-          <v-btn color="success" text @click="dialog = false">
+          <v-btn color="success" @click="dialog = false">
             Save
           </v-btn>
         </v-card-actions>

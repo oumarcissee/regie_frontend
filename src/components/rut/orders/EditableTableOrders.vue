@@ -16,11 +16,11 @@ const useProduct = useProductsList();
 const userStore = useProviderStore();
 const store = useOrderStore();
 
-import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBox.vue';
+import  '@/components/forms/form-elements/autocomplete/CustomComBox.vue' ;
 import CustomComBoxProduct from '@/components/forms/form-elements/autocomplete/CustomComBoxProduct.vue';
 
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// import { jsPDF } from 'jspdf';
+// import autoTable from 'jspdf-autotable';
 
 // import html2pdf from 'html2pdf.js';
 
@@ -45,7 +45,7 @@ onMounted(async () => {
     // console.log(providers.value)
 });
 
-const getStatus = (value: any) => {
+const getStatus = (value: boolean | any) => {
     status.value = value;
     return value;
 };
@@ -476,7 +476,7 @@ const doPdf = async () => {
                                     </v-row>
                                 </v-col>
                                 <v-col cols="12">
-                                    <v-switch color="primary" @update:modelValue="getStatus" v-model="status" label="Statut"></v-switch>
+                                    <v-switch color="primary" @update:model-value="getStatus(status)" v-model="status" label="Statut"></v-switch>
                                 </v-col>
 
                                 <v-col cols="12" sm="12">

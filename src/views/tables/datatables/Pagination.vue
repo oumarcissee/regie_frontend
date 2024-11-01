@@ -22,14 +22,26 @@ const breadcrumbs = ref([
 /*Header Data*/
 const pagination = ref(1);
 const itemsPerPage = ref(5);
-const headers = ref([
+
+interface TableHeader {
+  title: string;
+  align?: 'start' | 'center' | 'end';
+  key: string;
+}
+
+interface TableHeaderExpand extends TableHeader {
+    sortable?: boolean;
+}
+
+/* Header Data */
+const headers = ref<readonly TableHeader[]>([
     { title: 'Name', align: 'start', key: 'name' },
     { title: 'Project Name', align: 'start', key: 'project' },
     { title: 'Post', align: 'start', key: 'post' },
     { title: 'Status', align: 'start', key: 'status' },
     { title: 'Budget', align: 'end', key: 'budget' },
+] as const);
 
-])
 
 /*page count*/
 const pageCount = Math.ceil(BasicDatatables.length / itemsPerPage.value)

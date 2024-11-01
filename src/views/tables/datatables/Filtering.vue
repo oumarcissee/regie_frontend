@@ -2,7 +2,17 @@
 import { ref } from 'vue';
 import BaseBreadcrumb from '@/components/shared/BaseBreadcrumb.vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
-import { BasicDatatables,UppercaseFilter } from '@/_mockApis/components/datatable/dataTable';
+import { BasicDatatables, UppercaseFilter } from '@/_mockApis/components/datatable/dataTable';
+
+interface TableHeader {
+  title: string;
+  align?: 'start' | 'center' | 'end';
+  key: string;
+  value: string;
+}
+
+
+
 const page = ref({ title: 'Data Table Filtering' });
 const breadcrumbs = ref([
     {
@@ -20,13 +30,14 @@ const breadcrumbs = ref([
 /*Header Data*/
 const search = ref();
 const customsearch = ref();
-const headers = ref([
-    { title: 'Name', align: 'start', key: 'name' },
-    { title: 'Project Name', align: 'start', key: 'project' },
-    { title: 'Post', align: 'start', key: 'post' },
-    { title: 'Status', align: 'start', key: 'status' },
-    { title: 'Budget', align: 'end', key: 'budget' },
-])
+
+const headers = ref<TableHeader[]>([
+  { title: 'Name', align: 'start', key: 'name', value: 'name' },
+  { title: 'Project Name', align: 'start', key: 'project', value: 'project' },
+  { title: 'Post', align: 'start', key: 'post', value: 'post' },
+  { title: 'Status', align: 'start', key: 'status', value: 'status' },
+  { title: 'Budget', align: 'end', key: 'budget', value: 'budget' },
+]);
 
 
 function filterOnlyCapsText(value: { toString: () => string; } | null, query: string | null, item: any) {

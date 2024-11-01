@@ -143,7 +143,7 @@ const pError = ref();
 const roleSelected = ref();
 
 
-const changed = (value: string | any[]) => {
+const changed = (value: string | any) => {
     roleSelected.value = value
     return value
 }
@@ -226,13 +226,13 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
                 <v-label class="mb-2 font-weight-medium">Email</v-label>
                 <v-text-field variant="outlined" placeholder="E-mail" color="primary" :error-messages="email.errorMessage.value" v-model="email.value.value"></v-text-field>
                 <v-label class="mb-2 font-weight-medium">Nom</v-label>
-                <v-text-field variant="outlined" placeholder="Nom" color="primary" :error-messages="last_name.errorMessage.value" v-model="last_name.value.value"></v-text-field>
+                <v-text-field variant="filled" placeholder="Nom" color="primary" :error-messages="last_name.errorMessage.value" v-model="last_name.value.value"></v-text-field>
             </v-col>
 
              <v-col cols="12" sm="4">
                 
                 <v-label class="mb-2 font-weight-medium">Rôle</v-label>
-                <v-select  :items="roles" @update:modelValue="changed" single-line variant="outlined" v-model="role.value.value" :error-messages="role.errorMessage.value"></v-select>
+                <v-select  :items="roles" @update:model-value="changed" single-line variant="outlined" v-model="role.value.value" :error-messages="role.errorMessage.value"></v-select>
 
                 <v-label class="mb-2 font-weight-medium">Téléphone</v-label>
                 <v-text-field variant="outlined" placeholder="6xxxxxxx" color="primary" :error-messages="phone_number.errorMessage.value" v-model="phone_number.value.value"></v-text-field>

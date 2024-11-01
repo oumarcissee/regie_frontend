@@ -4,6 +4,8 @@ import BaseBreadcrumb from '@/components/shared/BaseBreadcrumb.vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
 import { BasicDatatables } from '@/_mockApis/components/datatable/dataTable';
 const page = ref({ title: 'Data Table Sorting' });
+
+
 const breadcrumbs = ref([
     {
         text: 'Dashboard',
@@ -17,11 +19,28 @@ const breadcrumbs = ref([
     }
 ]);
 
+interface TableHeader {
+    title: string;
+    align?: 'start' | 'center' | 'end';
+    key: string;
+    sortable?: boolean
+}
+
+interface TableSortBy { 
+    key: string;
+    order: string;
+}
+
+
+
 /*Header Data*/
-const sortBy = ref([
-    { key: 'name', order: 'desc' }
-])
-const headers = ref([
+/*Header Data*/
+// Use generic typing for `sortBy` and `groupBy`
+const sortBy = ref([{ key: 'name', order: 'asc' as const }])
+const groupBy = ref([{ key: 'status', order: 'asc' as const }])
+
+
+const headers = ref<TableHeader[]>([
     { title: 'Name', align: 'start', key: 'name', sortable: false },
     { title: 'Project Name', align: 'start', key: 'project' },
     { title: 'Post', align: 'start', key: 'post' },

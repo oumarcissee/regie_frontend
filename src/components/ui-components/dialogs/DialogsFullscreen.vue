@@ -26,7 +26,7 @@ const widgets = ref(false);
           <v-toolbar-title>Settings</v-toolbar-title>
           <v-spacer></v-spacer>
           <v-toolbar-items>
-            <v-btn dark text @click="dialog = false" flat> Save </v-btn>
+            <v-btn dark  @click="dialog = false" flat> Save </v-btn>
           </v-toolbar-items>
         </v-toolbar>
         <v-card-item>
