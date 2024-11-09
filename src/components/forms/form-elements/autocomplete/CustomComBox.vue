@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/services/utils';
 
 const { items, label, title, isDisabled } = defineProps({
   items: Array as any,
-  itemSelected: Array,
+  itemSelected: Array as any,
   isDisabled: Boolean,
   label: String,
   title: String,

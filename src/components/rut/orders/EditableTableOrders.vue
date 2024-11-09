@@ -1,55 +1,46 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { truncateText, currentUser, currentProduct, currentMonth, get_full_unite } from '@/services/utils';
+import { ref, computed, onMounted, provide } from 'vue';
+import { truncateText, currentMonth, get_full_unite } from '@/services/utils';
 import { orderFormPdf } from '@/utils/helpers/pdfForms/orderFormPdf';
-
 import { useField, useForm } from 'vee-validate';
-
 import type { Header, Item } from 'vue3-easy-data-table';
 import 'vue3-easy-data-table/dist/style.css';
-
 import { useOrderStore } from '@/stores/rutStore/orders/orderStore';
 import { useProviderStore } from '@/stores/rutStore/providerStore';
 import { useProductsList } from '@/stores/rutStore/products/productsListStore';
+// import { PrinterIcon, FilterIcon, PencilIcon, TrashIcon } from 'lucide-vue-next';
+import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBox.vue';
+import CustomComBoxProduct from '@/components/forms/form-elements/autocomplete/CustomComBoxProduct.vue';
 
+// Store initialization
 const useProduct = useProductsList();
 const userStore = useProviderStore();
 const store = useOrderStore();
 
-import  '@/components/forms/form-elements/autocomplete/CustomComBox.vue' ;
-import CustomComBoxProduct from '@/components/forms/form-elements/autocomplete/CustomComBoxProduct.vue';
+// Reactive references
+const loadingProvider = ref(false);
+const loadingProducts = ref(false);
+const valid = ref(true);
+const status = ref(false);
+const increment = ref(0);
+const productSelected = ref<Array<{ id: number; item: any; quantity: number; order?: any }>>([]);
+const isSelected = ref(false);
+const dialog = ref(false);
+const quantityDialog = ref(false);
+const editedIndex = ref(-1);
+const myIndex = ref(null);
+const quantityItem = ref('');
+const searchField = ref(['ref', 'last_name', 'created_at']);
+const searchValue = ref('');
+const themeColor = ref('rgb(var(--v-theme-secondary))');
+const itemsSelected = ref<Item[]>([]);
+const printPreviewDialog = ref(false);
+const printableArea = ref();
+const heading = ref('');
+const isSubmittingPdf = ref(false);
+const refProduct = ref();
 
-// import { jsPDF } from 'jspdf';
-// import autoTable from 'jspdf-autotable';
-
-// import html2pdf from 'html2pdf.js';
-
-
-
-const { addOrUpdateOrder, errors } = useOrderStore();
-
-onMounted(async () => {
-    await store.fetchOrdersLine();
-    await store.fetchOrders();
-    //Les lignes de commande
-
-    // loadingProvider.value = false;
-    //Chargement des fournisseurs
-    await userStore.fetchProviders();
-    loadingProvider.value = true;
-
-    // loadingProducts.value = false;
-    await useProduct.fetchItems();
-
-    loadingProducts.value = true;
-    // console.log(providers.value)
-});
-
-const getStatus = (value: boolean | any) => {
-    status.value = value;
-    return value;
-};
-
+// Form validation
 const { handleSubmit, handleReset, isSubmitting } = useForm({
     validationSchema: {
         provider(value: string | any[]) {
@@ -57,14 +48,11 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             return 'Selectionnez un fournisseur.';
         },
         products(value: string | any[]) {
-            if (!value) {
-                return 'Selectionnez un article.';
-            }
+            if (!value) return 'Selectionnez un article.';
             return true;
         },
         quantity(value: string | any[]) {
-            if (!/^\d+$/.test(value as any)) {
-                // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
+            if (!/^\d+$/.test(value as string)) {
                 return 'Entrer la quantité en chiffre entier.';
             }
             return true;
@@ -72,226 +60,35 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
     }
 });
 
-let increment = 0;
-const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
-    increment++;
-    try {
-        const product = useProduct.items.find((item: { id?: any }) => item?.id === data.products);
-        // const user = userStore.providers.find((item: { id?: any }) => item?.id === data.provider);
+const provider = useField('provider');
+const products = useField('products');
+const quantity = useField('quantity');
 
-        if (productSelected.value.length > 11) { 
-            setErrors({ products: 'Le maximum de produits sélectionnés est atteint.' });
-            return;
-        }
-
-        //Ajout d'un nouveau produit
-        productSelected.value.push({ id: increment, item: product, quantity: parseInt(data.quantity) });
-
-        //Desactivation du champ user
-        if (productSelected.value.length >= 0) isSelected.value = true;
-        //Mettre à jour le tableau
-        updateTableData();
-        // console.log(productSelected.value)
-        useProduct.items = useProduct.items.filter((item: { id: string }) => item.id !== data.products);
-        products.resetField();
-    } catch (error) {
-        console.log(error);
-    }
-});
-
-//La fonction pour mettre à jour les données de myTable
-const updateTableData = () => {
-    productSelected.value = productSelected.value;
-};
-
-//Affichage des commandes en fonction du mois
-
-const providersFiltred: any = computed(() => {
+// Computed properties
+const providersFiltred = computed(() => {
     const orders = store.orders.filter(
         (item: any) => item.created_at.includes(currentMonth.value) || item.modified_at.includes(currentMonth.value)
     );
     const providersIds = orders.map((item: any) => item.provider.id);
-
-    //Ignore les fournissseur ayant une commande
     return userStore.getProviders.filter((item: any) => !providersIds.includes(item.id));
 });
 
-//Affichage des commandes en fonction de mois
-const getOrders: any = computed(() => {
+const getOrders = computed(() => {
     return store.orders.filter(
         (item: any) => item.created_at.includes(currentMonth.value) || item.modified_at.includes(currentMonth.value)
     );
 });
 
-const getOrdersLine: any = computed(() => {
-    return store.ordersLine;
-});
-
-const formData = new FormData();
-
-const selected = ref<string | null | undefined | number>(null);
-
-const refProduct = ref();
-
-const provider = useField('provider');
-const products = useField('products');
-const quantity = useField('quantity');
-
-const status = ref(false);
-
-const quantityItem = ref('');
-
-const submit = async () => {
-    try {
-        if (productSelected.value.length === 0) {
-            //Si rien n'est selectioné
-            return productsSubmit();
-        } else {
-            const order = {
-                provider: provider.value.value,
-                status: status.value
-            };
-
-            const data = {
-                order: order,
-                orderLine: productSelected.value
-            };
-
-            if (editedIndex.value != -1) {
-                //Recuperation des articles liées à la commande
-                const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === editedIndex.value);
-
-                //filtrer les articles non selectonés
-                const itemIds = ordersLine.map((item: any) => item.item.id);
-                useProduct.items.filter((item: any) => !itemIds.includes(item.id));
-
-                //Modification de commande
-                await addOrUpdateOrder(data, data.orderLine[0].order.id);
-            } else {
-                //Ajout d'une nouvelle de la commande
-                await addOrUpdateOrder(data);
-            }
-
-            await refreshTable();
-        }
-    } catch (error) {
-        console.log(error);
-    }
-};
-
-// Fonction pour réinitialiser les champs
-const refreshTable = async () => {
-    await store.fetchOrders();
-    //Les lignes des commandes
-    store.fetchOrdersLine();
-    close();
-};
-
-// const providers = ref([]);
-let productSelected: Object | any = ref([]);
-
-const isSelected = ref(false);
-const loadingProvider = ref(false);
-const loadingProducts = ref(false);
-
-const valid = ref(true);
-const dialog = ref(false);
-const QuantityDialog = ref(false);
-
-const editedIndex = ref(-1);
-
-function close() {
-    dialog.value = false;
-    editedIndex.value = -1;
-    productSelected.value = [];
-    isSelected.value = false;
-    handleReset();
-}
-
-// Méthode pour modifier un élément
-const editItem = async (index: any) => {
-    provider.value.value = index.provider?.id || null;
-
-    dialog.value = true;
-    editedIndex.value = index.id;
-    isSelected.value = true;
-
-    //Selection de fournisseur.
-    status.value = index.status;
-
-    //Recuperation des articles liées à la commande
-    const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === index.id);
-    productSelected.value = ordersLine;
-
-    //filtrer les articles non selectonés
-    const itemIds = ordersLine.map((item: any) => item.item.id);
-    useProduct.items = useProduct.items.filter((item: any) => !itemIds.includes(item.id));
-
-    updateTableData();
-};
-
-// Suppression d'un element
-const deletion = async (index: any) => {
-    try {
-        await store.deleteItem(index, 'orders');
-
-        await refreshTable(); // Rafraîchir les données après la suppression
-    } catch (error) {
-        console.error('Erreur lors de la suppression :', error);
-    }
-};
-
-// Méthode pour modifier un élément
-const myIndex = ref();
-const editQuantity = (index: any) => {
-    QuantityDialog.value = true;
-
-    myIndex.value = index;
-
-    quantityItem.value = index.quantity;
-};
-
-//le changement de quantité
-const submitQuantity = () => {
-    myIndex.value.quantity = parseInt(quantityItem.value) > 0 ? quantityItem.value : 1;
-    updateTableData();
-
-    quantityItem.value = '';
-    QuantityDialog.value = false;
-};
-
-// Suppression d'un element
-const remove = async (item: any) => {
-    // console.log(item)
-    //Si le conteneur des articles n'est pas vide
-    if (productSelected.value.length > 1) {
-        //Suppression de l'élement supprimé
-        productSelected.value = productSelected.value.filter((i: any) => i.id !== item?.id);
-    }
-
-    // console.log(productSelected.value);//
-
-    //Mettre à jour le tableau
-    useProduct.items.push(item.item); // Add the removed item back to the product list
-    updateTableData();
-};
-
-//Computed Property
 const formTitle = computed(() => {
     return editedIndex.value === -1 ? 'Nouvelle Commande' : 'Editer une commande';
 });
 
-//Computed Property
 const formButton = computed(() => {
     return editedIndex.value === -1 ? 'Enregistrer' : 'Modifier';
 });
 
-const searchField = ref(['ref', 'last_name', 'created_at']);
-const searchValue = ref('');
-
-
+// Table headers
 const headers: Header[] = [
-    // { text: 'Référence', value: 'ref' },
     { text: '', value: 'image', sortable: true },
     { text: 'Destinateur', value: 'last_name', sortable: true },
     { text: 'Contact', value: 'contact', sortable: true },
@@ -301,89 +98,198 @@ const headers: Header[] = [
     { text: 'Actions', value: 'operation' }
 ];
 
-const themeColor = ref('rgb(var(--v-theme-secondary))');
+// Methods
+const getStatus = (value: boolean) => {
+    status.value = value;
+    return value;
+};
 
-const itemsSelected = ref<Item[]>([]);
+const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
+    increment.value++;
+    
+    try {
+        const product = useProduct.items.find((item: { id?: any }) => item?.id === data.products);
+        
+        if (productSelected.value.length > 11) {
+            setErrors({ products: 'Le maximum de produits sélectionnés est atteint.' });
+            return;
+        }
 
-// Print Preview and Print Functionality
-const printPreviewDialog = ref(false);
+        productSelected.value = [...productSelected.value, {
+            id: increment.value,
+            item: product,
+            quantity: parseInt(data.quantity)
+        }];
 
+        isSelected.value = productSelected.value.length > 0;
+        useProduct.items = useProduct.items.filter((item: { id: string }) => item.id !== data.products);
+        products.resetField();
+        
+    } catch (error) {
+        console.error("Erreur lors de l'ajout du produit:", error);
+    }
+});
+
+const submit = async () => {
+    try {
+        if (productSelected.value.length === 0) {
+            return productsSubmit();
+        }
+
+        const order = {
+            provider: provider.value.value,
+            status: status.value
+        };
+
+        const data = {
+            order,
+            orderLine: productSelected.value
+        };
+
+        if (editedIndex.value !== -1) {
+            const ordersLine = store.ordersLine.filter(
+                (item: { order?: any }) => item?.order?.id === editedIndex.value
+            );
+            const itemIds = ordersLine.map((item: any) => item.item.id);
+            useProduct.items = useProduct.items.filter((item: any) => !itemIds.includes(item.id));
+            
+            await store.addOrUpdateOrder(data, editedIndex.value);
+        } else {
+            await store.addOrUpdateOrder(data);
+        }
+
+        await refreshTable();
+    } catch (error) {
+        console.error('Error submitting form:', error);
+    }
+};
+
+const refreshTable = async () => {
+    await store.fetchOrders();
+    await store.fetchOrdersLine();
+    close();
+};
+
+const close = () => {
+    store.dialog = false;
+    editedIndex.value = -1;
+    productSelected.value = [];
+    isSelected.value = false;
+    handleReset();
+};
+
+const editItem = async (item: { user: number; id: number; status: boolean }) => {
+    try {
+        provider.setValue(item.user);
+        editedIndex.value = item.id;
+        store.dialog = true;
+        isSelected.value = true;
+        status.value = item.status;
+
+        const arrayProducts = store.ordersLine
+            .filter((line: any) => line?.order?.id === item.id)
+            .map((line: any) => ({
+                id: line.id,
+                item: line.item,
+                quantity: line.quantity,
+                order: line.order
+            }));
+
+        productSelected.value = arrayProducts;
+
+        const itemIds = arrayProducts.map((line: any) => line.item?.id).filter(Boolean);
+        useProduct.items = useProduct.items.filter((product: any) => !itemIds.includes(product.id));
+    } catch (error) {
+        console.error('Error editing item:', error);
+    }
+};
+
+const editQuantity = (newQuantity: any) => {
+    quantityDialog.value = true;
+    myIndex.value = newQuantity;
+    quantityItem.value = String(newQuantity.quantity);
+};
+
+const submitQuantity = () => {
+    if (myIndex.value) {
+        myIndex.value.quantity = parseInt(quantityItem.value) > 0 ? parseInt(quantityItem.value) : 1;
+    }
+    quantityItem.value = '';
+    quantityDialog.value = false;
+};
+
+const remove = (item: any) => {
+    if (productSelected.value.length > 1) {
+        productSelected.value = productSelected.value.filter((i: any) => i.id !== item?.id);
+    }
+    useProduct.items.push(item.item);
+};
+
+const deletion = async (index: any) => {
+    try {
+        await store.deleteItem(index, 'orders');
+        await refreshTable();
+    } catch (error) {
+        console.error('Erreur lors de la suppression :', error);
+    }
+};
+
+// PDF related methods
 const openPrintPreview = () => {
     printPreviewDialog.value = true;
-}
-
+};
 
 const closePrintPreviewDialog = () => {
-
     itemsSelected.value = [];
-
-    printPreviewDialog.value = false
-}
-
+    printPreviewDialog.value = false;
+};
 
 const Preview = (item: any) => {
-
-    itemsSelected.value.push(item);
+    itemsSelected.value = [item];
     openPrintPreview();
-}
-
-
-
-const printableArea = ref();
-
-
+};
 
 const printContent = () => {
     const printDiv = document.getElementById('printableArea');
+    if (!printDiv) return;
+    
     const newWin = window.open('');
-    newWin!.document.write('<html><head><title>Print</title></head><body>');
-    newWin!.document.write(printDiv!.outerHTML);
-    newWin!.document.write('</body></html>');
-    newWin!.document.close();
-    newWin!.print();
-    newWin!.close();
-}
-
-
-
-const heading = ref('');
-
-
-
-const isSubmittingPdf = ref();
-
-
-
-//Création du pdf
-const doPdf = async () => {
-    isSubmittingPdf.value = true;
-
-    await orderFormPdf(heading.value, itemsSelected.value);
-
-    isSubmittingPdf.value = false;
-    closePrintPreviewDialog();
+    if (!newWin) return;
+    
+    newWin.document.write('<html><head><title>Print</title></head><body>');
+    newWin.document.write(printDiv.outerHTML);
+    newWin.document.write('</body></html>');
+    newWin.document.close();
+    newWin.print();
+    newWin.close();
 };
 
-// const doPdf = async () => {
-//     isSubmittingPdf.value = true;
-    
-//     try {
-//         await orderFormPdf(heading.value, itemsSelected.value);
-//         closePrintPreviewDialog();
-//     } catch (error) {
-//         console.error("Une erreur est survenue lors de la création du PDF : ", error);
-//         // Vous pouvez également afficher un message d'erreur à l'utilisateur ici
-//     } finally {
-//         isSubmittingPdf.value = false;
-//     }
-// };
+const doPdf = async () => {
+    isSubmittingPdf.value = true;
+    try {
+        await orderFormPdf(heading.value, itemsSelected.value);
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+    } finally {
+        isSubmittingPdf.value = false;
+        closePrintPreviewDialog();
+    }
+};
 
-
-
-
-
-
-
+// Initialization
+onMounted(async () => {
+    try {
+        await Promise.all([
+            userStore.fetchProviders(),
+            store.fetchOrders(),
+            useProduct.fetchItems()
+        ]);
+        loadingProvider.value = true;
+        loadingProducts.value = true;
+    } catch (error) {
+        console.error('Error initializing component:', error);
+    }
+});
 </script>
 
 
@@ -402,13 +308,13 @@ const doPdf = async () => {
             />
         </v-col>
         <v-col cols="12" lg="8" md="6" class="text-right">
-            <v-dialog v-model="dialog" max-width="800" persistent class="dialog-mw">
+            <v-dialog v-model="store.dialog" max-width="800" persistent class="dialog-mw">
                 <template v-slot:activator="{ props }">
                     <v-col v-if="itemsSelected.length">
                         <div class="d-flex gap-2 justify-end">
                             <!-- <v-btn icon variant="text" >
-                                <CopyIcon size="20" />
-                            </v-btn> -->
+                                    <CopyIcon size="20" />
+                                </v-btn> -->
                             <v-btn icon variant="text" @click="openPrintPreview()" flat class="ml-auto">
                                 <PrinterIcon size="20" />
                             </v-btn>
@@ -476,7 +382,12 @@ const doPdf = async () => {
                                     </v-row>
                                 </v-col>
                                 <v-col cols="12">
-                                    <v-switch color="primary" @update:model-value="getStatus(status)" v-model="status" label="Statut"></v-switch>
+                                    <v-switch
+                                        color="primary"
+                                        @update:model-value="getStatus(status)"
+                                        v-model="status"
+                                        label="Statut"
+                                    ></v-switch>
                                 </v-col>
 
                                 <v-col cols="12" sm="12">
@@ -504,9 +415,9 @@ const doPdf = async () => {
                                                     <div class="d-flex align-center py-4">
                                                         <div class="hoverable">
                                                             <v-img
-                                                                :lazy-src="item?.item?.image"
-                                                                :src="item?.item?.image"
-                                                                :title="item.item.name"
+                                                                :lazy-src="item.item?.image"
+                                                                :src="item.item?.image"
+                                                                :title="item.item?.name"
                                                                 width="65px"
                                                                 class="rounded img-fluid"
                                                             ></v-img>
@@ -515,27 +426,27 @@ const doPdf = async () => {
                                                         <div class="ml-5">
                                                             <h4 class="text-h6 font-weight-semibold">{{ item.item.name }}</h4>
                                                             <span class="text-subtitle-1 d-block mt-1 textSecondary">{{
-                                                                truncateText(item.item.description, 20)
+                                                                truncateText(item.item?.description, 20)
                                                             }}</span>
                                                         </div>
                                                     </div>
                                                 </td>
 
                                                 <td class="text-subtitle-1">{{ item.quantity }}</td>
-                                                <td class="text-subtitle-1">{{ get_full_unite(item.item.unite) }}</td>
+                                                <td class="text-subtitle-1">{{ get_full_unite(item?.item?.unite) }}</td>
 
                                                 <td>
                                                     <div class="d-flex align-center">
                                                         <v-tooltip text="Editer">
-                                                            <template v-slot:activator="{ props }">
-                                                                <v-btn icon flat @click="editQuantity(item)" v-bind="props"
+                                                            <template v-slot:activator>
+                                                                <v-btn icon flat @click="editQuantity(item)"
                                                                     ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
                                                                 /></v-btn>
                                                             </template>
                                                         </v-tooltip>
                                                         <v-tooltip text="Retirer">
-                                                            <template v-slot:activator="{ props }">
-                                                                <v-btn icon flat @click="remove(item)" v-bind="props"
+                                                            <template v-slot:activator>
+                                                                <v-btn icon flat @click="remove(item)"
                                                                     ><TrashIcon stroke-width="1.5" size="20" class="text-error"
                                                                 /></v-btn>
                                                             </template>
@@ -557,7 +468,7 @@ const doPdf = async () => {
                 <!-- END Formulaire de commande -->
             </v-dialog>
 
-            <v-dialog v-model="QuantityDialog" max-width="300" persistent class="dialog-mw">
+            <v-dialog v-model="quantityDialog" max-width="300" persistent class="dialog-mw">
                 <v-card>
                     <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
                         <span class="title text-white">Nouvelle Quantité</span>
@@ -600,7 +511,6 @@ const doPdf = async () => {
         buttons-pagination
         itemKey="ref"
     >
-
         <template #item-image="{ image }">
             <div class="player-wrapper">
                 <img alt="user" width="70" class="rounded-circle img-fluid" :src="image" />
@@ -645,17 +555,17 @@ const doPdf = async () => {
                 <div class="d-flex align-center">
                     <v-tooltip text="Editer">
                         <template v-slot:activator="{ props }">
-                            <v-btn icon flat @click="editItem(item)" v-bind="props"
+                            <v-btn icon flat @click="editItem({ user: parseInt(item?.provider?.id), id: parseInt(item.id) ,status: item.status})" v-bind="props"
                                 ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
                             /></v-btn>
                         </template>
                     </v-tooltip>
 
                     <v-tooltip text="Voir">
-                     <template v-slot:activator="{ props }">
-                         <v-btn icon flat @click="Preview(item)" v-bind="props"
-                         ><PrinterIcon stroke-width="1.5" size="20" class="text-primary"
-                         /></v-btn>
+                        <template v-slot:activator="{ props }">
+                            <v-btn icon flat @click="Preview(item)" v-bind="props"
+                                ><PrinterIcon stroke-width="1.5" size="20" class="text-primary"
+                            /></v-btn>
                         </template>
                     </v-tooltip>
                     <v-tooltip text="Supprimer">
@@ -677,9 +587,8 @@ const doPdf = async () => {
             <v-card-text>
                 <div id="printableArea" ref="printableArea">
                     <div v-for="item in itemsSelected" :key="item.id">
-                        <v-row >
+                        <v-row>
                             <v-col>
-
                                 <h3>Detail de la commande N° {{ item.id }}</h3>
                                 <p>Référence: {{ item.ref }}</p>
                                 <p>Destinateur: {{ item.first_name }} {{ item.last_name }}</p>
@@ -687,60 +596,54 @@ const doPdf = async () => {
                                 <p>Faite le: {{ item.created_at }}</p>
                                 <p>Modifiée le: {{ item.modified_at }}</p>
                                 <p>Statut: {{ item.status ? 'En cours' : 'Cloturée' }}</p>
-
                             </v-col>
-                            
                         </v-row>
 
                         <v-row>
                             <v-col>
                                 <v-table class="mt-5" id="myTabledd">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-subtitle-1 font-weight-semibold">N°</th>
-                                                <!-- <th class="text-subtitle-1 font-weight-semibold">Réference</th> -->
-                                                <th class="text-subtitle-1 font-weight-semibold">Article</th>
-                                                <th class="text-subtitle-1 font-weight-semibold">Quantité</th>
-                                                <th class="text-subtitle-1 font-weight-semibold">Unité</th>
+                                    <thead>
+                                        <tr>
+                                            <th class="text-subtitle-1 font-weight-semibold">N°</th>
+                                            <!-- <th class="text-subtitle-1 font-weight-semibold">Réference</th> -->
+                                            <th class="text-subtitle-1 font-weight-semibold">Article</th>
+                                            <th class="text-subtitle-1 font-weight-semibold">Quantité</th>
+                                            <th class="text-subtitle-1 font-weight-semibold">Unité</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(order, index) in item.orders" :key="index">
+                                            <td class="text-subtitle-1">{{ index + 1 }}</td>
+                                            <!-- <td class="text-subtitle-1">{{ item.product.ref }}</td> -->
 
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            
-                                            <tr v-for="(order, index) in item.orders" :key="index">
-                                                <td class="text-subtitle-1">{{ index + 1 }}</td>
-                                                <!-- <td class="text-subtitle-1">{{ item.product.ref }}</td> -->
-
-                                                <td class="text-subtitle-1">
-                                                    <div class="d-flex align-center py-4">
-                                                        <div class="hoverable">
-                                                            <v-img
-                                                                :lazy-src="order?.item?.image"
-                                                                :src="order?.item?.image"
-                                                                :title="order.item.name"
-                                                                width="65px"
-                                                                class="rounded img-fluid"
-                                                            ></v-img>
-                                                        </div>
-
-                                                        <div class="ml-5">
-                                                            <h4 class="text-h6 font-weight-semibold">{{ order.item.name }}</h4>
-                                                            <span class="text-subtitle-1 d-block mt-1 textSecondary">{{
-                                                                truncateText(order.item.description, 20)
-                                                            }}</span>
-                                                        </div>
+                                            <td class="text-subtitle-1">
+                                                <div class="d-flex align-center py-4">
+                                                    <div class="hoverable">
+                                                        <v-img
+                                                            :lazy-src="order?.item?.image"
+                                                            :src="order?.item?.image"
+                                                            :title="order.item.name"
+                                                            width="65px"
+                                                            class="rounded img-fluid"
+                                                        ></v-img>
                                                     </div>
-                                                </td>
 
-                                                <td class="text-subtitle-1">{{ order.quantity }}</td>
-                                                <td class="text-subtitle-1">{{ get_full_unite(order.item.unite) }}</td>
+                                                    <div class="ml-5">
+                                                        <h4 class="text-h6 font-weight-semibold">{{ order.item.name }}</h4>
+                                                        <span class="text-subtitle-1 d-block mt-1 textSecondary">{{
+                                                            truncateText(order.item.description, 20)
+                                                        }}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
 
-                                            </tr>
-                                        </tbody>
+                                            <td class="text-subtitle-1">{{ order.quantity }}</td>
+                                            <td class="text-subtitle-1">{{ get_full_unite(order.item?.unite) }}</td>
+                                        </tr>
+                                    </tbody>
                                 </v-table>
                             </v-col>
                         </v-row>
-
 
                         <br />
 

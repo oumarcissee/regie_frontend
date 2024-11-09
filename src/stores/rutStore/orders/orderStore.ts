@@ -17,9 +17,10 @@ const locale = fr; // or en, or es
 export const useOrderStore = defineStore({
     id: 'orderStore',
     state: () => ({
-        orders: [],
+        orders: [] as any,
         ordersLine: [],
         months: [] as any,
+        dialog: false,
         errors: {
             nameError: null as any,
             nameText: null as any,
@@ -38,28 +39,27 @@ export const useOrderStore = defineStore({
         // Fetch followers from action
         
         async fetchOrders() {
-            await this.fetchOrdersLine()//Récuperation des lignes de commandes
+            await this.fetchOrdersLine();//Récuperation des lignes de commandes
             try {
                 const response = await new ApiAxios().find(`/orders/`);
 
-                // console.log(response, "Dans try");
-                // return;
-                this.orders = response.data.results
+                this.orders = response.data.results;    
+
                 this.orders.forEach((item: any) => {
 
                     item.created_at  = format(new Date(item.created_at), "dd, MMMM yyyy", { locale });
                     item.modified_at = format(new Date(item.modified_at), "dd, MMMM yyyy", { locale });
                     // item.user = item.provider.first_name + " " + item.provider.last_name;
-                    item.image = item.provider.image;
-                    item.first_name = item.provider.first_name;
-                    item.last_name = item.provider.last_name;
-                    item.contact  = item.provider.phone_number;
-                    item.email = item.provider.email;
-                    item.address = item.provider.address;
+                    item.image = item.provider?.image;
+                    item.first_name = item.provider?.first_name;
+                    item.last_name = item.provider?.last_name;
+                    item.contact  = item.provider?.phone_number;
+                    item.email = item.provider?.email;
+                    item.address = item.provider?.address;
                     
                     item.id = item.id;
 
-                    item.orders =  this.ordersLine.filter((itemLine: { order?: any }) => itemLine?.order?.id === item.id);
+                    item.orders = this.ordersLine.filter((itemLine: { order?: any }) => itemLine?.order?.id === item.id);
                  
                 });
 
@@ -75,7 +75,9 @@ export const useOrderStore = defineStore({
             try {
                 const response = await new ApiAxios().find(`/orders-line/`);
                 // console.log(response, "Commande line: ");
-                this.ordersLine = response.data.results
+                this.ordersLine = response.data.results;
+
+              
                
             } catch (error) {
                 alert(error);
@@ -128,8 +130,21 @@ export const useOrderStore = defineStore({
                     data.orderLine.forEach(async (item: any) => {
                         const response = await new ApiAxios().add('/orders-line/', {quantity: item.quantity,item: item.item.id, order: OrderResponse.data.id});
                     });
-                    //Enregistrement de la date
-                    const archiveResponse = await new ApiAxios().add('/archives/', {order: OrderResponse.data.id});
+                   
+                    // //
+                    // const archives = await new ApiAxios().find('/archives/');
+
+                    // archives.data.results.forEach(async (item: any) => {
+                    //     // if(format(new Date(item.date), "MMMM yyyy", { locale }) === format(new Date(data.order.created_at), "MMMM yyyy", { locale })) {
+                    //     //     await new ApiAxios().update(`/archives/${item.id}/`, {order: OrderResponse.data.id}, item.id);
+                    //     // }
+
+                    //     if (data.order.id === item.order.id) {
+                            
+                    //         await new ApiAxios().update(`/archives/${item.id}/`, { order: OrderResponse.data.id }, item.id);
+                            
+                    //     }
+                    // });
                 //    this.getUniqueMonth()
 
                     Swal.fire({
