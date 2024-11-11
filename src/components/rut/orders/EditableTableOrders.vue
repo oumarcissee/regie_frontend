@@ -67,7 +67,7 @@ const quantity = useField('quantity');
 // Computed properties
 const providersFiltred = computed(() => {
     const orders = store.orders.filter(
-        (item: any) => item.created_at.includes(currentMonth.value) || item.modified_at.includes(currentMonth.value)
+        (item: any) => item.created_at.includes(currentMonth.value)
     );
     const providersIds = orders.map((item: any) => item.provider.id);
     return userStore.getProviders.filter((item: any) => !providersIds.includes(item.id));
@@ -75,7 +75,7 @@ const providersFiltred = computed(() => {
 
 const getOrders = computed(() => {
     return store.orders.filter(
-        (item: any) => item.created_at.includes(currentMonth.value) || item.modified_at.includes(currentMonth.value)
+        (item: any) => item.created_at.includes(currentMonth.value)
     );
 });
 

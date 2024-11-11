@@ -84,13 +84,14 @@ export const useOrderStore = defineStore({
                 console.log(error);
             }
         },
+        
         //
         async getUniqueMonth() {
             try {
                 const archives = await new ApiAxios().find('/archives/');
 
                 const uniqueMonths = new Set();
-  
+                
                 archives.data.results.forEach((item: any) => {
                     uniqueMonths.add(format(new Date(item.date), "MMMM yyyy", { locale }));
                 });
@@ -101,7 +102,7 @@ export const useOrderStore = defineStore({
                 
                 currentMonth.value = currentMonth.value ?? this.months[0];
       
-                return this.months
+                return this.months;
 
             } catch (error) {
                 alert(error+ "Erreur d'uniqueMonths date");
