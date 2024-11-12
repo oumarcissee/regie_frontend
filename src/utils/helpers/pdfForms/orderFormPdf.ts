@@ -1,152 +1,232 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import autoTable from 'jspdf-autotable';
-
-import {  get_full_unite } from '@/services/utils';
+import autoTable, { type UserOptions, type Color, type CellDef } from 'jspdf-autotable';
+import { get_full_unite } from '@/services/utils';
 import headerPortrait from './includes/headerPortrait';
 import footerPortrait from './includes/footerPortrait';
 import signature from './includes/signature';
 
+// Types
+interface OrderItem {
+    item: {
+        name: string;
+        unite: string;
+        image: string;
+    };
+    quantity: number;
+}
 
+interface OrderData {
+    ref: string;
+    last_name: string;
+    contact: string;
+    created_at: string;
+    modified_at: string;
+    address: string;
+    orders: OrderItem[];
+}
 
-const orderFormPdf = async (heading: string, data: any []) => {
+type FontStyle = 'normal' | 'bold' | 'italic' | 'bolditalic';
 
+const STYLES = {
+    colors: {
+        primary: [0, 48, 135],
+        secondary: [0, 102, 204],
+        accent: [240, 240, 250],
+        white: [255, 255, 255],
+        black: [0, 0, 0]
+    } as const,
+    fonts: {
+        header: { size: 16, style: 'bold' as FontStyle },
+        subHeader: { size: 12, style: 'bold' as FontStyle },
+        normal: { size: 11, style: 'normal' as FontStyle },
+        section: { size: 14, style: 'bold' as FontStyle }
+    },
+    spacing: {
+        margin: 0.3,
+        lineHeight: 0.3,
+        sectionGap: 0.5
+    },
+    table: {
+        // Ajusté pour correspondre exactement à la largeur du header
+        width: 7.67 // Format A4 (8.27) - 0.6 (marges totales)
+    }
+};
+
+const ICONS = {
+    REF: '•',
+    CLIENT: '•',
+    CONTACT: '•',
+    ADDRESS: '•',
+    PACKAGE: '•'
+} as const;
+
+const toColor = (color: readonly [number, number, number]): Color => color as Color;
+
+const orderFormPdf = async (heading: string, data: any[]) => {
     const doc = new jsPDF({
         unit: 'in',
         format: 'a4'
     });
 
-    data.forEach((item: { ref: any; last_name: any; contact: any; created_at: any; modified_at: any; address: any; orders: any[]; }, index: number) => {
+    data.forEach((item: OrderData, index: number) => {
         if (index > 0) {
             doc.addPage();
         }
-        
-        //Entête du page
-        headerPortrait(doc, "Bon de Commande");
-        //Pie du page
-        footerPortrait(doc, data, index + 1, data.length);
 
-
-        //Contenu de page
-
-        let yCoord = 2.5; // Initial y coordinate after header
-        doc.setFontSize(12);
-        doc.text(`Reference: ${item.ref}`, 1, yCoord);
-        yCoord += 0.30; // Adjust the increment to fit your layout
-
-        doc.text(`Nom du destinateur: ${item.last_name}`, 1, yCoord);
-        yCoord += 0.30;
-
-        doc.text(`Contact: ${item.contact}`, 1, yCoord);
-        yCoord += 0.30;
-
-        doc.text(`Adresse: ${item.address}`, 1, yCoord);
-        yCoord += 0.50;
-
-        doc.setFontSize(14);
-        doc.text(`Fourniture(s) :`, 1, yCoord);
-        yCoord += 0.30;
-
-        const body = item.orders.map((value: { item: { name: any; unite: any; }; quantity: any; }, i: number) => {
-        
-            return [
-                i + 1,
-                {
-                    content: '',
-                    styles: {
-                        cellWidth: 1,
-                        cellHeight: 0.5
-                    }
-                },
-                value.item.name,
-                value.quantity,
-                get_full_unite(value.item.unite),
-            ];
-        });
-
-       
-
-        autoTable(doc, {
-            startY: yCoord, // Start the table below the text
-            head: [['N°', 'Image', 'Article', 'Quantité', 'Unité', 'Obs']],
-            body: body,
-            styles: {
-                fontSize: 12 // Increase the font size as needed,
-                
-            },
-            // theme: "plain",
-
-            didDrawCell: function(data) {
-                if (data.column.index === 1 && data.cell.section === 'body') {
-                    const value = item.orders[data.row.index];
-                    const imgData = value.item.image;
-
-                    if (imgData) {
-                        const padding = 0.1;
-                        const cellHeight = data.cell.height - padding * 2;
-                        const cellWidth = data.cell.width - padding * 2;
-                        let imgWidth = cellWidth;
-                        let imgHeight = cellHeight;
-
-                        // Calculate x and y to center the image in the cell
-                        const xOffset = (data.cell.width - imgWidth) / 2;
-                        const yOffset = (data.cell.height - imgHeight) / 2;
-
-                        doc.addImage(imgData, 'PNG', data.cell.x + xOffset, data.cell.y + yOffset, imgWidth, imgHeight);
-                    }
-                }
-            },
-            
-        })
-
-        // const imgSrc = '../../../public/assets/apps/armoirie-guinée-1024x513.png';
-        // const imgWidth = 12; // Width of the image in units
-        // const imgHeight = 5; // Height of the image in units
-
-        // const pageWidth = doc.internal.pageSize.getWidth();
-        // const imgX = (pageWidth - imgWidth) / 2; // Calculate the x position to center the image
-
-        // // Create a canvas to draw the image with reduced opacity
-        // const canvas = document.createElement('canvas');
-        // const ctx = canvas.getContext('2d') 
-        // const img = new Image();
-
-        // img.onload = function() {
-        //     // Set canvas dimensions to match the image
-        //     canvas.width = img.width;
-        //     canvas.height = img.height;
-
-        //     // Draw the image on the canvas with reduced opacity
-        //     ctx.globalAlpha = 0.05; // Set the opacity (0.05 = 5% opacity)
-        //     ctx.drawImage(img, 0, 0);
-
-        //     // Convert the canvas to a data URL
-        //     const imgData = canvas.toDataURL('image/png');
-
-        //     // Add the image to the PDF
-        //     doc.addImage(imgData, 'PNG', imgX, 4, imgWidth, imgHeight);
-
-        //     // Save and open the PDF
-        //     const blob = doc.output('blob');
-        //     const url = URL.createObjectURL(blob);
-        //     window.open(url);
-        // };
-
-        // img.src = imgSrc;
-
-        //Section de la signature
+        headerPortrait(doc, "BON DE COMMANDE");
+        let yCoord = 2.5;
+        drawClientInfoBox(doc, item, yCoord);
+        yCoord += 1.5;
+        drawOrderDetails(doc, item, yCoord);
         signature(doc);
-
- 
+        footerPortrait(doc, data, index + 1, data.length);
     });
 
-    // Save and open the PDF
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);
     window.open(url);
-
-    // doc.save(`${heading}.pdf`);
 };
 
+const drawClientInfoBox = (doc: jsPDF, item: OrderData, startY: number) => {
+    const accent = STYLES.colors.accent;
+    doc.setFillColor(accent[0], accent[1], accent[2]);
+    
+    doc.roundedRect(
+        STYLES.spacing.margin,
+        startY - 0.2,
+        STYLES.table.width,
+        1.3,
+        0.1,
+        0.1,
+        'F'
+    );
 
-export { orderFormPdf }
+    const primary = STYLES.colors.primary;
+    doc.setFontSize(STYLES.fonts.subHeader.size);
+    doc.setTextColor(primary[0], primary[1], primary[2]);
+    doc.setFont('helvetica', STYLES.fonts.subHeader.style);
+
+    const clientInfo = [
+        { icon: ICONS.REF, label: 'Référence', value: item.ref },
+        { icon: ICONS.CLIENT, label: 'Client', value: item.last_name },
+        { icon: ICONS.CONTACT, label: 'Contact', value: item.contact },
+        { icon: ICONS.ADDRESS, label: 'Adresse', value: item.address }
+    ];
+
+    let y = startY;
+    clientInfo.forEach(info => {
+        doc.text(
+            `${info.icon} ${info.label}: ${info.value}`,
+            STYLES.spacing.margin + 0.2,
+            y
+        );
+        y += STYLES.spacing.lineHeight;
+    });
+};
+
+const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
+    const secondary = STYLES.colors.secondary;
+    doc.setFontSize(STYLES.fonts.section.size);
+    doc.setTextColor(secondary[0], secondary[1], secondary[2]);
+    doc.text(`${ICONS.PACKAGE} Détails de la commande:`, STYLES.spacing.margin, startY);
+
+    const totalWidth = STYLES.table.width;
+    const columnWidths = {
+        no: totalWidth * 0.05,
+        image: totalWidth * 0.12,
+        article: totalWidth * 0.33,
+        quantity: totalWidth * 0.18,
+        unite: totalWidth * 0.15,
+        obs: totalWidth * 0.17
+    };
+
+    const tableConfig: UserOptions = {
+        startY: startY + 0.3,
+        margin: { left: STYLES.spacing.margin },
+        head: [['N°', 'Image', 'Article', 'Quantité', 'Unité', 'Obs']],
+        body: item.orders.map((order, i) => {
+            const row: CellDef[] = [
+                { content: (i + 1).toString() },
+                { content: '', styles: { minCellHeight: 0.4 } },
+                { content: order.item.name },
+                { content: order.quantity.toString() },
+                { content: get_full_unite(order.item.unite) },
+                { content: '' }
+            ];
+            return row;
+        }),
+        styles: {
+            fontSize: STYLES.fonts.normal.size,
+            cellPadding: 0.1,
+            lineColor: toColor(STYLES.colors.white),
+            lineWidth: 0
+        },
+        headStyles: {
+            fillColor: toColor(STYLES.colors.secondary),
+            textColor: toColor(STYLES.colors.white),
+            fontSize: STYLES.fonts.subHeader.size,
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        alternateRowStyles: {
+            fillColor: toColor(STYLES.colors.accent)
+        },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: columnWidths.no },
+            1: { cellWidth: columnWidths.image },
+            2: { 
+                halign: 'left',  // Alignement à gauche pour la colonne Article
+                cellWidth: columnWidths.article
+            },
+            3: { halign: 'center', cellWidth: columnWidths.quantity },
+            4: { halign: 'center', cellWidth: columnWidths.unite },
+            5: { cellWidth: columnWidths.obs }
+        },
+        didParseCell: function(data: any) {
+            // Aligner l'en-tête de la colonne Article à gauche
+            if (data.section === 'head' && data.column.index === 2) {
+                data.cell.styles.halign = 'left';
+            }
+        },
+        didDrawCell: function(data: any) {
+            handleImageCell(doc, data, item);
+        }
+    };
+
+    autoTable(doc, tableConfig);
+};
+const handleImageCell = (doc: jsPDF, data: any, item: OrderData) => {
+    if (data.column.index === 1 && data.cell.section === 'body') {
+        const order = item.orders[data.row.index];
+        const imgData = order.item.image;
+
+        if (imgData) {
+            const padding = 0.05;
+            const dimensions = {
+                width: data.cell.width - padding * 2,
+                height: data.cell.height - padding * 2
+            };
+
+            const position = {
+                x: data.cell.x + (data.cell.width - dimensions.width) / 2,
+                y: data.cell.y + (data.cell.height - dimensions.height) / 2
+            };
+
+            try {
+                doc.addImage(
+                    imgData,
+                    'PNG',
+                    position.x,
+                    position.y,
+                    dimensions.width,
+                    dimensions.height
+                );
+            } catch (error) {
+                console.warn('Erreur de chargement de l\'image:', error);
+            }
+        }
+    }
+};
+
+export { orderFormPdf };

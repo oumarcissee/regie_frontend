@@ -4,7 +4,7 @@ import { getCurrentMonth , currentMonth} from '@/services/utils';
 const signature = (doc: any) => {
 
   //Section de la signature
-  let finalY = doc?.autoTable.previous.finalY + 0.25;
+  let finalY = doc?.autoTable.previous.finalY + 0.45;
 
   const date = new Date().toLocaleDateString('fr-FR', {
     day: '2-digit',
@@ -20,36 +20,36 @@ const signature = (doc: any) => {
     align: 'right'
   });
 
-  doc.text("Vue", 1.2, finalY, {
-    align: 'left'
-  });
+  // doc.text("Vue", 1.2, finalY, {
+  //   align: 'left'
+  // });
 
-  finalY += 0.25
+  finalY += 0.45
 
 
-  doc.text("Régisseur des unités territorials", pageWidth - 0.5, finalY ,{ align: 'right'}); // Adjust the x-coordinate to the right
+  doc.text("Le DG l'intendance Militaire", pageWidth - 0.5, finalY ,{ align: 'right'}); // Adjust the x-coordinate to the right
 
-  doc.text("Le DG l'intendance Militaire", 0.5, finalY, {
+  doc.text("Régisseur des unités territorials", 0.5, finalY, {
     align: 'left'
   });
   
   finalY += 1
 
-  doc.text("Chef Service Administratifs et Financiers", pageWidth - 0.5, finalY, {
+  doc.text("Intendant Militaire", pageWidth - 0.5, finalY, {
     align: 'right'
   });
 
-  doc.text("Intendant Militaire", 0.8, finalY, {
+  doc.text("Chef Service Administratifs et Financiers", 0.8, finalY, {
     align: 'left'
   });
 
   finalY += 0.25
 
-  doc.text("Colonel Younoussa MAGASSOUBA", pageWidth - 0.5, finalY, {
+  doc.text("Colonel Gassime TRAORE", pageWidth - 0.5, finalY, {
     align: 'right'
   });
 
-  doc.text("Colonel Gassime TRAORE", 0.5, finalY, {
+  doc.text("Colonel Younoussa MAGASSOUBA", 0.5, finalY, {
     align: 'left'
   });
 

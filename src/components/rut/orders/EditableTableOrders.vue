@@ -711,7 +711,7 @@ onMounted(async () => {
 
             <v-card-actions>
                 <!-- <v-btn color="primary" @click="doPdf">Print</v-btn> -->
-                <v-btn color="secondary" variant="flat" @click="doPdf" block :loading="isSubmittingPdf">Impression</v-btn>
+                <v-btn color="secondary" variant="flat" @click="doPdf" block :loading="isSubmittingPdf">Imprimer</v-btn>
                 <!-- <v-btn @click="closePrintPreviewDialog">Close</v-btn> -->
             </v-card-actions>
         </v-card>
