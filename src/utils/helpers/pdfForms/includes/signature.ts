@@ -4,7 +4,7 @@ import { getCurrentMonth , currentMonth} from '@/services/utils';
 const signature = (doc: any) => {
 
   //Section de la signature
-  let finalY = doc?.autoTable.previous.finalY + 0.45;
+  let finalY = doc?.autoTable.previous.finalY + 0.25;
 
   const date = new Date().toLocaleDateString('fr-FR', {
     day: '2-digit',
@@ -16,7 +16,7 @@ const signature = (doc: any) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   doc.setFontSize(12);
 
-  doc.text(text, pageWidth - 0.7, finalY, {
+  doc.text(text, pageWidth - 0.5, finalY, {
     align: 'right'
   });
 
@@ -24,7 +24,7 @@ const signature = (doc: any) => {
   //   align: 'left'
   // });
 
-  finalY += 0.45
+  finalY += 0.25
 
 
   doc.text("Le DG l'intendance Militaire", pageWidth - 0.5, finalY ,{ align: 'right'}); // Adjust the x-coordinate to the right
@@ -35,11 +35,11 @@ const signature = (doc: any) => {
   
   finalY += 1
 
-  doc.text("Intendant Militaire", pageWidth - 0.5, finalY, {
+  doc.text("Intendant Militaire", pageWidth - 0.8, finalY, {
     align: 'right'
   });
 
-  doc.text("Chef Service Administratifs et Financiers", 0.8, finalY, {
+  doc.text("Chef Service Administratifs et Financiers", 0.5, finalY, {
     align: 'left'
   });
 

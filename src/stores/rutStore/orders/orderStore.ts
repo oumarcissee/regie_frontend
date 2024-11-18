@@ -36,6 +36,16 @@ export const useOrderStore = defineStore({
         }
     },
     actions: {
+
+        async fetchOrderById(orderId: number) {
+            try {
+                const response = await new ApiAxios().find(`/orders/${orderId}`);
+                return response.data.results;
+                } catch (error) {
+                console.error('Error fetching order:', error);
+                throw error;
+            }
+        },
         // Fetch followers from action
         
         async fetchOrders() {

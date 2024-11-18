@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, provide } from 'vue';
-import { truncateText, currentMonth, get_full_unite } from '@/services/utils';
+import { truncateText, currentMonth, get_full_unite, setItemSelected } from '@/services/utils';
 import { orderFormPdf } from '@/utils/helpers/pdfForms/orderFormPdf';
 import { useField, useForm } from 'vee-validate';
 import type { Header, Item } from 'vue3-easy-data-table';
@@ -230,6 +230,7 @@ const deletion = async (index: any) => {
         
         await store.deleteItem(index, 'orders');
         await refreshTable();
+        
     } catch (error) {
         console.error('Erreur lors de la suppression :', error);
     }
@@ -245,10 +246,31 @@ const closePrintPreviewDialog = () => {
     printPreviewDialog.value = false;
 };
 
-const Preview = (item: any) => {
-    itemsSelected.value = [item];
-    openPrintPreview();
+const Preview = async (item: any) => {
+    try {
+        // Rafraîchir les données de la commande avant l'aperçu
+        await store.fetchOrdersLine();
+        await store.fetchOrders();
+        
+        // Filtrer les lignes de commande pour obtenir la ligne correspondant à la commande
+        const orderLine = store.ordersLine.find(line => line.order.id === item.id);
+        
+        // Charger le produit correspondant à la ligne
+        const product = useProduct.items.find((product: { id: any; }) => product.id === orderLine.item.id);
+        
+        // Créer un objet pour l'aperçu dans la modal
+        const previewItem = {...orderLine, product };
+        // Mettre à jour itemsSelected avec les données rafraîchies
+        const updatedOrder = store.orders.find((order: { id: any; }) => order.id === item.id);
+        if (updatedOrder) {
+            itemsSelected.value = [updatedOrder];
+        }
+        openPrintPreview();
+    } catch (error) {
+        console.error('Error preparing preview:', error);
+    }
 };
+
 
 const printContent = () => {
     const printDiv = document.getElementById('printableArea');

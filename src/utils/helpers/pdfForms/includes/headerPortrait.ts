@@ -60,8 +60,9 @@ const headerPortrait = (doc: jsPDF, title: string) => {
     doc.text("République de Guinée", pageWidth - 0.5, 0.5, { align: 'right' });
 
     // National motto with colored text and better spacing
-    let xPos = pageWidth - 2;
+    let xPos = (pageWidth - 2) + 0.4;
     
+    doc.setFontSize(10);
     // Travail in Red
     doc.setTextColor(204, 0, 0);
     doc.text("Travail", xPos, 0.75, { align: 'right' });
@@ -69,12 +70,12 @@ const headerPortrait = (doc: jsPDF, title: string) => {
     
     // Justice in Yellow
     doc.setTextColor(204, 163, 0);
-    doc.text("Justice", xPos + travailWidth * 0.8, 0.75, { align: 'right' });
+    doc.text("Justice", xPos + travailWidth * 0.9, 0.75, { align: 'right' });
     const justiceWidth = doc.getTextWidth("Justice - ");
     
     // Solidarité in Green
     doc.setTextColor(0, 153, 0);
-    doc.text("Solidarité", xPos + (travailWidth + justiceWidth) * 0.8, 0.75, { align: 'right' });
+    doc.text("Solidarité", xPos + (travailWidth + justiceWidth) * 1, 0.75, { align: 'right' });
 
     // Ministry information
     doc.setTextColor(styles.primary.r, styles.primary.g, styles.primary.b);
