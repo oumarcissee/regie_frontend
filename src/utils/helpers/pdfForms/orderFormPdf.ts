@@ -144,7 +144,7 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
     const tableConfig: UserOptions = {
         startY: startY + 0.3,
         margin: { left: STYLES.spacing.margin },
-        head: [['N°', 'Image', 'Article', 'Quantité', 'Unité', 'Obs']],
+        head: [['N°', 'Image', 'Article', 'Quantité' ,'Unité', 'Obs']],
         body: item.orders.map((order, i) => {
             const row: CellDef[] = [
                 { content: (i + 1).toString() },

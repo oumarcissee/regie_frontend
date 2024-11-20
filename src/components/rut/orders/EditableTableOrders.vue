@@ -246,7 +246,7 @@ const closePrintPreviewDialog = () => {
     printPreviewDialog.value = false;
 };
 
-const Preview = async (item: any) => {
+const preview = async (item: any) => {
     try {
         // Rafraîchir les données de la commande avant l'aperçu
         await store.fetchOrdersLine();
@@ -594,7 +594,7 @@ onMounted(async () => {
 
                     <v-tooltip text="Voir">
                         <template v-slot:activator="{ props }">
-                            <v-btn icon flat @click="Preview(item)" v-bind="props"
+                            <v-btn icon flat @click="preview(item)" v-bind="props"
                                 ><PrinterIcon stroke-width="1.5" size="20" class="text-primary"
                             /></v-btn>
                         </template>
