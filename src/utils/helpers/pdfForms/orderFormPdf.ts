@@ -12,6 +12,7 @@ interface OrderItem {
         name: string;
         unite: string;
         image: string;
+        price: number;
     };
     quantity: number;
 }
@@ -48,8 +49,7 @@ const STYLES = {
         sectionGap: 0.5
     },
     table: {
-        // Ajusté pour correspondre exactement à la largeur du header
-        width: 7.67 // Format A4 (8.27) - 0.6 (marges totales)
+        width: 7.67
     }
 };
 
@@ -62,6 +62,8 @@ const ICONS = {
 } as const;
 
 const toColor = (color: readonly [number, number, number]): Color => color as Color;
+
+
 
 const orderFormPdf = async (heading: string, data: any[]) => {
     const doc = new jsPDF({
@@ -125,6 +127,17 @@ const drawClientInfoBox = (doc: jsPDF, item: OrderData, startY: number) => {
     });
 };
 
+const formatPrice = (price: number): string => {
+    // Formatter le nombre avec des espaces comme séparateurs de milliers
+    const formattedNumber = price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return `${formattedNumber} GNF`;
+};
+
+const truncateText = (text: string, maxLength: number): string => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength - 3) + '...';
+};
+
 const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
     const secondary = STYLES.colors.secondary;
     doc.setFontSize(STYLES.fonts.section.size);
@@ -133,34 +146,64 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
 
     const totalWidth = STYLES.table.width;
     const columnWidths = {
-        no: totalWidth * 0.05,
-        image: totalWidth * 0.12,
-        article: totalWidth * 0.33,
-        quantity: totalWidth * 0.18,
-        unite: totalWidth * 0.15,
-        obs: totalWidth * 0.17
+        no: totalWidth * 0.05,        // 5%
+        image: totalWidth * 0.12,     // 12%
+        article: totalWidth * 0.23,    // 23%
+        quantity: totalWidth * 0.12,   // 12%
+        unite: totalWidth * 0.13,     // 13%
+        unitPrice: totalWidth * 0.17,  // 17%
+        totalPrice: totalWidth * 0.18  // 18%
     };
+
+    const orderTotal = item.orders.reduce((sum, order) =>
+        sum + (order.quantity * order.item.price), 0
+    );
+
+    // Calculer la largeur approximative en caractères pour chaque colonne
+    const charWidthEstimate = STYLES.fonts.normal.size / 3.5; // Estimation approximative
+    const maxCharsInArticle = Math.floor((columnWidths.article * 72) / charWidthEstimate); // 72 points par pouce
 
     const tableConfig: UserOptions = {
         startY: startY + 0.3,
         margin: { left: STYLES.spacing.margin },
-        head: [['N°', 'Image', 'Article', 'Quantité' ,'Unité', 'Obs']],
-        body: item.orders.map((order, i) => {
-            const row: CellDef[] = [
-                { content: (i + 1).toString() },
-                { content: '', styles: { minCellHeight: 0.4 } },
-                { content: order.item.name },
-                { content: order.quantity.toString() },
-                { content: get_full_unite(order.item.unite) },
-                { content: '' }
-            ];
-            return row;
-        }),
+        head: [['N°', 'Image', 'Article', 'Quantité', 'Unité', 'Prix unit.', 'Total']],
+        body: [
+            ...item.orders.map((order, i) => {
+                const totalPrice = order.quantity * order.item.price;
+                const row: CellDef[] = [
+                    { content: (i + 1).toString() },
+                    { content: '', styles: { minCellHeight: 0.4 } },
+                    {
+                        content: truncateText(order.item.name, maxCharsInArticle),
+                        title: order.item.name // Pour afficher le texte complet au survol
+                    },
+                    { content: order.quantity.toString() },
+                    { content: get_full_unite(order.item.unite) },
+                    { content: formatPrice(order.item.price) },
+                    { content: formatPrice(totalPrice) }
+                ];
+                return row;
+            }),
+            [{
+                content: 'Total',
+                colSpan: 6,
+                styles: {
+                    fontStyle: 'bold',
+                    halign: 'right'
+                }
+            }, {
+                content: formatPrice(orderTotal),
+                styles: {
+                    fontStyle: 'bold'
+                }
+            }]
+        ],
         styles: {
             fontSize: STYLES.fonts.normal.size,
             cellPadding: 0.1,
             lineColor: toColor(STYLES.colors.white),
-            lineWidth: 0
+            lineWidth: 0,
+            overflow: 'hidden' // Empêcher le débordement du texte
         },
         headStyles: {
             fillColor: toColor(STYLES.colors.secondary),
@@ -175,29 +218,31 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
         columnStyles: {
             0: { halign: 'center', cellWidth: columnWidths.no },
             1: { cellWidth: columnWidths.image },
-            2: { 
-                halign: 'left',  // Alignement à gauche pour la colonne Article
-                cellWidth: columnWidths.article
+            2: {
+                halign: 'left',
+                cellWidth: columnWidths.article,
+                overflow: 'hidden'
             },
             3: { halign: 'center', cellWidth: columnWidths.quantity },
             4: { halign: 'center', cellWidth: columnWidths.unite },
-            5: { cellWidth: columnWidths.obs }
+            5: { halign: 'right', cellWidth: columnWidths.unitPrice },
+            6: { halign: 'right', cellWidth: columnWidths.totalPrice }
         },
-        didParseCell: function(data: any) {
-            // Aligner l'en-tête de la colonne Article à gauche
+        didParseCell: function (data: any) {
             if (data.section === 'head' && data.column.index === 2) {
                 data.cell.styles.halign = 'left';
             }
         },
-        didDrawCell: function(data: any) {
+        didDrawCell: function (data: any) {
             handleImageCell(doc, data, item);
         }
     };
 
     autoTable(doc, tableConfig);
 };
+
 const handleImageCell = (doc: jsPDF, data: any, item: OrderData) => {
-    if (data.column.index === 1 && data.cell.section === 'body') {
+    if (data.column.index === 1 && data.cell.section === 'body' && data.row.index < item.orders.length) {
         const order = item.orders[data.row.index];
         const imgData = order.item.image;
 

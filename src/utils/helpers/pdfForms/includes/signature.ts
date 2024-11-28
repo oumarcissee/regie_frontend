@@ -1,61 +1,87 @@
 import type jsPDF from "jspdf";
-import { getCurrentMonth , currentMonth} from '@/services/utils';
+import { getCurrentMonth, currentMonth } from '@/services/utils';
 
 const signature = (doc: any) => {
+    // Default Y position if autoTable information is not available
+    let finalY = doc.previousAutoTable 
+        ? doc.previousAutoTable.finalY + 0.25 
+        : doc.internal.pageSize.height - 3; // Fallback to near bottom of page
 
-  //Section de la signature
-  let finalY = doc?.autoTable.previous.finalY + 0.25;
+    // Configuration de la date
+    const date = new Date().toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+    });
 
-  const date = new Date().toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  }); // Adjust locale as needed (e.g., 'en-US' for US format)
-  const text = `Conakry, ${date}`;
-  const textWidth = doc.getTextWidth(text);
-  const pageWidth = doc.internal.pageSize.getWidth();
-  doc.setFontSize(12);
+    // Dimensions de la page
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const leftMargin = 0.5;
+    const rightMargin = pageWidth - 0.5;
 
-  doc.text(text, pageWidth - 0.5, finalY, {
-    align: 'right'
-  });
+    // Largeur des conteneurs (environ 1/3 de la page pour chaque conteneur)
+    const containerWidth = pageWidth / 3;
 
-  // doc.text("Vue", 1.2, finalY, {
-  //   align: 'left'
-  // });
+    // Positions des conteneurs
+    const leftContainerX = leftMargin;
+    const rightContainerX = rightMargin - containerWidth + 0.3;
 
-  finalY += 0.25
+    // Configuration du texte
+    doc.setFontSize(12);
 
+    // Date (alignée à droite)
+    doc.text(`Conakry, ${date}`, rightMargin, finalY, { align: 'right' });
 
-  doc.text("Le DG l'intendance Militaire", pageWidth - 0.5, finalY ,{ align: 'right'}); // Adjust the x-coordinate to the right
+    // Ajuster la position Y après la date
+    const dateFinalY = finalY + 0.30;
 
-  doc.text("Régisseur des unités territorials", 0.5, finalY, {
-    align: 'left'
-  });
-  
-  finalY += 1
+    // Conteneur gauche
+    const leftContent = [
+        "Régisseur des unités territoriales",
+        "Chef Service Administratifs et Financiers",
+        "Colonel Younoussa MAGASSOUBA"
+    ];
 
-  doc.text("Intendant Militaire", pageWidth - 0.8, finalY, {
-    align: 'right'
-  });
+    // Conteneur droit
+    const rightContent = [
+        "Le DG l'intendance Militaire",
+        "Intendant Militaire", 
+        "Colonel Gassime TRAORE"
+    ];
 
-  doc.text("Chef Service Administratifs et Financiers", 0.5, finalY, {
-    align: 'left'
-  });
+    // Fonction pour centrer le texte dans un conteneur
+    const drawCenteredText = (textArray: string[], x: number, startY: number, containerWidth: number) => {
+        let counter = 0;
+        let currentY = startY;
+        textArray.forEach((text, index) => {
+            const centerX = x + (containerWidth / 2);
+            counter ++;
 
-  finalY += 0.25
+            if (index === textArray.length - 1) {
+                // Ajouter plus d'espace avant le dernier élément (le nom)
+                currentY += 0.05;
+            }
 
-  doc.text("Colonel Gassime TRAORE", pageWidth - 0.5, finalY, {
-    align: 'right'
-  });
+            if (counter === 3) {
+                // Ajouter un espace de la signature
+                currentY += 0.7;
+            }
 
-  doc.text("Colonel Younoussa MAGASSOUBA", 0.5, finalY, {
-    align: 'left'
-  });
+            doc.text(text, centerX, currentY, {
+                align: 'center'
+            });
 
+            currentY += (index === textArray.length - 1) ? 0.05 : 0.25;
+        });
+        return currentY;
+    };
 
+    // Dessiner les conteneurs et leur contenu
+    const leftFinalY = drawCenteredText(leftContent, leftContainerX, dateFinalY, containerWidth);
+    const rightFinalY = drawCenteredText(rightContent, rightContainerX, dateFinalY, containerWidth);
 
-
-}
+    // Retourner la position Y finale (la plus grande des deux conteneurs)
+    return Math.max(leftFinalY, rightFinalY);
+};
 
 export default signature;

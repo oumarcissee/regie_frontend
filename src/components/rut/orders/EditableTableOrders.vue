@@ -289,6 +289,8 @@ const printContent = () => {
 
 const doPdf = async () => {
     isSubmittingPdf.value = true;
+
+    // console.log(itemsSelected.value);
     try {
         await orderFormPdf(heading.value, itemsSelected.value);
     } catch (error) {
