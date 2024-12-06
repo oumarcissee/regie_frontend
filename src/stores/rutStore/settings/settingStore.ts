@@ -8,8 +8,8 @@ import Swal from 'sweetalert2'
 
 
 
-export const useProductsList = defineStore({
-    id: 'productsListStore',
+export const useSettingStore = defineStore({
+    id: 'settingStore',
     state: () => ({
         items: [] as any,
         errors: {
@@ -18,16 +18,17 @@ export const useProductsList = defineStore({
         },
     }),
     getters: {
-        getProducts(state) {
+        getSignators(state) {
             return state.items;
         }
     },
     actions: {
         // Fetch followers from action
-        async fetchItems() {
+        async fetchSignators() {
             try {
-                const response = await new ApiAxios().find(`/items/`);
+                const response = await new ApiAxios().find(`signal-operators/`);
                 return this.items = response?.data?.results;
+
             } catch (error) {
                 alert(error);
                 console.log(error);
