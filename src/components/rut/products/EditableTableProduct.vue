@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useSettingStore } from '@/stores/rutStore/products/productsListStore';
+import { useProductsList } from '@/stores/rutStore/products/productsListStore';
 import { truncateText } from '@/services/utils';
 import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
@@ -19,8 +19,8 @@ import contact from '@/_mockApis/apps/contact';
 const image = ref<File[] | null>(null);
 const { errorMessage } = useField('image'); // On conserve uniquement le message d'erreur
 
-const { addOrUpdateProduct, errors } = useSettingStore();
-const store = useSettingStore();
+const { addOrUpdateProduct, errors } = useProductsList();
+const store = useProductsList();
 
 const { handleSubmit, handleReset, isSubmitting } = useForm({
     validationSchema: {
