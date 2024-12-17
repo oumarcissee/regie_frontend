@@ -129,7 +129,6 @@ const refreshTable = async () => {
         
 
         items.value = fetchedSignators;
-        return;
         close();
     } catch (error) {
         console.error('Erreur lors du rafraîchissement :', error);
