@@ -40,6 +40,14 @@ const heading = ref('');
 const isSubmittingPdf = ref(false);
 const refProduct = ref();
 
+import { format } from 'date-fns';
+
+
+const formatDate = (date: string | Date) => {
+    return date ? format(new Date(date), 'dd/MM/yyyy HH:mm') : '-';
+};
+
+
 // Form validation
 const { handleSubmit, handleReset, isSubmitting } = useForm({
     validationSchema: {

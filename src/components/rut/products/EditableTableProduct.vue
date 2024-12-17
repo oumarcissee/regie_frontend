@@ -12,7 +12,7 @@ import VueCropper from 'vue-cropperjs';
 
 import { useField, useForm } from 'vee-validate';
 
-import type { Items } from '@/types/rut/ProductsType';
+import type { Items } from '@/types/rut/SignatorType';
 
 import contact from '@/_mockApis/apps/contact';
 

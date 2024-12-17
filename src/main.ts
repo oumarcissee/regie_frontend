@@ -37,7 +37,7 @@ import VueEasyLightbox from 'vue-easy-lightbox';
 
 
 const i18n = createI18n({
-    locale: 'en',
+    locale: 'fr',
     messages: messages,
     silentTranslationWarn: true,
     silentFallbackWarn: true

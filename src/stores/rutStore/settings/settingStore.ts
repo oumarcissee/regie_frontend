@@ -1,152 +1,137 @@
 import { defineStore } from 'pinia';
-// project imports
 import { isAxiosError } from '@/services/utils';
-import { router } from '@/router';
-
 import ApiAxios from '@/services/ApiAxios';
-import Swal from 'sweetalert2'
+import Swal from 'sweetalert2';
+import type { Signator } from '@/types/rut/SignatorType';
+import { shallowRef } from 'vue';
 
-
+interface SettingStoreState {
+    items: Signator[];
+    errors: {
+        nameError: string | null;
+        nameText: string | null;
+    };
+}
 
 export const useSettingStore = defineStore({
     id: 'settingStore',
     state: () => ({
-        items: [] as any,
-        errors: {
-            nameError: null as any,
-            nameText: null as any,
-        },
+        items: shallowRef([]),
+   
     }),
+
     getters: {
         getSignators(state) {
-            return state.items;
+            
         }
     },
     actions: {
-        // Fetch followers from action
         async fetchSignators() {
             try {
-                const response = await new ApiAxios().find(`signal-operators/`);
-                return this.items = response?.data?.results;
-
+                const response = await new ApiAxios().find(`/operators/`);
+           
+                return await JSON.parse(JSON.stringify(response.data.results));;
             } catch (error) {
-                alert(error);
-                console.log(error);
+                console.error('Erreur lors de la récupération des signataires :', error);
+                
+                // Afficher une notification d'erreur
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur de chargement',
+                    text: 'Impossible de charger les signataires'
+                });
+
+                // Retourner un tableau vide pour éviter l'erreur de rendu
+                return [];
             }
         },
 
-        //Ajout d'un élement
-        async addOrUpdateProduct(data: any, param?: any) {
+        async addOrUpdateProduct(data: FormData, param?: number) {
             try {
                 if (param) {
-                    const response = await new ApiAxios().updatePartialForm(`/items/${param}/`, data, param);
-                    // await this.fetchItems()
-
-                    this.$reset()
+                    await new ApiAxios().updatePartialForm(`/signal-operators/${param}/`, data, param);
+                    
                     Swal.fire({
                         position: "center",
                         icon: "success",
-                        title: "Modification effectué",
+                        title: "Modification effectuée",
                         showConfirmButton: false,
-                        timer: 2000,
-                        showClass: {
-                            popup: `
-                            animate__animated
-                            animate__fadeInRight
-                            animate__faster
-                            `
-                        },
-                        hideClass: {
-                            popup: `
-                            animate__animated
-                            animate__fadeInRight
-                            animate__faster
-                            `
-                        }
+                        timer: 2000
                     });
                 } else {
-                    const response = await new ApiAxios().addForm('/items/', data);
-                    console.log(response.data);
-        
-                    this.$reset()
+                    await new ApiAxios().addForm('/signal-operators/', data);
+                    
                     Swal.fire({
                         position: "center",
                         icon: "success",
-                        title: "Enregisrement effectué",
+                        title: "Enregistrement effectué",
                         showConfirmButton: false,
-                        timer: 2000,
-                        showClass: {
-                            popup: `
-                            animate__animated
-                            animate__fadeInRight
-                            animate__faster
-                            `
-                        },
-                        hideClass: {
-                            popup: `
-                            animate__animated
-                            animate__fadeInRight
-                            animate__faster
-                            `
-                        }
+                        timer: 2000
                     });
                 }
-             
-            } catch (error) {
 
+                // Réinitialiser et recharger les données
+                this.$reset();
+                await this.fetchSignators();
+            } catch (error) {
                 if (isAxiosError(error)) {
-                    // console.log(error)
-                    if (error.response && error.response.data) {
-                      
-                        const responseData = error.response.data as { name: string[]};
-                        this.errors.nameError = responseData.name ? "Cet article existe déja." : null;
-                        this.errors.nameText = data.get('name')
+                    if (error.response?.data) {
+                        // const responseData = error.response.data as { name?: string[] };
                         
-                      
+                        // this.errors.nameError = responseData.name 
+                        //     ? "Cet article existe déjà." 
+                        //     : null;
+                        
+                        // this.errors.nameText = data.get('name') as string;
                     }
                 }
-                return Promise.reject("Autres erreur");
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: 'Une erreur est survenue lors de l\'enregistrement.'
+                });
+                
+                return Promise.reject(error);
             }
         },
-         /**
-         * @param  {String} item 
-         * @param  {String} url 
-         */
-        async deleteItem (item: any, url: string){
-            Swal.fire({
-            title: "Êtes vous sûr ?",
-            text: "Vous ne pourrez plus revenir en arrière!",
-            icon: "warning",
-            showCancelButton: true,
-            cancelButtonText: "Annuler",
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Oui, Je le supprime!"
-            }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    const response = await new ApiAxios().delete(`/${url}/${item.id}/`, item.id);
+
+        async deleteItem(item: any, url: string) {
+            try {
+                const result = await Swal.fire({
+                    title: "Êtes-vous sûr ?",
+                    text: "Vous ne pourrez plus revenir en arrière !",
+                    icon: "warning",
+                    showCancelButton: true,
+                    cancelButtonText: "Annuler",
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Oui, je le supprime !"
+                });
+
+                if (result.isConfirmed) {
+                    await new ApiAxios().delete(`/${url}/${item.id}/`, item.id);
+                    
+                    // Mettre à jour la liste locale
+                    this.items = this.items.filter((user: any) => user.id !== item.id);
+
                     Swal.fire({
-                        title: "Supprimé!",
+                        title: "Supprimé !",
                         text: "Votre objet a bien été supprimé.",
                         icon: "success"
                     });
-                    //
-                    this.items = this.items?.filter((user: any) => user.id !== item.id);
-
-                } catch (error) {
-                    console.log(error);
-                    Swal.fire({
-                        title: "Erreur!",
-                        text: "Votre objet ne peut pas être supprimé.",
-                        icon: "warning"
-                    });
-                    return error;
                 }
+            } catch (error) {
+                console.error('Erreur lors de la suppression :', error);
                 
+                Swal.fire({
+                    title: "Erreur !",
+                    text: "Votre objet ne peut pas être supprimé.",
+                    icon: "warning"
+                });
+                
+                throw error;
             }
-                
-            });
         }
     }
 });

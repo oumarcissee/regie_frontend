@@ -1,244 +1,179 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useSettingStore } from '@/stores/rutStore/settings/settingStore';
-import { truncateText } from '@/services/utils';
-import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
-
-const locale = fr; // or en, or es
-
-import type { VueCropperMethods } from 'vue-cropperjs';
-import VueCropper from 'vue-cropperjs';
-
 import { useField, useForm } from 'vee-validate';
+import type { Signator } from '@/types/rut/SignatorType';
 
-import type { Items } from '@/types/rut/ProductsType';
+import { PencilIcon, TrashIcon } from 'lucide-vue-next';
 
-import contact from '@/_mockApis/apps/contact';
-
-const { addOrUpdateProduct, errors } = useSettingStore();
 const store = useSettingStore();
-
-const { handleSubmit, handleReset, isSubmitting } = useForm({
-    validationSchema: {
-        first_name(value: string | any[]) {
-            if (value?.length <= 4 || !value) {
-                return 'Le prenom doit avoir au moins 4 lettres.';
-            } else if (errors.nameError && errors.nameText === value) {
-                return errors.nameError;
-            }
-            return true;
-        },
-
-        last_name(value: string | any[]) {
-            if (value?.length <= 4 || !value) {
-                return 'Le nom doit avoir au moins 4 lettres.';
-            } else if (errors.nameError && errors.nameText === value) {
-                return errors.nameError;
-            }
-            return true;
-        },
-
-        position(value: string | any[]) {
-            if (value) return true;
-            return 'Choisissez la position.';
-        },
-
-        function_name(value: string | any[]) {
-            if (value?.length <= 4 || !value) {
-                return 'La fonction doit avoir au moins 4 lettres.';
-            }
-            return true;
-        },
-
-        title(value: string | any[]) {
-            if (value?.length <= 4 || !value) {
-                return 'Le titre doit avoir au moins 4 lettres.';
-            }
-            return true;
-        },
-
-       
-    }
-});
-
-onMounted(async () => {
-    await refreshTable();
-});
-
-const getItems: any = computed(() => {
-    return store.items;
-});
-
-let form: Items = Object();
-
-const formData = new FormData();
-
-const imageSrc = ref('');
-
-const selected = ref<string | null | undefined | number>(null);
-let cropper = ref<VueCropperMethods | null>(null);
-
-function setImage(e: Event) {
-    dialogImg.value = true;
-    const target = e.target as HTMLInputElement;
-    const file = (target.files as FileList)[0];
-
-    if (!file || file.type.indexOf('image/') === -1) {
-        dialogImg.value = false;
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        if (event.target && event.target.result) {
-            imageSrc.value = event.target.result.toString();
-            if (cropper.value) {
-                cropper.value.replace(imageSrc.value);
-            }
-        }
-    };
-
-    reader.readAsDataURL(file);
-}
-
-const dialogImg = ref(false) as any;
-
-const first_name    = useField('first_name');
-const last_name     = useField('last_name');
-const title         = useField('title');
-const function_name = useField('function_name');
-const position      = useField('position');
-
-// const divider     = useField('divider');
-// const description = useField('description');
-
-// const rate_per_days = useField('rate_per_days');
-// const image = useField('image');
-// const price = useField('price');
-
-const count = ref(0);
-
-const submit = handleSubmit(async (data: any, { setErrors }: any) => {
-    try {
-        formData.append('first_name', data.first_name);
-        formData.append('last_name', data.last_name);
-        formData.append('title', data.title);
-        formData.append('function_name', data.function_name);
-        formData.append('position', data.position);
-
-        if (editedIndex.value !== -1) {
-            console.log(selected.value, 'selected');
-            //Si un élément est selectioné
-            await addOrUpdateProduct(formData, editedIndex.value);
-            await refreshTable();
-        } else {
-            // if (!formData.get('image')) formData.set('image', data.image[0]);
-            await addOrUpdateProduct(formData);
-            await refreshTable();
-        }
-    } catch (error) {
-        console.log(error);
-        count.value++;
-        if (count.value >= 5) {
-            // Arrêter l'exécution du script ou effectuer une action appropriée
-            console.log(error);
-            return;
-        }
-
-        submit();
-        return setErrors({ apiError: error });
-    }
-});
-
-// Fonction pour réinitialiser les champs
-const refreshTable = async () => {
-    await store.fetchSignators();
-    close();
-};
-
-const positionSelected = ref();
-
-const changed = (value: string | any) => {
-    positionSelected.value = value;
-    return value;
-};
+const { addOrUpdateProduct } = store;
 
 const positions = ref([
     { title: 'Rien', value: 'default' },
     { title: 'A gauche', value: 'left' },
     { title: 'A droite', value: 'right' },
-    { title: 'Au milieu', value: 'center'}
+    { title: 'Au milieu', value: 'center' }
 ]);
 
-const valid = ref(true);
-const dialog = ref(false);
-
-const search = ref('');
-const rolesbg = ref(['primary', 'secondary', 'error', 'success', 'warning']);
-const desserts = ref(contact);
-const editedIndex = ref(-1);
-
-//Methods
-const filteredList = computed(() => {
-    return getItems.filter((item: any) => {
-        return item.name.toLowerCase().includes(search.value.toLowerCase());
-    });
+const { handleSubmit, handleReset, isSubmitting } = useForm({
+    validationSchema: {
+        first_name(value: string) {
+            if (!value || value.length < 2) {
+                return 'Le prénom doit avoir au moins 2 lettres.';
+            }
+            return true;
+        },
+        last_name(value: string) {
+            if (!value || value.length < 2) {
+                return 'Le nom doit avoir au moins 2 lettres.';
+            }
+            return true;
+        },
+        position(value: string) {
+            if (!value) {
+                return 'Veuillez choisir une position.';
+            }
+            return true;
+        },
+        function_name(value: string) {
+            if (!value || value.length < 2) {
+                return 'La fonction doit avoir au moins 2 lettres.';
+            }
+            return true;
+        },
+        title(value: string) {
+            if (!value || value.length < 2) {
+                return 'Le titre doit avoir au moins 2 lettres.';
+            }
+            return true;
+        }
+    }
 });
 
-function close() {
+const search = ref('');
+const dialog = ref(false);
+const editedIndex = ref(-1);
+
+const first_name = useField('first_name');
+const last_name = useField('last_name');
+const title = useField('title');
+const function_name = useField('function_name');
+const position = useField('position');
+
+const formatDate = (date: string | Date) => {
+    return date ? format(new Date(date), 'dd/MM/yyyy HH:mm') : '-';
+};
+
+onMounted(async () => {
+    try {
+        await refreshTable();
+    } catch (error) {
+        console.error('Error initializing component:', error);
+    }
+});
+
+const getItems = computed(() => {
+    return items.value.filter(
+        (item: Signator) =>
+            item.first_name.toLowerCase().includes(search.value.toLowerCase()) ||
+            item.last_name.toLowerCase().includes(search.value.toLowerCase())
+    );
+});
+
+const formTitle = computed(() => (editedIndex.value === -1 ? 'Nouveau signataire' : 'Modifier un signataire'));
+
+const formButton = computed(() => (editedIndex.value === -1 ? 'Enregistrer' : 'Modifier'));
+
+const submit = handleSubmit(async (data: any, { setErrors }: any) => {
+    const formData = new FormData();
+
+    Object.keys(data).forEach((key) => {
+        formData.append(key, data[key]);
+    });
+
+    try {
+        if (editedIndex.value !== -1) {
+            await addOrUpdateProduct(formData, editedIndex.value);
+        } else {
+            await addOrUpdateProduct(formData);
+        }
+
+        await refreshTable();
+        dialog.value = false; // Fermer le dialogue après soumission réussie
+    } catch (error: any) {
+        console.error('Erreur lors de la soumission :', error);
+
+        if (error.response?.data) {
+            const apiErrors = error.response.data;
+            const errorMessages: Record<string, string> = {};
+
+            Object.keys(apiErrors).forEach((key) => {
+                errorMessages[key] = apiErrors[key][0];
+            });
+
+            setErrors(errorMessages);
+        } else {
+            setErrors({ apiError: "Une erreur est survenue lors de l'enregistrement." });
+        }
+    }
+});
+
+const items = ref<Signator[]>([]);
+
+const refreshTable = async () => {
+    try {
+        const fetchedSignators = await store.fetchSignators();
+        console.log(fetchedSignators);
+        
+
+        items.value = fetchedSignators;
+        return;
+        close();
+    } catch (error) {
+        console.error('Erreur lors du rafraîchissement :', error);
+        items.value = [];
+    }
+};
+
+const close = () => {
     dialog.value = false;
     editedIndex.value = -1;
     handleReset();
-}
-
-function closeImg() {
-    dialogImg.value = false;
-}
-
-// Méthode pour modifier un élément
-const editItem = (index: any) => {
-    dialog.value = true;
-    editedIndex.value = index.id;
-
-    first_name.value.value = index.first_name;
-    last_name.value.value = index.last_name.name;
-    function_name.value.value = index.function_name;
-    position.value.value = index.position;
-    title.value.value = index.title;
-
 };
 
-// Suppression d'un element
-const remove = async (index: any) => {
+const editItem = (item: Signator) => {
+    dialog.value = true;
+    editedIndex.value = item.id;
+
+    first_name.value.value = item.first_name;
+    last_name.value.value = item.last_name;
+    function_name.value.value = item.function_name;
+    position.value.value = item.position;
+    title.value.value = item.title;
+};
+
+const remove = async (item: Signator) => {
     try {
-        await store.deleteItem(index, 'items');
-        await refreshTable(); // Rafraîchir les données après la suppression
+        await store.deleteItem(item, 'operators');
+        await refreshTable();
     } catch (error) {
         console.error('Erreur lors de la suppression :', error);
     }
 };
-
-//Computed Property
-const formTitle = computed(() => {
-    return editedIndex.value === -1 ? 'Nouvel Article' : 'Editer un Article';
-});
-
-//Computed Property
-const formButton = computed(() => {
-    return editedIndex.value === -1 ? 'Enregistrer' : 'Modifier';
-});
 </script>
 <template>
     <v-row>
         <v-col cols="12" lg="4" md="6">
-            <v-text-field density="compact" v-model="search" label="Rechercher par nom ou rôle" variant="outlined"></v-text-field>
+            <v-text-field density="compact" v-model="search" label="Rechercher par nom ou prénom" variant="outlined"></v-text-field>
         </v-col>
         <v-col cols="12" lg="8" md="6" class="text-right">
             <v-dialog v-model="dialog" max-width="800">
                 <template v-slot:activator="{ props }">
                     <v-btn color="primary" v-bind="props" flat class="ml-auto">
-                        <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Ajouter un signateur
+                        <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>
+                        Ajouter un signataire
                     </v-btn>
                 </template>
                 <v-card>
@@ -248,7 +183,7 @@ const formButton = computed(() => {
                     </v-card-title>
 
                     <v-card-text>
-                        <v-form ref="form" v-model="valid" lazy-validation>
+                        <v-form>
                             <v-row>
                                 <v-col cols="12" sm="6">
                                     <v-text-field
@@ -256,8 +191,7 @@ const formButton = computed(() => {
                                         v-model="first_name.value.value"
                                         :error-messages="first_name.errorMessage.value"
                                         label="Prénoms"
-                                    >
-                                    </v-text-field>
+                                    ></v-text-field>
                                 </v-col>
 
                                 <v-col cols="12" sm="6">
@@ -288,20 +222,19 @@ const formButton = computed(() => {
                                     <v-select
                                         label="Position"
                                         :items="positions"
-                                        @update:modelValue="changed"
-                                        single-line
                                         variant="outlined"
                                         v-model="position.value.value"
                                         :error-messages="position.errorMessage.value"
-                                    >
-                                    </v-select>
+                                    ></v-select>
                                 </v-col>
                             </v-row>
                         </v-form>
                     </v-card-text>
 
                     <v-card-actions class="pa-4">
-                        <v-btn color="secondary" variant="flat" @click="submit" block :loading="isSubmitting">{{ formButton }}</v-btn>
+                        <v-btn color="secondary" variant="flat" @click="submit" block :loading="isSubmitting">
+                            {{ formButton }}
+                        </v-btn>
                     </v-card-actions>
                 </v-card>
             </v-dialog>
@@ -327,37 +260,31 @@ const formButton = computed(() => {
                 <td class="text-subtitle-1">{{ item.ref }}</td>
                 <td>
                     <div class="d-flex align-center py-4">
-                        <!-- <div class="hoverable">
-                            <v-img :lazy-src="item.image" :src="item.image" width="65px" class="rounded img-fluid"></v-img>
-                        </div> -->
-
                         <div class="ml-5">
                             <h4 class="text-h6 font-weight-semibold">{{ item.first_name }}</h4>
-                            <!-- <span class="text-subtitle-1 d-block mt-1 textSecondary">{{ truncateText(item.last_name, 20) }}</span> -->
                         </div>
                     </div>
                 </td>
                 <td class="text-subtitle-1">{{ item.last_name }}</td>
-                <!-- {{ format(new Date(date), 'E, MMM d') }} -->
                 <td class="text-subtitle-1">{{ item.title }}</td>
-                <td class="text-subtitle-1">{{ item.divider }}</td>
-                <!-- <td>
-                    <v-chip :color="item.rolestatus" size="small" label>{{ item.role }}</v-chip>
-                </td>  -->
+                <td class="text-subtitle-1">{{ item.function_name }}</td>
+                <td class="text-subtitle-1">{{ formatDate(item.created_at) }}</td>
+                <td class="text-subtitle-1">{{ formatDate(item.modified_at) }}</td>
                 <td>
                     <div class="d-flex align-center">
-                        <v-tooltip text="Edit">
+                        <v-tooltip text="Modifier">
                             <template v-slot:activator="{ props }">
-                                <v-btn icon flat @click="editItem(item)" v-bind="props"
-                                    ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
-                                /></v-btn>
+                                <v-btn icon flat @click="editItem(item)" v-bind="props">
+                                    <PencilIcon :stroke-width="1.5" :size="20" class="text-primary" />//+
+                                </v-btn>
                             </template>
                         </v-tooltip>
-                        <v-tooltip text="Delete">
+
+                        <v-tooltip text="Supprimer">
                             <template v-slot:activator="{ props }">
-                                <v-btn icon flat @click="remove(item)" v-bind="props"
-                                    ><TrashIcon stroke-width="1.5" size="20" class="text-error"
-                                /></v-btn>
+                                <v-btn icon flat @click="remove(item)" v-bind="props">
+                                    <TrashIcon stroke-width="1.5" :size="20" class="text-error" />
+                                </v-btn>
                             </template>
                         </v-tooltip>
                     </div>

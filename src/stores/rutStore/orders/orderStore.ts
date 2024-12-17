@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 // project imports
 import { isAxiosError, currentMonth } from '@/services/utils';
 
-import { router } from '@/router';
+// import { router } from '@/router';
 
 import ApiAxios from '@/services/ApiAxios';
 import Swal from 'sweetalert2'
@@ -11,14 +11,11 @@ import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
 const locale = fr; // or en, or es
 
-
-
-
 export const useOrderStore = defineStore({
     id: 'orderStore',
     state: () => ({
         orders: [] as any,
-        ordersLine: [],
+        ordersLine: [] as any,
         months: [] as any,
         dialog: false,
         errors: {
@@ -57,9 +54,11 @@ export const useOrderStore = defineStore({
 
                 this.orders.forEach((item: any) => {
 
-                    item.created_at  = format(new Date(item.created_at), "dd, MMMM yyyy", { locale });
+                    item.created_at = format(new Date(item.created_at), "dd, MMMM yyyy HH'h'mm", { locale });
+                    // item.created_at_with_hour = format(new Date(item.created_at), "dd, MMMM yyyy HH'h'mm", { locale });
+                    
                     item.modified_at = format(new Date(item.modified_at), "dd, MMMM yyyy", { locale });
-                    // item.user = item.provider.first_name + " " + item.provider.last_name;
+                    
                     item.image = item.provider?.image;
                     item.first_name = item.provider?.first_name;
                     item.last_name = item.provider?.last_name;
@@ -106,8 +105,8 @@ export const useOrderStore = defineStore({
                     uniqueMonths.add(format(new Date(item.date), "MMMM yyyy", { locale }));
                 });
                
-                Array.from(uniqueMonths).forEach((item: any) => {
-                    this.months.push(item);
+                Array.from(uniqueMonths).forEach( async(item: any) => {
+                    await this.months.push(item);
                 });
                 
                 currentMonth.value = currentMonth.value ?? this.months[0];
