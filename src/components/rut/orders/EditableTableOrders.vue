@@ -261,7 +261,7 @@ const preview = async (item: any) => {
         await store.fetchOrders();
         
         // Filtrer les lignes de commande pour obtenir la ligne correspondant à la commande
-        const orderLine = store.ordersLine.find(line => line.order.id === item.id);
+        const orderLine = store.ordersLine.find((line: { order: { id: any; }; }) => line.order.id === item.id);
         
         // Charger le produit correspondant à la ligne
         const product = useProduct.items.find((product: { id: any; }) => product.id === orderLine.item.id);
