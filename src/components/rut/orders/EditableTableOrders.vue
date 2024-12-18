@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, provide } from 'vue';
-import { truncateText, currentMonth, get_full_unite, setItemSelected } from '@/services/utils';
+import { truncateText, formatDate, get_full_unite, setItemSelected } from '@/services/utils';
 import { orderFormPdf } from '@/utils/helpers/pdfForms/orderFormPdf';
 import { useField, useForm } from 'vee-validate';
 import type { Header, Item } from 'vue3-easy-data-table';
@@ -40,13 +40,6 @@ const heading = ref('');
 const isSubmittingPdf = ref(false);
 const refProduct = ref();
 
-import { format } from 'date-fns';
-
-
-const formatDate = (date: string | Date) => {
-    return date ? format(new Date(date), 'dd/MM/yyyy HH:mm') : '-';
-};
-
 
 // Form validation
 const { handleSubmit, handleReset, isSubmitting } = useForm({
@@ -75,7 +68,7 @@ const quantity = useField('quantity');
 // Computed properties
 const providersFiltred = computed(() => {
     const orders = store.orders.filter(
-        (item: any) => item.created_at.includes(currentMonth.value)
+        (item: any) => item.created_at
     );
     const providersIds = orders.map((item: any) => item.provider.id);
     return userStore.getProviders.filter((item: any) => !providersIds.includes(item.id));
@@ -83,7 +76,7 @@ const providersFiltred = computed(() => {
 
 const getOrders = computed(() => {
     return store.orders.filter(
-        (item: any) => item.created_at.includes(currentMonth.value)
+        (item: any) => item.created_at
     );
 });
 
@@ -574,13 +567,13 @@ onMounted(async () => {
 
         <template #item-created_at="{ created_at }">
             <div class="player-wrapper">
-                <h5 class="text-h5">{{ created_at }}</h5>
+                <h5 class="text-h5">{{ formatDate(created_at) }}</h5>
             </div>
         </template>
 
         <template #item-modified_at="{ modified_at }">
             <div class="player-wrapper">
-                <h5 class="text-h5">{{ modified_at }}</h5>
+                <h5 class="text-h5">{{ formatDate(modified_at) }}</h5>
             </div>
         </template>
 

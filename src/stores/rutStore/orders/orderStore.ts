@@ -11,6 +11,10 @@ import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
 const locale = fr; // or en, or es
 
+const formatDate = (date: string | Date) => {
+    return date ? format(new Date(date), 'dd/MM/yyyy HH:mm') : '-';
+};
+
 export const useOrderStore = defineStore({
     id: 'orderStore',
     state: () => ({
@@ -54,10 +58,16 @@ export const useOrderStore = defineStore({
 
                 this.orders.forEach((item: any) => {
 
-                    item.created_at = format(new Date(item.created_at), "dd, MMMM yyyy HH'h'mm", { locale });
-                    // item.created_at_with_hour = format(new Date(item.created_at), "dd, MMMM yyyy HH'h'mm", { locale });
+                    item.created_at = new Date(item.created_at);
+                    item.modified_at = new Date(item.modified_at);
+
+                    // item.created_at = format(new Date(item.created_at), "dd, MMMM yyyy HH'h'mm", { locale });
+                    // // item.created_at_with_hour = format(new Date(item.created_at), "dd, MMMM yyyy HH'h'mm", { locale });
                     
-                    item.modified_at = format(new Date(item.modified_at), "dd, MMMM yyyy", { locale });
+                    // item.modified_at = format(new Date(item.modified_at), "dd, MMMM yyyy", { locale });
+                
+                    // item.created_at = item.created_at;
+                    // item.modified_at = item.modified_at;
                     
                     item.image = item.provider?.image;
                     item.first_name = item.provider?.first_name;
@@ -71,6 +81,8 @@ export const useOrderStore = defineStore({
                     item.orders = this.ordersLine.filter((itemLine: { order?: any }) => itemLine?.order?.id === item.id);
                  
                 });
+
+                
 
 
             } catch (error) {

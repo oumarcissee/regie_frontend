@@ -3,6 +3,29 @@ import type { AxiosError } from 'axios';
 import ApiAxios from './ApiAxios';
 import Swal from 'sweetalert2';
 import { ref } from 'vue';
+import { format } from 'date-fns';
+
+import fr from 'date-fns/locale/fr';
+const locale = fr; // or en, or es
+
+
+
+
+
+/**
+ *
+ * @param {Date} date
+ * @param {String} type
+ * @returns Date
+ * **/
+const formatDate = (date: string | Date, type: string = '') => {
+  if (type === 'chaine') {
+    return date ? format(new Date(date), "dd, MMMM yyyy HH'h'mm", { locale }) : '-';
+  } else {
+    return date ? format(new Date(date), 'dd/MM/yyyy HH:mm') : '-';
+  }
+};
+
 
 
 /**
@@ -156,12 +179,13 @@ const getCurrentUser = (value: string | any[]) => {
 
 const getCurrentProduct = (value: string | any[]) => {
   currentProduct.value = value;
-  return value
+  return value;
 }
+
 
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
   confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getCurrentMonth, currentMonth,
-  get_full_unite
+  get_full_unite, formatDate
 }

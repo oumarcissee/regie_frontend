@@ -8,7 +8,7 @@ import type { Signator } from '@/types/rut/SignatorType';
 import { PencilIcon, TrashIcon } from 'lucide-vue-next';
 
 const store = useSettingStore();
-const { addOrUpdateProduct } = store;
+const { addOrUpdateSignator } = store;
 
 const positions = ref([
     { title: 'Rien', value: 'default' },
@@ -74,8 +74,8 @@ onMounted(async () => {
     }
 });
 
-const getItems = computed(() => {
-    return items.value.filter(
+const getItems = computed(async () => {
+    return (await store.fetchSignators()).filter(
         (item: Signator) =>
             item.first_name.toLowerCase().includes(search.value.toLowerCase()) ||
             item.last_name.toLowerCase().includes(search.value.toLowerCase())
@@ -95,9 +95,11 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
 
     try {
         if (editedIndex.value !== -1) {
-            await addOrUpdateProduct(formData, editedIndex.value);
+            await addOrUpdateSignator(formData, editedIndex.value);
+            await refreshTable();
         } else {
-            await addOrUpdateProduct(formData);
+            await addOrUpdateSignator(formData);
+            await refreshTable();
         }
 
         await refreshTable();
@@ -124,12 +126,8 @@ const items = ref<Signator[]>([]);
 
 const refreshTable = async () => {
     try {
-        const fetchedSignators = await store.fetchSignators();
-        console.log(fetchedSignators);
-        
+        await store.fetchSignators();
 
-        items.value = fetchedSignators;
-        close();
     } catch (error) {
         console.error('Erreur lors du rafraîchissement :', error);
         items.value = [];
@@ -254,7 +252,7 @@ const remove = async (item: Signator) => {
             </tr>
         </thead>
         <tbody>
-            <tr v-for="(item, index) in getItems" :key="item.id">
+            <tr v-for="(item, index) in store.items" :key="item.id">
                 <td class="text-subtitle-1">{{ index + 1 }}</td>
                 <td class="text-subtitle-1">{{ item.ref }}</td>
                 <td>
