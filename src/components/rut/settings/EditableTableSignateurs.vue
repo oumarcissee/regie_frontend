@@ -76,11 +76,10 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
 });
 
 const first_name = useField('first_name');
-const last_name = useField('last_name');
+const last_name  = useField('last_name');
 const function_name = useField('function_name');
 const title = useField('title');
 const position = useField('position');
-
 
 
 const provider = useField('provider');
@@ -103,7 +102,7 @@ const getOrders = computed(() => {
 });
 
 const formTitle = computed(() => {
-    return editedIndex.value === -1 ? 'Nouvelle Commande' : 'Editer une commande';
+    return editedIndex.value === -1 ? 'Nouveau signateur' : 'Editer un signateur';
 });
 
 const formButton = computed(() => {
@@ -112,12 +111,12 @@ const formButton = computed(() => {
 
 // Table headers
 const headers: Header[] = [
-    { text: '', value: 'image', sortable: true },
-    { text: 'Destinateur', value: 'last_name', sortable: true },
-    { text: 'Contact', value: 'contact', sortable: true },
-    { text: 'Faite le', value: 'created_at', sortable: true },
-    { text: 'Modifiée le', value: 'modified_at', sortable: true },
-    { text: 'Statut', value: 'status', sortable: true },
+    // { text: '', value: 'image', sortable: true },
+    { text: 'Prénom', value: 'first_name', sortable: true },
+    { text: 'Nom', value: 'last_name', sortable: true },
+    { text: 'Titre', value: 'title', sortable: true },
+    { text: 'Fonction', value: 'function_name', sortable: true },
+    { text: 'Position', value: 'position', sortable: true },
     { text: 'Actions', value: 'operation' }
 ];
 
@@ -349,7 +348,7 @@ onMounted(async () => {
 
                     <v-col v-else>
                         <v-btn color="primary" v-bind="props" flat class="ml-auto">
-                            <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Passer une commande
+                            <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Nouveau signateur
                         </v-btn>
                     </v-col>
                 </template>
@@ -364,7 +363,7 @@ onMounted(async () => {
                     <v-card-text>
                         <v-form ref="form" v-model="valid" lazy-validation>
                             <v-row>
-                                <v-col cols="12">
+                                <!-- <v-col cols="12">
                                     <CustomComBox
                                         :items="editedIndex === -1 ? providersFiltred : userStore.getProviders"
                                         label="Selectionner un fournisseur (Client)"
@@ -384,33 +383,49 @@ onMounted(async () => {
                                         v-model="products.value.value"
                                         :error-messages="products.errorMessage.value"
                                     />
-                                </v-col>
+                                </v-col> -->
                                 <v-col cols="12" sm="6">
-                                    <v-row>
-                                        <v-col cols="12" sm="6">
-                                            <v-text-field
-                                                variant="outlined"
-                                                v-model="quantity.value.value"
-                                                :error-messages="quantity.errorMessage.value"
-                                                label="La quantité"
-                                            ></v-text-field>
-                                        </v-col>
-
-                                        <v-col cols="12" sm="6">
-                                            <!-- Méthode pour modifier un élément -->
-                                            <v-btn color="primary" variant="outlined" size="large" block flat @click="productsSubmit">
-                                                Ajouter
-                                            </v-btn>
-                                        </v-col>
-                                    </v-row>
+                                
+                                    <v-text-field
+                                        variant="outlined"
+                                        v-model="first_name.value.value"
+                                        :error-messages="first_name.errorMessage.value"
+                                        label="Entrer votre prénom"
+                                    ></v-text-field>
+                               
                                 </v-col>
-                                <v-col cols="12">
-                                    <v-switch
-                                        color="primary"
-                                        @update:model-value="getStatus(status)"
-                                        v-model="status"
-                                        label="Statut"
-                                    ></v-switch>
+
+                                  <v-col cols="12" sm="6">
+                                
+                                    <v-text-field
+                                        variant="outlined"
+                                        v-model="last_name.value.value"
+                                        :error-messages="last_name.errorMessage.value"
+                                        label="Entrer votre nom"
+                                    ></v-text-field>
+                               
+                                </v-col>
+
+                                  <v-col cols="12" sm="6">
+                                
+                                    <v-text-field
+                                        variant="outlined"
+                                        v-model="title.value.value"
+                                        :error-messages="title.errorMessage.value"
+                                        label="Entrer le titre "
+                                    ></v-text-field>
+                               
+                                </v-col>
+
+                                 <v-col cols="12" sm="6">
+                                
+                                    <v-text-field
+                                        variant="outlined"
+                                        v-model="function_name.value.value"
+                                        :error-messages="function_name.errorMessage.value"
+                                        label="Entrer la fonction. "
+                                    ></v-text-field>
+                               
                                 </v-col>
 
                                 <v-col cols="12" sm="12">
