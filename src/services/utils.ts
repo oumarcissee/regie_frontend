@@ -20,9 +20,9 @@ const locale = fr; // or en, or es
  * **/
 const formatDate = (date: string | Date, type: string = '') => {
   if (type === 'chaine') {
-    return date ? format(new Date(date), "dd, MMMM yyyy HH'h'mm", { locale }) : '-';
+    return date ? format(new Date(date), "dd,MMMM yyyy HH'h'mm", { locale }) : '-';
   } else {
-    return date ? format(new Date(date), 'dd/MM/yyyy HH:mm') : '-';
+    return date ? format(new Date(date), 'dd/MM/yyyy') : '-';
   }
 };
 

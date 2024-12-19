@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, provide } from 'vue';
-import { truncateText, formatDate, get_full_unite, setItemSelected } from '@/services/utils';
+import { truncateText, currentMonth, get_full_unite, formatDate } from '@/services/utils';
 import { orderFormPdf } from '@/utils/helpers/pdfForms/orderFormPdf';
 import { useField, useForm } from 'vee-validate';
 import type { Header, Item } from 'vue3-easy-data-table';
@@ -40,7 +40,6 @@ const heading = ref('');
 const isSubmittingPdf = ref(false);
 const refProduct = ref();
 
-
 // Form validation
 const { handleSubmit, handleReset, isSubmitting } = useForm({
     validationSchema: {
@@ -68,7 +67,7 @@ const quantity = useField('quantity');
 // Computed properties
 const providersFiltred = computed(() => {
     const orders = store.orders.filter(
-        (item: any) => item.created_at
+        (item: any) => formatDate(item.created_at, 'chaine').includes(currentMonth.value)
     );
     const providersIds = orders.map((item: any) => item.provider.id);
     return userStore.getProviders.filter((item: any) => !providersIds.includes(item.id));
@@ -76,7 +75,7 @@ const providersFiltred = computed(() => {
 
 const getOrders = computed(() => {
     return store.orders.filter(
-        (item: any) => item.created_at
+        (item: any) =>  formatDate(item.created_at, 'chaine').includes(currentMonth.value)
     );
 });
 
@@ -228,10 +227,8 @@ const remove = (item: any) => {
 
 const deletion = async (index: any) => {
     try {
-        
         await store.deleteItem(index, 'orders');
         await refreshTable();
-        
     } catch (error) {
         console.error('Erreur lors de la suppression :', error);
     }
@@ -247,31 +244,10 @@ const closePrintPreviewDialog = () => {
     printPreviewDialog.value = false;
 };
 
-const preview = async (item: any) => {
-    try {
-        // Rafraîchir les données de la commande avant l'aperçu
-        await store.fetchOrdersLine();
-        await store.fetchOrders();
-        
-        // Filtrer les lignes de commande pour obtenir la ligne correspondant à la commande
-        const orderLine = store.ordersLine.find((line: { order: { id: any; }; }) => line.order.id === item.id);
-        
-        // Charger le produit correspondant à la ligne
-        const product = useProduct.items.find((product: { id: any; }) => product.id === orderLine.item.id);
-        
-        // Créer un objet pour l'aperçu dans la modal
-        const previewItem = {...orderLine, product };
-        // Mettre à jour itemsSelected avec les données rafraîchies
-        const updatedOrder = store.orders.find((order: { id: any; }) => order.id === item.id);
-        if (updatedOrder) {
-            itemsSelected.value = [updatedOrder];
-        }
-        openPrintPreview();
-    } catch (error) {
-        console.error('Error preparing preview:', error);
-    }
+const Preview = (item: any) => {
+    itemsSelected.value = [item];
+    openPrintPreview();
 };
-
 
 const printContent = () => {
     const printDiv = document.getElementById('printableArea');
@@ -290,8 +266,6 @@ const printContent = () => {
 
 const doPdf = async () => {
     isSubmittingPdf.value = true;
-
-    // console.log(itemsSelected.value);
     try {
         await orderFormPdf(heading.value, itemsSelected.value);
     } catch (error) {
@@ -301,14 +275,6 @@ const doPdf = async () => {
         closePrintPreviewDialog();
     }
 };
-const imageDialog = ref(false)
-const selectedImage = ref(null)
-
-const openImageDialog = (imageUrl: string) => {
-  selectedImage.value = imageUrl;
-  imageDialog.value = true;
-}
- 
 
 // Initialization
 onMounted(async () => {
@@ -546,8 +512,8 @@ onMounted(async () => {
         itemKey="ref"
     >
         <template #item-image="{ image }">
-            <div class=" hoverable">
-                <img alt="user" width="70" class="rounded-circle img-fluid mx-auto" :src="image" :lazy-src="image" />
+            <div class="player-wrapper">
+                <img alt="user" width="70" class="rounded-circle img-fluid" :src="image" />
             </div>
         </template>
 
@@ -597,7 +563,7 @@ onMounted(async () => {
 
                     <v-tooltip text="Voir">
                         <template v-slot:activator="{ props }">
-                            <v-btn icon flat @click="preview(item)" v-bind="props"
+                            <v-btn icon flat @click="Preview(item)" v-bind="props"
                                 ><PrinterIcon stroke-width="1.5" size="20" class="text-primary"
                             /></v-btn>
                         </template>
@@ -617,173 +583,83 @@ onMounted(async () => {
     <!-- Print Preview Dialog -->
     <v-dialog v-model="printPreviewDialog" max-width="800px" persistent>
         <v-card>
-            <v-card-title class="d-flex align-center justify-space-between">
-                <span class="h2">Aperçu de l'impression</span>
-                <v-btn icon @click="closePrintPreviewDialog()" title="Fermer">
-                    <v-icon>mdi-close</v-icon>
-                </v-btn>
-            </v-card-title>
-     
-           <v-card-text>
+            <v-card-title class="h2">Aperçu de l'impression</v-card-title>
+            <v-card-text>
                 <div id="printableArea" ref="printableArea">
-                    <div v-for="item in itemsSelected" :key="item.id" class="order-container">
-                        <v-card class="mb-6" elevation="1">
-                    <!-- En-tête de la commande -->
-                    <v-row class="d-flex align-center justify-space-between pa-4">
-                        <v-col cols="8">
-                            <div class="d-flex align-center mb-4">
-                                <h2 class="text-h5 font-weight-bold primary--text">
-                                    Commande N° {{ item.id }}
-                                </h2>
-                                <v-chip
-                                    :color="item.status ? 'success' : 'grey'"
-                                    class="ml-4"
-                                    small
-                                >
-                                    {{ item.status ? 'En cours' : 'Cloturée' }}
-                                </v-chip>
-                            </div>
+                    <div v-for="item in itemsSelected" :key="item.id">
+                        <v-row>
+                            <v-col>
+                                <h3>Detail de la commande N° {{ item.id }}</h3>
+                                <p>Référence: {{ item.ref }}</p>
+                                <p>Destinateur: {{ item.first_name }} {{ item.last_name }}</p>
+                                <p>Contact: {{ item.contact }}</p>
+                                <p>Faite le: {{ formatDate(item.created_at, 'chaine') }}</p>
+                                <p>Modifiée le: {{ formatDate(item.modified_at, 'chaine') }}</p>
+                                <p>Statut: {{ item.status ? 'En cours' : 'Cloturée' }}</p>
+                            </v-col>
+                        </v-row>
 
-                            <v-row dense>
-                                <v-col cols="6">
-                                    <div class="info-group">
-                                        <div class="info-label">Référence</div>
-                                        <div class="info-value">{{ item.ref }}</div>
-                                    </div>
-                                    
-                                    <div class="info-group mt-2">
-                                        <div class="info-label">Destinateur</div>
-                                        <div class="info-value">{{ item.first_name }} {{ item.last_name }}</div>
-                                    </div>
+                        <v-row>
+                            <v-col>
+                                <v-table class="mt-5" id="myTabledd">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-subtitle-1 font-weight-semibold">N°</th>
+                                            <!-- <th class="text-subtitle-1 font-weight-semibold">Réference</th> -->
+                                            <th class="text-subtitle-1 font-weight-semibold">Article</th>
+                                            <th class="text-subtitle-1 font-weight-semibold">Quantité</th>
+                                            <th class="text-subtitle-1 font-weight-semibold">Unité</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(order, index) in item.orders" :key="index">
+                                            <td class="text-subtitle-1">{{ index + 1 }}</td>
+                                            <!-- <td class="text-subtitle-1">{{ item.product.ref }}</td> -->
 
-                                    <div class="info-group mt-2">
-                                        <div class="info-label">Contact</div>
-                                        <div class="info-value">{{ item.contact }}</div>
-                                    </div>
-                                </v-col>
+                                            <td class="text-subtitle-1">
+                                                <div class="d-flex align-center py-4">
+                                                    <div class="hoverable">
+                                                        <v-img
+                                                            :lazy-src="order?.item?.image"
+                                                            :src="order?.item?.image"
+                                                            :title="order.item.name"
+                                                            width="65px"
+                                                            class="rounded img-fluid"
+                                                        ></v-img>
+                                                    </div>
 
-                                <v-col cols="6">
-                                    <div class="info-group">
-                                        <div class="info-label">Date de création</div>
-                                        <div class="info-value">{{ item.created_at }}</div>
-                                    </div>
+                                                    <div class="ml-5">
+                                                        <h4 class="text-h6 font-weight-semibold">{{ order.item.name }}</h4>
+                                                        <span class="text-subtitle-1 d-block mt-1 textSecondary">{{
+                                                            truncateText(order.item.description, 20)
+                                                        }}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
 
-                                    <div class="info-group mt-2">
-                                        <div class="info-label">Dernière modification</div>
-                                        <div class="info-value">{{ item.modified_at }}</div>
-                                    </div>
-                                </v-col>
-                            </v-row>
-                        </v-col>
+                                            <td class="text-subtitle-1">{{ order.quantity }}</td>
+                                            <td class="text-subtitle-1">{{ get_full_unite(order.item?.unite) }}</td>
+                                        </tr>
+                                    </tbody>
+                                </v-table>
+                            </v-col>
+                        </v-row>
 
-                        <v-col cols="4" class="text-center">
-                            <div class="hoverable">
-                                <v-img
-                                    :lazy-src="item?.provider?.image"
-                                    :src="item?.provider?.image"
-                                    :title="item?.item?.name"
-                                    width="195px"
-                                    class="rounded img-fluid mx-auto"
-                                    @click="openImageDialog(item?.provider?.image)"
-                                ></v-img>
-                            </div>
-                        </v-col>
-                    </v-row>
+                        <br />
 
-                    <!-- Table des articles -->
-                    <v-table class="mt-4 table">
-                        <thead class="dark lighten-4">
-                            <tr>
-                                <th class="text-subtitle-1 font-weight-bold">N°</th>
-                                <th class="text-subtitle-1 font-weight-bold">Article</th>
-                                <th class="text-subtitle-1 font-weight-bold">Quantité</th>
-                                <th class="text-subtitle-1 font-weight-bold">Unité</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(order, index) in item.orders" :key="index">
-                                <td class="text-subtitle-1 text-center" width="80">{{ index + 1 }}</td>
-                                <td>
-                                    <div class="d-flex align-center py-2">
-                                        <div class="hoverable">
-                                            <v-img
-                                                :lazy-src="order?.item?.image"
-                                                :src="order?.item?.image"
-                                                :title="order.item.name"
-                                                width="65px"
-                                                class="rounded img-fluid"
-                                                @click="openImageDialog(order?.item?.image)"
-                                            ></v-img>
-                                        </div>
-                                        <div class="ml-4">
-                                            <div class="font-weight-medium">{{ order.item.name }}</div>
-                                            <div class="text-caption grey--text">
-                                                {{ truncateText(order.item.description, 20) }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="text-subtitle-1 text-center">{{ order.quantity }}</td>
-                                <td class="text-subtitle-1">{{ get_full_unite(order.item?.unite) }}</td>
-                            </tr>
-                        </tbody>
-                    </v-table>
-                        </v-card>
+                        <hr />
+
+                        <br />
                     </div>
                 </div>
             </v-card-text>
-
-
             <v-card-actions>
                 <!-- <v-btn color="primary" @click="doPdf">Print</v-btn> -->
-                <v-btn color="secondary" variant="flat" @click="doPdf" block :loading="isSubmittingPdf">Imprimer</v-btn>
+                <v-btn color="secondary" variant="flat" @click="doPdf" block :loading="isSubmittingPdf">Impression</v-btn>
                 <!-- <v-btn @click="closePrintPreviewDialog">Close</v-btn> -->
             </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
 
-<style scoped>
-.order-container {
-    margin-bottom: 2rem;
-}
-
-.info-group {
-    margin-bottom: 0.5rem;
-}
-
-.info-label {
-    font-size: 0.875rem;
-    color: rgba(0, 0, 0, 0.6);
-    margin-bottom: 0.25rem;
-}
-
-.info-value {
-    font-size: 1rem;
-    font-weight: 500;
-}
-
-.hoverable {
-    transition: transform 0.2s;
-    cursor: pointer;
-}
-
-.hoverable:hover {
-    transform: scale(1.05);
-}
-
-.v-table {
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    border-radius: 4px;
-}
-
-.v-table th {
-    background-color: #f5f5f5 !important;
-    text-transform: uppercase;
-    font-size: 0.875rem !important;
-}
-
-.v-table td {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-}
-</style>
+<style></style>
