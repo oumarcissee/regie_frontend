@@ -63,8 +63,6 @@ const ICONS = {
 
 const toColor = (color: readonly [number, number, number]): Color => color as Color;
 
-
-
 const orderFormPdf = async (heading: string, data: any[]) => {
     const doc = new jsPDF({
         unit: 'in',

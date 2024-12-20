@@ -27,6 +27,21 @@ const formatDate = (date: string | Date, type: string = '') => {
 };
 
 
+/**
+ *
+ * @param {String} chaine
+ * @returns String
+ * **/
+
+const signatorPosition = (chaine: string): string => {
+    switch (chaine) {
+        case 'left': return "GAUCHE";
+        case 'right': return "DROITE";
+        case 'center': return "CENTRE";
+        default: return "RIEN";
+    }
+}
+
 
 /**
  *
@@ -124,20 +139,14 @@ const deleteItem = async (item: any, url: string, data: Array<any> ) => {
 //Affichge des rôles des utilisateurs
 const get_full_role = (role: string) => {
 
-  let selected_role = role;
   switch (role) {
-    case 'manager_a':
-      selected_role = "Regisseur des Unités Territoriales";
-      break;
-    case 'manager_b':
-      selected_role = "Regisseur des Centres de formations et OPEX";
-      break;
-    default:
-      selected_role= "Autre role"
-      break;
+    case 'manager_a': return "Regisseur des Unités Territoriales";
+    case 'manager_b': return "Regisseur des Centres de formations et OPEX";
+    case 'admin': return "Administrateur";
+    case 'user': return "Utilisateur";
+    default: return "Unknown";
+    
   }
-
-  return selected_role;
 }
 
 //Affichge de type des produits
@@ -187,5 +196,5 @@ export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
   confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getCurrentMonth, currentMonth,
-  get_full_unite, formatDate
+  get_full_unite, formatDate, signatorPosition
 }

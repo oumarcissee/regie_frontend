@@ -20,7 +20,7 @@ export const useSettingStore = defineStore({
         },
     }),
     getters: {
-        getOrders(state) {
+        getSignators(state) {
             
             return state.items;
         },
@@ -28,7 +28,7 @@ export const useSettingStore = defineStore({
     },
     actions: {
 
-        async fetchOrderById(id: number) {
+        async fetchSignatorsById(id: number) {
             try {
                 const response = await new ApiAxios().find(`/${this.url}/${id}`);
                 return response.data.results;
@@ -62,8 +62,10 @@ export const useSettingStore = defineStore({
                 //Si c'est une modification
                 if (param) {
                
-                    const OrderResponse = await new ApiAxios().updatePartialForm(`/${this.url}/${param}/`, data, param);
+                    const SignatorsResponse = await new ApiAxios().updatePartialForm(`/${this.url}/${param}/`, data, param);
 
+                    this.$reset();
+                  
                     Swal.fire({
                         position: "center",
                         icon: "success",
@@ -86,16 +88,9 @@ export const useSettingStore = defineStore({
                         }
                     });
                 } else {
-                    
-                    // console.log(data.order);
-                    // return;
+
                     //Ajout de la commande
-                    const OrderResponse = await new ApiAxios().add(`/${this.url}/`, data.order);
-                  
-                
-                    //Enregistrement de la date
-                    // const archiveResponse = await new ApiAxios().add(`/archives/`, {order: OrderResponse.data.id});
-                    
+                    const SignatorsResponse = await new ApiAxios().add(`/${this.url}/`, data);
 
                     this.$reset()
                     
@@ -144,12 +139,14 @@ export const useSettingStore = defineStore({
             }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
+
                     const response = await new ApiAxios().delete(`/${url}/${item.id}/`, item.id);
                     Swal.fire({
                         title: "Supprimé!",
                         text: "Votre objet a bien été supprimé.",
                         icon: "success"
                     });
+
                     //
                     this.items = this.items?.filter((user: any) => user.id !== item.id);
 
