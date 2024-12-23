@@ -92,7 +92,7 @@ export const useSettingStore = defineStore({
                     //Ajout de la commande
                     const SignatorsResponse = await new ApiAxios().add(`/${this.url}/`, data);
 
-                    this.$reset()
+                    this.$reset();
                     
                     Swal.fire({
                         position: "center",
@@ -119,7 +119,7 @@ export const useSettingStore = defineStore({
              
             } catch (error) {
 
-                return Promise.reject(error + "Autres erreur");
+                return Promise.reject(error);
             }
         },
          /**
