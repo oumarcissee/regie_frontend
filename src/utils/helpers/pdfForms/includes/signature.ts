@@ -1,10 +1,14 @@
 import type jsPDF from "jspdf";
 import { getCurrentMonth, currentMonth } from '@/services/utils';
+import { useSettingStore } from '@/stores/rutStore/settings/settingStore';
 
-const signature = (doc: any) => {
+const { getSignators, fetchSignators } = useSettingStore();
+fetchSignators();
+
+const signature = (doc: any, signators: any[]) => {
     // Default Y position if autoTable information is not available
-    let finalY = doc.previousAutoTable 
-        ? doc.previousAutoTable.finalY + 0.25 
+    let finalY = doc.previousAutoTable
+        ? doc.previousAutoTable.finalY + 0.25
         : doc.internal.pageSize.height - 3; // Fallback to near bottom of page
 
     // Configuration de la date
@@ -36,45 +40,53 @@ const signature = (doc: any) => {
     const dateFinalY = finalY + 0.30;
 
     // Conteneur gauche
-    const leftContent = [
-        "Régisseur des unités territoriales",
-        "Chef Service Administratifs et Financiers",
-        "Colonel Younoussa MAGASSOUBA"
-    ];
+    const leftContent: any[] = [];
+    const rightContent: any[] = [];
+    const centerContent: any[] = [];
 
-    // Conteneur droit
-    const rightContent = [
-        "Le DG l'intendance Militaire",
-        "Intendant Militaire", 
-        "Colonel Gassime TRAORE"
-    ];
+    signators.forEach(element => {
+        if (element.position === 'left') {
+            leftContent.push([
+                element.function_name,
+                element.title,
+                `${element.grade} ${element.first_name} ${element.last_name}`
+            ]);
+        } else if (element.position === 'right') {
+            rightContent.push([
+                element.function_name,
+                element.title,
+                `${element.grade} ${element.first_name} ${element.last_name}`
+            ]);
+        }
+    });
 
-    // Fonction pour centrer le texte dans un conteneur
-    const drawCenteredText = (textArray: string[], x: number, startY: number, containerWidth: number) => {
-        let counter = 0;
-        let currentY = startY;
-        textArray.forEach((text, index) => {
-            const centerX = x + (containerWidth / 2);
-            counter ++;
+   const drawCenteredText = (textArray: string[], x: number, startY: number, containerWidth: number) => {
+    let counter = 0;
+    let currentY = startY;
+    
+    textArray.forEach((text, index) => {
+        const centerX = x + (containerWidth / 2);
+        counter++;
 
-            if (index === textArray.length - 1) {
-                // Ajouter plus d'espace avant le dernier élément (le nom)
-                currentY += 0.05;
-            }
-
-            if (counter === 3) {
-                // Ajouter un espace de la signature
-                currentY += 0.7;
-            }
-
-            doc.text(text, centerX, currentY, {
-                align: 'center'
-            });
-
-            currentY += (index === textArray.length - 1) ? 0.05 : 0.25;
-        });
-        return currentY;
-    };
+        // Après le premier élément (titre du poste)
+        if (counter === 1) {
+            doc.text(text, centerX, currentY, { align: 'center' });
+            currentY += 0.25; // Espace normal après le premier élément
+        }
+        // Pour le deuxième élément (fonction)
+        else if (counter === 2) {
+            doc.text(text, centerX, currentY, { align: 'center' });
+            currentY += 1.5; // Grand espace avant le nom
+        }
+        // Pour le dernier élément (nom complet)
+        else if (counter === 3) {
+            doc.text(text, centerX, currentY, { align: 'center' });
+            currentY += 0.25;
+        }
+    });
+    
+    return currentY;
+};
 
     // Dessiner les conteneurs et leur contenu
     const leftFinalY = drawCenteredText(leftContent, leftContainerX, dateFinalY, containerWidth);

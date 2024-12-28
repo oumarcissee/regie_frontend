@@ -28,15 +28,15 @@ export const useSettingStore = defineStore({
     },
     actions: {
 
-        async fetchSignatorsById(id: number) {
-            try {
-                const response = await new ApiAxios().find(`/${this.url}/${id}`);
-                return response.data.results;
-                } catch (error) {
-                console.error('Error fetching order:', error);
-                throw error;
-            }
-        },
+        // async fetchSignatorsById(id: number) {
+        //     try {
+        //         const response = await new ApiAxios().find(`/${this.url}/${id}`);
+        //         return this.items = response.data.results;
+        //         } catch (error) {
+        //         console.error('Error fetching order:', error);
+        //         throw error;
+        //     }
+        // },
         // Fetch followers from action
         
         async fetchSignators() {

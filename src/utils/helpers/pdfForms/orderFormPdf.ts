@@ -63,7 +63,7 @@ const ICONS = {
 
 const toColor = (color: readonly [number, number, number]): Color => color as Color;
 
-const orderFormPdf = async (heading: string, data: any[]) => {
+const orderFormPdf = async (heading: string, data: any[], signators: any[]) => {
     const doc = new jsPDF({
         unit: 'in',
         format: 'a4'
@@ -79,7 +79,7 @@ const orderFormPdf = async (heading: string, data: any[]) => {
         drawClientInfoBox(doc, item, yCoord);
         yCoord += 1.5;
         drawOrderDetails(doc, item, yCoord);
-        signature(doc);
+        signature(doc, signators);
         footerPortrait(doc, data, index + 1, data.length);
     });
 

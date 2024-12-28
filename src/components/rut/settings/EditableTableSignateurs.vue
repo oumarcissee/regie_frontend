@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import Notification from '@/components/shared/Notification.vue';
 import { useField, useForm } from 'vee-validate';
 import type { Header, Item } from 'vue3-easy-data-table';
 import { useSettingStore } from '@/stores/rutStore/settings/settingStore';
-import { formatDate, signatorPosition, truncateText } from '@/services/utils';
+import { formatDate, signatorPosition, truncateText ,showNotification,notif } from '@/services/utils';
+import type { AxiosError } from 'axios';
 
 // Store initialization
 const store = useSettingStore();
@@ -20,9 +22,9 @@ const themeColor = ref('rgb(var(--v-theme-secondary))');
 const itemsSelected = ref<Item[]>([]);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
-const snackbar = ref(false);
-const snackbarMessage = ref('');
-const snackbarColor = ref('');
+// const snackbar = ref(false);
+// const snackbarMessage = ref('');
+// const snackbarColor = ref('');
 
 // Position options
 const position = ref([
@@ -32,6 +34,13 @@ const position = ref([
     { title: 'CENTRE', value: 'center' },
 ]);
 
+// Position options
+const grades = ref([
+    { title: 'Colonel', value: 'colonel' },
+    { title: 'COMMANDANT', value: 'commandant' },
+   
+]);
+
 // Validation améliorée
 const { handleSubmit, handleReset, isSubmitting } = useForm({
     validationSchema: {
@@ -39,6 +48,13 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             if (!value) return 'Sélectionnez une position.';
             if (!['default', 'left', 'right', 'center'].includes(value)) {
                 return 'Position invalide.';
+            }
+            return true;
+        },
+        grade(value: string) {
+            if (!value) return 'Sélectionnez une position.';
+            if (!['colonel', 'commandant'].includes(value)) {
+                return 'Grande invalide.';
             }
             return true;
         },
@@ -62,28 +78,20 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             return true;
         },
         title(value: string) {
+            return true;
             if (!value) return 'Entrer le titre de la personne.';
             if (value.length > 100) return 'Le titre ne peut pas dépasser 100 caractères.';
-            return true;
         }
     }
 });
 
 // Form fields
 const first_name = useField('first_name');
+const grade     = useField('grade');
 const last_name = useField('last_name');
 const function_name = useField('function_name');
 const title = useField('title');
 const positionField = useField('position');
-
-// Headers restent les mêmes...
-
-// Gestion des notifications
-const showNotification = (message: string, color: string = 'success') => {
-    snackbarMessage.value = message;
-    snackbarColor.value = color;
-    snackbar.value = true;
-};
 
 // Methods avec gestion d'erreurs
 const submit = handleSubmit(async (values) => {
@@ -104,9 +112,20 @@ const submit = handleSubmit(async (values) => {
         }
 
     } catch (err) {
-      
-        error.value = err instanceof Error ? err.message : 'Une erreur est survenue';
-        showNotification(error.value, 'error');
+        // error.value = err instanceof Error ? err.message : 'Une erreur est survenue';
+           if (err instanceof Error) {
+            const axiosError = err as AxiosError<{[key: string]: string[]}>;
+            if (axiosError.response?.data) {
+                const errorMessages = Object.values(axiosError.response.data)
+                    .flat()
+                    .join(', ');
+                showNotification(errorMessages, 'error');
+            } else {
+                showNotification(err.message, 'error');
+            }
+        } else {
+            showNotification('Une erreur est survenue', 'error');
+        }
     } finally {
         isLoading.value = false;
         close();
@@ -117,6 +136,7 @@ const submit = handleSubmit(async (values) => {
 
 // Table headers
 const headers: Header[] = [
+    { text: 'Grade', value: 'grade', sortable: true },
     { text: 'Prénom', value: 'first_name', sortable: true },
     { text: 'Nom', value: 'last_name', sortable: true },
     { text: 'Titre', value: 'title', sortable: true },
@@ -164,6 +184,7 @@ const editItem = (item: any) => {
     function_name.value.value = item.function_name;
     title.value.value = item.title;
     positionField.value.value = item.position;
+    grade.value.value = item.grade;
 
     dialog.value = true;
 };
@@ -178,7 +199,9 @@ const deleteItem = async (item: any) => {
 };
 
 onMounted(async () => {
+    isLoading.value = true;
     await refreshTable();
+    isLoading.value = false;
 });
 </script>
 
@@ -216,6 +239,7 @@ onMounted(async () => {
                     <v-card-text>
                         <v-form ref="form" v-model="valid" @submit.prevent="submit">
                             <v-row>
+                               
                                 <v-col cols="12" sm="6">
                                     <v-text-field
                                         v-model="first_name.value.value"
@@ -255,6 +279,18 @@ onMounted(async () => {
                                         required
                                     />
                                 </v-col>
+                                 <v-col cols="12">
+                                    <v-select
+                                        v-model="grade.value.value"
+                                        :items="grades"
+                                        item-grade="grade"
+                                        item-value="value"
+                                        :error-messages="grade.errorMessage.value"
+                                        label="Grade"
+                                        variant="outlined"
+                                        required
+                                    />
+                                </v-col>
 
                                 <v-col cols="12">
                                     <v-select
@@ -268,6 +304,8 @@ onMounted(async () => {
                                         required
                                     />
                                 </v-col>
+
+
                             </v-row>
                         </v-form>
                     </v-card-text>
@@ -358,6 +396,10 @@ onMounted(async () => {
 
             <v-card-text class="pa-4">
                 <v-list v-if="selectedSignator">
+                     <v-list-item>
+                        <v-list-item-title class="font-weight-bold mb-2">Grade</v-list-item-title>
+                        <v-list-item-subtitle>{{ selectedSignator.grade }}</v-list-item-subtitle>
+                    </v-list-item>
                     <v-list-item>
                         <v-list-item-title class="font-weight-bold mb-2">Prénom</v-list-item-title>
                         <v-list-item-subtitle>{{ selectedSignator.first_name }}</v-list-item-subtitle>
@@ -390,25 +432,25 @@ onMounted(async () => {
     <!-- Existing dialogs remain the same -->
 
 
-     <!-- Snackbar pour les notifications -->
- <v-snackbar
-    v-model="snackbar"
-    :color="snackbarColor"
-    :timeout="3000"
-    location="top"
->
-    {{ snackbarMessage }}
-    
-    <template v-slot:actions>
-        <v-btn
-            color="white"
-            variant="text"
-            @click="snackbar = false"
-        >
-            Fermer
-        </v-btn>
-    </template>
-</v-snackbar>
+    <!-- Snackbar pour les notifications -->
+    <v-snackbar
+        v-model="notif.snackbar.value"
+        :color="notif.snackbarColor.value"
+        :timeout="3000"
+        location="top"
+    >
+        {{ notif.snackbarMessage }}
+        
+        <template v-slot:actions>
+            <v-btn
+                color="white"
+                variant="text"
+                @click="notif.snackbar.value = false"
+            >
+                Fermer
+            </v-btn>
+        </template>
+    </v-snackbar>
 
     <!-- Loading Overlay -->
     <v-overlay
@@ -432,6 +474,7 @@ onMounted(async () => {
     >
         {{ error }}
     </v-alert> -->
+
 
 </template>
 

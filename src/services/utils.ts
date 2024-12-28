@@ -2,7 +2,7 @@ import { useAuthStore } from '@/stores/auth';
 import type { AxiosError } from 'axios';
 import ApiAxios from './ApiAxios';
 import Swal from 'sweetalert2';
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { format } from 'date-fns';
 
 import fr from 'date-fns/locale/fr';
@@ -192,9 +192,26 @@ const getCurrentProduct = (value: string | any[]) => {
 }
 
 
+// État pour les notifications avec la structure correcte
+const notif = reactive({
+  snackbar: { value: false },
+  snackbarColor: { value: '' },
+  snackbarMessage: ''  // String direct, pas un ref
+});
+
+
+
+// Gestion des notifications
+const showNotification = (message: string, color: string = 'success') => {
+    notif.snackbarMessage = message;
+    notif.snackbarColor.value = color;
+    notif.snackbar.value = true;
+};
+
+
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
   confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getCurrentMonth, currentMonth,
-  get_full_unite, formatDate, signatorPosition
+  get_full_unite, formatDate, signatorPosition,showNotification,notif
 }

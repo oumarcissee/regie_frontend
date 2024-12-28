@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, provide } from 'vue';
-import { truncateText, currentMonth, get_full_unite, formatDate } from '@/services/utils';
+import { truncateText, currentMonth, get_full_unite, formatDate, showNotification } from '@/services/utils';
 import { orderFormPdf } from '@/utils/helpers/pdfForms/orderFormPdf';
 import { useField, useForm } from 'vee-validate';
 import type { Header, Item } from 'vue3-easy-data-table';
@@ -11,6 +11,10 @@ import { useProductsList } from '@/stores/rutStore/products/productsListStore';
 // import { PrinterIcon, FilterIcon, PencilIcon, TrashIcon } from 'lucide-vue-next';
 import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBox.vue';
 import CustomComBoxProduct from '@/components/forms/form-elements/autocomplete/CustomComBoxProduct.vue';
+import type { AxiosError } from 'axios';
+import { useSettingStore } from '@/stores/rutStore/settings/settingStore';
+
+const { fetchSignators, getSignators } = useSettingStore();
 
 // Store initialization
 const useProduct = useProductsList();
@@ -39,6 +43,7 @@ const printableArea = ref();
 const heading = ref('');
 const isSubmittingPdf = ref(false);
 const refProduct = ref();
+const isLoading = ref(false);
 
 // Form validation
 const { handleSubmit, handleReset, isSubmitting } = useForm({
@@ -132,9 +137,12 @@ const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
 
 const submit = async () => {
     try {
+        isLoading.value = true;
+
         if (productSelected.value.length === 0) {
             return productsSubmit();
         }
+
 
         const order = {
             provider: provider.value.value,
@@ -154,13 +162,32 @@ const submit = async () => {
             useProduct.items = useProduct.items.filter((item: any) => !itemIds.includes(item.id));
             
             await store.addOrUpdateOrder(data, editedIndex.value);
+            showNotification('Commande ajoutée avec succès');
         } else {
             await store.addOrUpdateOrder(data);
+            showNotification('Commande modifiée avec succès');
         }
 
         await refreshTable();
     } catch (error) {
-        console.error('Error submitting form:', error);
+         if (error instanceof Error) {
+            const axiosError = error as AxiosError<{[key: string]: string[]}>;
+            if (axiosError.response?.data) {
+                const errorMessages = Object.values(axiosError.response.data)
+                    .flat()
+                    .join(', ');
+                showNotification(errorMessages, 'error');
+            } else {
+                showNotification(error.message, 'error');
+            }
+        } else {
+            showNotification('Une erreur est survenue', 'error');
+        }
+    } finally {
+        isLoading.value = false;
+        close();
+        await refreshTable();
+        
     }
 };
 
@@ -267,7 +294,10 @@ const printContent = () => {
 const doPdf = async () => {
     isSubmittingPdf.value = true;
     try {
-        await orderFormPdf(heading.value, itemsSelected.value);
+        const signators = await fetchSignators();
+        // console.log(signators);
+
+        await orderFormPdf(heading.value, itemsSelected.value, signators);
     } catch (error) {
         console.error('Error generating PDF:', error);
     } finally {
@@ -279,6 +309,8 @@ const doPdf = async () => {
 // Initialization
 onMounted(async () => {
     try {
+        isLoading.value = true;
+
         await Promise.all([
             userStore.fetchProviders(),
             store.fetchOrders(),
@@ -286,6 +318,8 @@ onMounted(async () => {
         ]);
         loadingProvider.value = true;
         loadingProducts.value = true;
+        isLoading.value = false;
+
     } catch (error) {
         console.error('Error initializing component:', error);
     }
@@ -660,6 +694,19 @@ onMounted(async () => {
             </v-card-actions>
         </v-card>
     </v-dialog>
+
+
+        <!-- Loading Overlay -->
+    <v-overlay
+        :model-value="isLoading"
+        class="align-center justify-center"
+    >
+        <v-progress-circular
+            color="primary"
+            indeterminate
+            size="64"
+        ></v-progress-circular>
+    </v-overlay>
 </template>
 
 <style></style>
