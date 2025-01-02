@@ -21,72 +21,78 @@ const signature = (doc: any, signators: any[]) => {
     // Dimensions de la page
     const pageWidth = doc.internal.pageSize.getWidth();
     const leftMargin = 0.5;
-    const rightMargin = pageWidth - 0.5;
+    const rightMargin = pageWidth - 0.9;
 
     // Largeur des conteneurs (environ 1/3 de la page pour chaque conteneur)
     const containerWidth = pageWidth / 3;
 
     // Positions des conteneurs
     const leftContainerX = leftMargin;
-    const rightContainerX = rightMargin - containerWidth + 0.3;
+    const rightContainerX = rightMargin - containerWidth + 0.4;
 
     // Configuration du texte
-    doc.setFontSize(12);
+    doc.setFontSize(11);
 
     // Date (alignée à droite)
-    doc.text(`Conakry, ${date}`, rightMargin, finalY, { align: 'right' });
+    doc.text(`Conakry, ${date}`, rightMargin - 0.07, finalY, { align: 'right' });
 
     // Ajuster la position Y après la date
-    const dateFinalY = finalY + 0.30;
+    const dateFinalY = finalY + 0.23;
 
-    // Conteneur gauche
-    const leftContent: any[] = [];
-    const rightContent: any[] = [];
-    const centerContent: any[] = [];
+    // Initialize empty arrays for content
+    let leftContent: string[] = [];
+    let rightContent: string[] = [];
 
-    signators.forEach(element => {
-        if (element.position === 'left') {
-            leftContent.push([
-                element.function_name,
-                element.title,
-                `${element.grade} ${element.first_name} ${element.last_name}`
-            ]);
-        } else if (element.position === 'right') {
-            rightContent.push([
-                element.function_name,
-                element.title,
-                `${element.grade} ${element.first_name} ${element.last_name}`
-            ]);
-        }
-    });
+    // Populate arrays based on signators data
+    if (signators && signators.length > 0) {
+        signators.forEach(element => {
+            if (element.position === 'left') {
+                leftContent = [
+                    element.function_name,
+                    element.title,
+                    `${element.grade} ${element.first_name} ${element.last_name}`
+                ];
+            } else if (element.position === 'right') {
+                rightContent = [
+                    element.function_name,
+                    element.title,
+                    `${element.grade} ${element.first_name} ${element.last_name}`
+                ];
+            }
+        });
+    } else {
+        // Fallback content if no signators provided
+        leftContent = [
+            "Fonction",
+            "Titre",
+            "Grade Prénom et Nom"
+        ];
+        
+        rightContent = [
+            "Fonction",
+            "Titre",
+            "Grade Prénom et Nom"
+        ];
+    }
 
-   const drawCenteredText = (textArray: string[], x: number, startY: number, containerWidth: number) => {
+    const drawCenteredText = (textArray: string[], x: number, startY: number, containerWidth: number) => {
     let counter = 0;
     let currentY = startY;
     
     textArray.forEach((text, index) => {
-        const centerX = x + (containerWidth / 2);
+        const centerX = x + (containerWidth / 2 - 0.1);
         counter++;
-
         // Après le premier élément (titre du poste)
+        doc.text(text, centerX, currentY, { align: 'center' });
         if (counter === 1) {
-            doc.text(text, centerX, currentY, { align: 'center' });
-            currentY += 0.25; // Espace normal après le premier élément
+            currentY += 1; // Espace normal après le premier élément
+        } else {
+            currentY += 0.25; // Espace normal entre les éléments
         }
-        // Pour le deuxième élément (fonction)
-        else if (counter === 2) {
-            doc.text(text, centerX, currentY, { align: 'center' });
-            currentY += 1.5; // Grand espace avant le nom
-        }
-        // Pour le dernier élément (nom complet)
-        else if (counter === 3) {
-            doc.text(text, centerX, currentY, { align: 'center' });
-            currentY += 0.25;
-        }
+       
     });
-    
-    return currentY;
-};
+        return currentY;
+    };
 
     // Dessiner les conteneurs et leur contenu
     const leftFinalY = drawCenteredText(leftContent, leftContainerX, dateFinalY, containerWidth);

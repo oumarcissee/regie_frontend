@@ -183,7 +183,7 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
                 return row;
             }),
             [{
-                content: 'Total',
+                content: 'Montant total',
                 colSpan: 6,
                 styles: {
                     fontStyle: 'bold',

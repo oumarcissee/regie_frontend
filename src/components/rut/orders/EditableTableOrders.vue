@@ -309,16 +309,20 @@ const doPdf = async () => {
 // Initialization
 onMounted(async () => {
     try {
-        isLoading.value = true;
+        if (!store.getOrders.length) { 
+            isLoading.value = true;
+    
+            await Promise.all([
+                userStore.fetchProviders(),
+                store.fetchOrders(),
+                useProduct.fetchItems()
+            ]);
+    
+            loadingProvider.value = true;
+            loadingProducts.value = true;
+            isLoading.value = false;
 
-        await Promise.all([
-            userStore.fetchProviders(),
-            store.fetchOrders(),
-            useProduct.fetchItems()
-        ]);
-        loadingProvider.value = true;
-        loadingProducts.value = true;
-        isLoading.value = false;
+        }
 
     } catch (error) {
         console.error('Error initializing component:', error);

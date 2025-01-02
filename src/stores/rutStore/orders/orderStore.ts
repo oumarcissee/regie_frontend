@@ -20,7 +20,6 @@ export const useOrderStore = defineStore({
         dialog: false,
         errors: {
             nameError: null as any,
-            nameText: null as any,
         },
     }),
     getters: {
