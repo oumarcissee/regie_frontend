@@ -209,63 +209,103 @@ const showNotification = (message: string, color: string = 'success') => {
 };
 
 
-const numberToWords = (num: number): string => {
+function convertNumberToWords(number: number) {
+    // Constantes
     const units = ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"];
     const teens = ["dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf"];
-    const tens = ["", "dix", "vingt", "trente", "quarante", "cinquante", "soixante", "soixante-dix", "quatre-vingt", "quatre-vingt-dix"];
+    const tens = ["", "dix", "vingt", "trente", "quarante", "cinquante", "soixante", "soixante", "quatre-vingt", "quatre-vingt"];
 
-    if (num === 0) return "zéro GNF";
+    // Cas particuliers
+    if (number === 0) return "zéro GNF";
+    if (isNaN(number)) return "Nombre invalide";
 
-    let words = "";
-
-    // Traitement des milliards
-    if (num >= 1000000000) {
-        const billions = Math.floor(num / 1000000000);
-        words += numberToWords(billions).replace(" GNF", "") + " milliard" + (billions > 1 ? "s" : "") + " ";
-        num %= 1000000000;
-    }
-
-    // Traitement des millions
-    if (num >= 1000000) {
-        const millions = Math.floor(num / 1000000);
-        words += numberToWords(millions).replace(" GNF", "") + " million" + (millions > 1 ? "s" : "") + " ";
-        num %= 1000000;
-    }
-
-    // Traitement des milliers
-    if (num >= 1000) {
-        const thousands = Math.floor(num / 1000);
-        words += (thousands > 1 ? numberToWords(thousands).replace(" GNF", "") + " " : "") + "mille ";
-        num %= 1000;
-    }
-
-    // Traitement des centaines
-    if (num >= 100) {
+    // Fonction interne pour gérer les nombres < 1000
+    function convertLessThanOneThousand(num: number) {
+        let result = "";
+        
+        // Gestion des centaines
         const hundreds = Math.floor(num / 100);
-        words += (hundreds > 1 ? units[hundreds] + " " : "") + "cent ";
-        num %= 100;
+        if (hundreds > 0) {
+            result += (hundreds > 1 ? units[hundreds] + " " : "") + "cent" + (hundreds > 1 && num % 100 === 0 ? "s" : "") + " ";
+            num = num % 100;
+        }
+        
+        // Gestion des dizaines et unités
+        if (num >= 80) {
+            result += "quatre-vingt";
+            num -= 80;
+            if (num === 0) {
+                result += "s";
+            } else {
+                result += "-" + convertLessThanOneThousand(num);
+            }
+        } else if (num >= 70) {
+            result += "soixante";
+            num -= 60;
+            result += "-" + convertLessThanOneThousand(num);
+        } else if (num >= 20) {
+            const tenIndex = Math.floor(num / 10);
+            result += tens[tenIndex];
+            const unitsNum = num % 10;
+            if (unitsNum > 0) {
+                result += "-" + units[unitsNum];
+            }
+        } else if (num >= 10) {
+            result += teens[num - 10];
+        } else if (num > 0) {
+            result += units[num];
+        }
+        
+        return result.trim();
     }
 
-    // Traitement des dizaines et unités
-    if (num >= 20) {
-        const tenIndex = Math.floor(num / 10);
-        words += tens[tenIndex];
-        num %= 10;
-        if (num > 0) words += "-" + units[num];
-    } else if (num >= 10) {
-        words += teens[num - 10];
-        num = 0;
-    } else if (num > 0) {
-        words += units[num];
+    let result = "";
+    
+    // Gestion des mille milliards
+    if (number >= 1000000000000) {
+        const thousandBillions = Math.floor(number / 1000000000000);
+        if (thousandBillions > 1) {
+            result += convertLessThanOneThousand(thousandBillions) + " ";
+        }
+        result += "mille milliards ";
+        number = number % 1000000000000;
     }
-
-    return words.trim() + " GNF";
-};
-
+    
+    // Gestion des milliards
+    if (number >= 1000000000) {
+        const billions = Math.floor(number / 1000000000);
+        result += convertLessThanOneThousand(billions) + " milliard" + (billions > 1 ? "s" : "") + " ";
+        number = number % 1000000000;
+    }
+    
+    // Gestion des millions
+    if (number >= 1000000) {
+        const millions = Math.floor(number / 1000000);
+        result += convertLessThanOneThousand(millions) + " million" + (millions > 1 ? "s" : "") + " ";
+        number = number % 1000000;
+    }
+    
+    // Gestion des milliers
+    if (number >= 1000) {
+        const thousands = Math.floor(number / 1000);
+        if (thousands > 1) {
+            result += convertLessThanOneThousand(thousands) + " ";
+        }
+        result += "mille ";
+        number = number % 1000;
+    }
+    
+    // Gestion du reste
+    if (number > 0) {
+        result += convertLessThanOneThousand(number);
+    }
+    
+    return result.trim() + " GNF";
+}
 
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
   confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getCurrentMonth, currentMonth,
-  get_full_unite, formatDate, signatorPosition,showNotification,notif,numberToWords
+  get_full_unite, formatDate, signatorPosition,showNotification,notif,convertNumberToWords
 }

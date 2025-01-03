@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import autoTable, { type UserOptions, type Color, type CellDef } from 'jspdf-autotable';
-import { get_full_unite, numberToWords } from '@/services/utils';
+import { get_full_unite, convertNumberToWords } from '@/services/utils';
 import headerPortrait from './includes/headerPortrait';
 import footerPortrait from './includes/footerPortrait';
 import signature from './includes/signature';
@@ -89,7 +89,6 @@ const orderFormPdf = async (heading: string, data: any[], signators: any[]) => {
         drawClientInfoBox(doc, item, yCoord);
         yCoord += 1.5;
         drawOrderDetails(doc, item, yCoord);
-        console.log(orderTotal);
         signature(doc, signators, orderTotal,formatPrice(orderTotal),  STYLES.spacing.margin);
         footerPortrait(doc, data, index + 1, data.length);
     });

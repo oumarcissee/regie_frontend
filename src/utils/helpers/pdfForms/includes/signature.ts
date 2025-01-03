@@ -1,5 +1,5 @@
 import type jsPDF from "jspdf";
-import { getCurrentMonth, currentMonth, numberToWords } from '@/services/utils';
+import { getCurrentMonth, currentMonth, convertNumberToWords } from '@/services/utils';
 import { useSettingStore } from '@/stores/rutStore/settings/settingStore';
 
 const { getSignators, fetchSignators } = useSettingStore();
@@ -43,7 +43,7 @@ const signature = (doc: any, signators: any[], montant: number, amount :string, 
     doc.setFontSize(12);
 
     // Format the amount text
-    const amountText = `Arrête ce montant à la somme de : ${numberToWords(montant)} (${amount})`;
+    const amountText = `Arrête ce montant à la somme de : ${convertNumberToWords(montant)} (${amount})`;
     const wrappedLines = wrapText(amountText, textWidth);
 
     // Draw each line of the wrapped text centered
