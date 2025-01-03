@@ -1,15 +1,61 @@
 import type jsPDF from "jspdf";
-import { getCurrentMonth, currentMonth } from '@/services/utils';
+import { getCurrentMonth, currentMonth, numberToWords } from '@/services/utils';
 import { useSettingStore } from '@/stores/rutStore/settings/settingStore';
 
 const { getSignators, fetchSignators } = useSettingStore();
-fetchSignators();
 
-const signature = (doc: any, signators: any[]) => {
+const signature = (doc: any, signators: any[], montant: number, amount :string, style: any) => {
     // Default Y position if autoTable information is not available
     let finalY = doc.previousAutoTable
         ? doc.previousAutoTable.finalY + 0.25
-        : doc.internal.pageSize.height - 3; // Fallback to near bottom of page
+        : doc.internal.pageSize.height - 3;
+
+    // Get page dimensions
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const textWidth = pageWidth - (style * 3); // Reduce width to allow for centering
+    const centerX = pageWidth / 2; // Calculate center of page
+
+    // Function to wrap text and return array of lines
+    const wrapText = (text: string, maxWidth: number): string[] => {
+        const words = text.split(' ');
+        const lines: string[] = [];
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            const word = words[i];
+            const width = doc.getStringUnitWidth(currentLine + ' ' + word) * doc.internal.getFontSize() / doc.internal.scaleFactor;
+            
+            if (width < maxWidth) {
+                currentLine += ' ' + word;
+            } else {
+                lines.push(currentLine);
+                currentLine = word;
+            }
+        }
+        lines.push(currentLine);
+        return lines;
+    };
+
+    // Store current font size
+    const currentFontSize = doc.internal.getFontSize();
+    
+    // Set smaller font size for amount text (9 instead of default 11)
+    doc.setFontSize(12);
+
+    // Format the amount text
+    const amountText = `Arrête ce montant à la somme de : ${numberToWords(montant)} (${amount})`;
+    const wrappedLines = wrapText(amountText, textWidth);
+
+    // Draw each line of the wrapped text centered
+    wrappedLines.forEach((line, index) => {
+        doc.text(line, centerX, finalY + (index * 0.2), { align: 'center' });
+    });
+
+    // Restore original font size
+    doc.setFontSize(currentFontSize);
+
+    // Update finalY to account for wrapped text
+    finalY += (wrappedLines.length * 0.2);
 
     // Configuration de la date
     const date = new Date().toLocaleDateString('fr-FR', {
@@ -18,15 +64,10 @@ const signature = (doc: any, signators: any[]) => {
         year: 'numeric'
     });
 
-    // Dimensions de la page
-    const pageWidth = doc.internal.pageSize.getWidth();
+    // Dimensions and margins
     const leftMargin = 0.5;
     const rightMargin = pageWidth - 0.9;
-
-    // Largeur des conteneurs (environ 1/3 de la page pour chaque conteneur)
     const containerWidth = pageWidth / 3;
-
-    // Positions des conteneurs
     const leftContainerX = leftMargin;
     const rightContainerX = rightMargin - containerWidth + 0.4;
 
@@ -61,44 +102,31 @@ const signature = (doc: any, signators: any[]) => {
             }
         });
     } else {
-        // Fallback content if no signators provided
-        leftContent = [
-            "Fonction",
-            "Titre",
-            "Grade Prénom et Nom"
-        ];
-        
-        rightContent = [
-            "Fonction",
-            "Titre",
-            "Grade Prénom et Nom"
-        ];
+        leftContent = ["Fonction", "Titre", "Grade Prénom et Nom"];
+        rightContent = ["Fonction", "Titre", "Grade Prénom et Nom"];
     }
 
     const drawCenteredText = (textArray: string[], x: number, startY: number, containerWidth: number) => {
-    let counter = 0;
-    let currentY = startY;
-    
-    textArray.forEach((text, index) => {
-        const centerX = x + (containerWidth / 2 - 0.1);
-        counter++;
-        // Après le premier élément (titre du poste)
-        doc.text(text, centerX, currentY, { align: 'center' });
-        if (counter === 1) {
-            currentY += 1; // Espace normal après le premier élément
-        } else {
-            currentY += 0.25; // Espace normal entre les éléments
-        }
-       
-    });
+        let counter = 0;
+        let currentY = startY;
+
+        textArray.forEach((text) => {
+            const centerX = x + (containerWidth / 2 - 0.1);
+            counter++;
+            doc.text(text, centerX, currentY, { align: 'center' });
+            if (counter === 1) {
+                currentY += 1;
+            } else {
+                currentY += 0.25;
+            }
+        });
         return currentY;
     };
 
-    // Dessiner les conteneurs et leur contenu
+    // Draw containers and content
     const leftFinalY = drawCenteredText(leftContent, leftContainerX, dateFinalY, containerWidth);
     const rightFinalY = drawCenteredText(rightContent, rightContainerX, dateFinalY, containerWidth);
 
-    // Retourner la position Y finale (la plus grande des deux conteneurs)
     return Math.max(leftFinalY, rightFinalY);
 };
 

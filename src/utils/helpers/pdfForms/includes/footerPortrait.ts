@@ -11,7 +11,7 @@ const footerPortrait = (doc: jsPDF, data: any,  pageNumber: number, totalPages: 
     doc.setDrawColor(150); // Couleur gris clair pour le filigrane
     doc.setLineWidth(0.05); // Largeur de la ligne
     const lineYOffset = 0.5; // Adjust this value to move the line down
-    doc.line(0.5, pageHeight - 1 + lineYOffset, pageWidth - 0.5, pageHeight - 1 + lineYOffset); // Ligne horizontale au début du pied de page
+    doc.line(0.5, pageHeight - 0.9 + lineYOffset, pageWidth - 0.5, pageHeight - 0.9 + lineYOffset); // Ligne horizontale au début du pied de page
 
     const domain = window.location.hostname; // Capturer le domaine dynamiquement
 

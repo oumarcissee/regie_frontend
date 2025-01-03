@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import autoTable, { type UserOptions, type Color, type CellDef } from 'jspdf-autotable';
-import { get_full_unite } from '@/services/utils';
+import { get_full_unite, numberToWords } from '@/services/utils';
 import headerPortrait from './includes/headerPortrait';
 import footerPortrait from './includes/footerPortrait';
 import signature from './includes/signature';
@@ -49,9 +49,19 @@ const STYLES = {
         sectionGap: 0.5
     },
     table: {
-        width: 7.67
+        width: 7.67,
+        columnWidths: {
+            no: 0.05,        // 5%
+            image: 0.12,     // 12%
+            article: 0.17,   // 17%
+            quantity: 0.12,  // 12%
+            unite: 0.13,     // 13%
+            unitPrice: 0.18, // 18%
+            totalPrice: 0.22 // 20% (augmenté pour accommoder les grands nombres)
+        }
     }
 };
+let orderTotal: any;
 
 const ICONS = {
     REF: '•',
@@ -79,7 +89,8 @@ const orderFormPdf = async (heading: string, data: any[], signators: any[]) => {
         drawClientInfoBox(doc, item, yCoord);
         yCoord += 1.5;
         drawOrderDetails(doc, item, yCoord);
-        signature(doc, signators);
+        console.log(orderTotal);
+        signature(doc, signators, orderTotal,formatPrice(orderTotal),  STYLES.spacing.margin);
         footerPortrait(doc, data, index + 1, data.length);
     });
 
@@ -126,15 +137,34 @@ const drawClientInfoBox = (doc: jsPDF, item: OrderData, startY: number) => {
 };
 
 const formatPrice = (price: number): string => {
-    // Formatter le nombre avec des espaces comme séparateurs de milliers
-    const formattedNumber = price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-    return `${formattedNumber} GNF`;
+    try {
+        // Convertir le nombre en entier pour éviter les décimales
+        const priceInt = Math.round(price);
+        
+        // Formatter le nombre avec des espaces comme séparateurs de milliers
+        const formattedNumber = priceInt.toString()
+            .split('')
+            .reverse()
+            .reduce((acc, digit, i) => {
+                if (i > 0 && i % 3 === 0) {
+                    return digit + ' ' + acc;
+                }
+                return digit + acc;
+            }, '');
+
+        return `${formattedNumber} GNF`;
+    } catch (error) {
+        console.error('Erreur lors du formatage du prix:', error);
+        return `${price} GNF`; // Fallback au cas où
+    }
 };
 
 const truncateText = (text: string, maxLength: number): string => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength - 3) + '...';
 };
+
+
 
 const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
     const secondary = STYLES.colors.secondary;
@@ -153,7 +183,7 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
         totalPrice: totalWidth * 0.18  // 18%
     };
 
-    const orderTotal = item.orders.reduce((sum, order) =>
+    orderTotal = item.orders.reduce((sum, order) =>
         sum + (order.quantity * order.item.price), 0
     );
 
@@ -201,7 +231,7 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
             cellPadding: 0.1,
             lineColor: toColor(STYLES.colors.white),
             lineWidth: 0,
-            overflow: 'hidden' // Empêcher le débordement du texte
+            overflow: 'ellipsize' // Corrigé : "ellipsize" au lieu de "ellipsis"
         },
         headStyles: {
             fillColor: toColor(STYLES.colors.secondary),
@@ -214,17 +244,29 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
             fillColor: toColor(STYLES.colors.accent)
         },
         columnStyles: {
-            0: { halign: 'center', cellWidth: columnWidths.no },
-            1: { cellWidth: columnWidths.image },
-            2: {
+            0: { halign: 'center', cellWidth: STYLES.table.columnWidths.no * STYLES.table.width },
+            1: { cellWidth: STYLES.table.columnWidths.image * STYLES.table.width },
+            2: { 
                 halign: 'left',
-                cellWidth: columnWidths.article,
-                overflow: 'hidden'
+                cellWidth: STYLES.table.columnWidths.article * STYLES.table.width,
+                overflow: 'ellipsize' // Corrigé ici aussi
             },
-            3: { halign: 'center', cellWidth: columnWidths.quantity },
-            4: { halign: 'center', cellWidth: columnWidths.unite },
-            5: { halign: 'right', cellWidth: columnWidths.unitPrice },
-            6: { halign: 'right', cellWidth: columnWidths.totalPrice }
+            3: { 
+                halign: 'center',
+                cellWidth: STYLES.table.columnWidths.quantity * STYLES.table.width
+            },
+            4: { 
+                halign: 'center',
+                cellWidth: STYLES.table.columnWidths.unite * STYLES.table.width
+            },
+            5: { 
+                halign: 'right',
+                cellWidth: STYLES.table.columnWidths.unitPrice * STYLES.table.width
+            },
+            6: { 
+                halign: 'right',
+                cellWidth: STYLES.table.columnWidths.totalPrice * STYLES.table.width
+            }
         },
         didParseCell: function (data: any) {
             if (data.section === 'head' && data.column.index === 2) {
@@ -237,6 +279,7 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
     };
 
     autoTable(doc, tableConfig);
+
 };
 
 const handleImageCell = (doc: jsPDF, data: any, item: OrderData) => {

@@ -115,7 +115,7 @@ const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
     try {
         const product = useProduct.items.find((item: { id?: any }) => item?.id === data.products);
         
-        if (productSelected.value.length > 11) {
+        if (productSelected.value.length >= 10) {
             setErrors({ products: 'Le maximum de produits sélectionnés est atteint.' });
             return;
         }

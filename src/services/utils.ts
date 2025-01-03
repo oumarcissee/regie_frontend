@@ -209,9 +209,63 @@ const showNotification = (message: string, color: string = 'success') => {
 };
 
 
+const numberToWords = (num: number): string => {
+    const units = ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"];
+    const teens = ["dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf"];
+    const tens = ["", "dix", "vingt", "trente", "quarante", "cinquante", "soixante", "soixante-dix", "quatre-vingt", "quatre-vingt-dix"];
+
+    if (num === 0) return "zéro GNF";
+
+    let words = "";
+
+    // Traitement des milliards
+    if (num >= 1000000000) {
+        const billions = Math.floor(num / 1000000000);
+        words += numberToWords(billions).replace(" GNF", "") + " milliard" + (billions > 1 ? "s" : "") + " ";
+        num %= 1000000000;
+    }
+
+    // Traitement des millions
+    if (num >= 1000000) {
+        const millions = Math.floor(num / 1000000);
+        words += numberToWords(millions).replace(" GNF", "") + " million" + (millions > 1 ? "s" : "") + " ";
+        num %= 1000000;
+    }
+
+    // Traitement des milliers
+    if (num >= 1000) {
+        const thousands = Math.floor(num / 1000);
+        words += (thousands > 1 ? numberToWords(thousands).replace(" GNF", "") + " " : "") + "mille ";
+        num %= 1000;
+    }
+
+    // Traitement des centaines
+    if (num >= 100) {
+        const hundreds = Math.floor(num / 100);
+        words += (hundreds > 1 ? units[hundreds] + " " : "") + "cent ";
+        num %= 100;
+    }
+
+    // Traitement des dizaines et unités
+    if (num >= 20) {
+        const tenIndex = Math.floor(num / 10);
+        words += tens[tenIndex];
+        num %= 10;
+        if (num > 0) words += "-" + units[num];
+    } else if (num >= 10) {
+        words += teens[num - 10];
+        num = 0;
+    } else if (num > 0) {
+        words += units[num];
+    }
+
+    return words.trim() + " GNF";
+};
+
+
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
   confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getCurrentMonth, currentMonth,
-  get_full_unite, formatDate, signatorPosition,showNotification,notif
+  get_full_unite, formatDate, signatorPosition,showNotification,notif,numberToWords
 }
