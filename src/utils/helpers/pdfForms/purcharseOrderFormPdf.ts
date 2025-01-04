@@ -51,7 +51,7 @@ const STYLES = {
     table: {
         width: 7.67,
         columnWidths: {
-            no: 0.05,        // 5%
+            no: 0.06,        // 5%
             image: 0.12,     // 12%
             article: 0.17,   // 17%
             quantity: 0.12,  // 12%
@@ -73,7 +73,7 @@ const ICONS = {
 
 const toColor = (color: readonly [number, number, number]): Color => color as Color;
 
-const orderFormPdf = async (title: string, heading: string, data: any[], signators: any[]) => {
+const purchaseOrderFormPdf = async(title: string,heading: string, data: any[], signators: any[]) => {
     const doc = new jsPDF({
         unit: 'in',
         format: 'a4'
@@ -89,7 +89,7 @@ const orderFormPdf = async (title: string, heading: string, data: any[], signato
         drawClientInfoBox(doc, item, yCoord);
         yCoord += 1.5;
         drawOrderDetails(doc, item, yCoord);
-        signature(doc, signators, orderTotal,formatPrice(orderTotal),  STYLES.spacing.margin);
+        signature(doc, signators, 0,formatPrice(orderTotal),  STYLES.spacing.margin);
         footerPortrait(doc, data, index + 1, data.length);
     });
 
@@ -175,12 +175,12 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
     const columnWidths = {
         no: totalWidth * 0.05,        // 5%
         image: totalWidth * 0.12,     // 12%
-        article: totalWidth * 0.23,    // 23%
-        quantity: totalWidth * 0.12,   // 12%
-        unite: totalWidth * 0.13,     // 13%
-        unitPrice: totalWidth * 0.17,  // 17%
-        totalPrice: totalWidth * 0.18  // 18%
+        article: totalWidth * 0.33,   // 30%
+        quantity: totalWidth * 0.20,  // 12%
+        unite: totalWidth * 0.20,     // 13%
+        obs: totalWidth * 0.10        // 28%
     };
+
 
     orderTotal = item.orders.reduce((sum, order) =>
         sum + (order.quantity * order.item.price), 0
@@ -191,87 +191,68 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
     const maxCharsInArticle = Math.floor((columnWidths.article * 72) / charWidthEstimate); // 72 points par pouce
 
     const tableConfig: UserOptions = {
-        startY: startY + 0.3,
-        margin: { left: STYLES.spacing.margin },
-        head: [['N°', 'Image', 'Article', 'Quantité', 'Unité', 'Prix unit.', 'Total']],
-        body: [
-            ...item.orders.map((order, i) => {
-                const totalPrice = order.quantity * order.item.price;
-                const row: CellDef[] = [
-                    { content: (i + 1).toString() },
-                    { content: '', styles: { minCellHeight: 0.4 } },
-                    {
-                        content: truncateText(order.item.name, maxCharsInArticle),
-                        title: order.item.name // Pour afficher le texte complet au survol
-                    },
-                    { content: order.quantity.toString() },
-                    { content: get_full_unite(order.item.unite) },
-                    { content: formatPrice(order.item.price) },
-                    { content: formatPrice(totalPrice) }
-                ];
-                return row;
-            }),
-            [{
-                content: 'Montant total',
-                colSpan: 6,
-                styles: {
-                    fontStyle: 'bold',
-                    halign: 'right'
-                }
-            }, {
-                content: formatPrice(orderTotal),
-                styles: {
-                    fontStyle: 'bold'
-                }
-            }]
-        ],
-        styles: {
-            fontSize: STYLES.fonts.normal.size,
-            cellPadding: 0.1,
-            lineColor: toColor(STYLES.colors.white),
-            lineWidth: 0,
-            overflow: 'ellipsize' // Corrigé : "ellipsize" au lieu de "ellipsis"
+    startY: startY + 0.3,
+    margin: { left: STYLES.spacing.margin },
+    head: [['N°', 'Image', 'Article', 'Quantité', 'Unité', 'Obs']],
+    body: [
+        ...item.orders.map((order, i) => {
+            const row: CellDef[] = [
+                { content: (i + 1).toString() },
+                { content: '', styles: { minCellHeight: 0.4 } },
+                {
+                    content: truncateText(order.item.name, maxCharsInArticle),
+                    title: order.item.name
+                },
+                { content: order.quantity.toString() },
+                { content: get_full_unite(order.item.unite) },
+                { content: '' } // Colonne pour les observations
+            ];
+            return row;
+        })
+    ],
+    styles: {
+        fontSize: STYLES.fonts.normal.size,
+        cellPadding: 0.1,
+        lineColor: toColor(STYLES.colors.white),
+        lineWidth: 0,
+        overflow: 'ellipsize'
+    },
+    headStyles: {
+        fillColor: toColor(STYLES.colors.secondary),
+        textColor: toColor(STYLES.colors.white),
+        fontSize: STYLES.fonts.subHeader.size,
+        fontStyle: 'bold',
+        halign: 'center'
+    },
+    alternateRowStyles: {
+        fillColor: toColor(STYLES.colors.accent)
+    },
+    columnStyles: {
+        0: { halign: 'center', cellWidth: columnWidths.no },
+        1: { cellWidth: columnWidths.image },
+        2: { 
+            halign: 'left',
+            cellWidth: columnWidths.article,
+            overflow: 'ellipsize'
         },
-        headStyles: {
-            fillColor: toColor(STYLES.colors.secondary),
-            textColor: toColor(STYLES.colors.white),
-            fontSize: STYLES.fonts.subHeader.size,
-            fontStyle: 'bold',
-            halign: 'center'
+        3: { 
+            halign: 'center',
+            cellWidth: columnWidths.quantity
         },
-        alternateRowStyles: {
-            fillColor: toColor(STYLES.colors.accent)
+        4: { 
+            halign: 'center',
+            cellWidth: columnWidths.unite
         },
-        columnStyles: {
-            0: { halign: 'center', cellWidth: STYLES.table.columnWidths.no * STYLES.table.width },
-            1: { cellWidth: STYLES.table.columnWidths.image * STYLES.table.width },
-            2: { 
-                halign: 'left',
-                cellWidth: STYLES.table.columnWidths.article * STYLES.table.width,
-                overflow: 'ellipsize' // Corrigé ici aussi
-            },
-            3: { 
-                halign: 'center',
-                cellWidth: STYLES.table.columnWidths.quantity * STYLES.table.width
-            },
-            4: { 
-                halign: 'center',
-                cellWidth: STYLES.table.columnWidths.unite * STYLES.table.width
-            },
-            5: { 
-                halign: 'right',
-                cellWidth: STYLES.table.columnWidths.unitPrice * STYLES.table.width
-            },
-            6: { 
-                halign: 'right',
-                cellWidth: STYLES.table.columnWidths.totalPrice * STYLES.table.width
-            }
-        },
-        didParseCell: function (data: any) {
-            if (data.section === 'head' && data.column.index === 2) {
-                data.cell.styles.halign = 'left';
-            }
-        },
+        5: { 
+            halign: 'left',
+            cellWidth: columnWidths.obs
+        }
+    },
+    didParseCell: function (data: any) {
+        if (data.section === 'head' && data.column.index === 2) {
+            data.cell.styles.halign = 'left';
+        }
+    },
         didDrawCell: function (data: any) {
             handleImageCell(doc, data, item);
         }
@@ -314,4 +295,4 @@ const handleImageCell = (doc: jsPDF, data: any, item: OrderData) => {
     }
 };
 
-export { orderFormPdf };
+export { purchaseOrderFormPdf };

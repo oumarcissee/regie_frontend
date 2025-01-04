@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, provide } from 'vue';
 import { truncateText, currentMonth, get_full_unite, formatDate, showNotification } from '@/services/utils';
 import { orderFormPdf } from '@/utils/helpers/pdfForms/orderFormPdf';
+import { purchaseOrderFormPdf } from '@/utils/helpers/pdfForms/purcharseOrderFormPdf';
 import { useField, useForm } from 'vee-validate';
 import type { Header, Item } from 'vue3-easy-data-table';
 import 'vue3-easy-data-table/dist/style.css';
@@ -42,6 +43,7 @@ const printPreviewDialog = ref(false);
 const printableArea = ref();
 const heading = ref('');
 const isSubmittingPdf = ref(false);
+const isSubmitting2Pdf = ref(false);
 const refProduct = ref();
 const isLoading = ref(false);
 
@@ -291,17 +293,31 @@ const printContent = () => {
     newWin.close();
 };
 
-const doPdf = async () => {
+const doBillPdf = async () => {
     isSubmittingPdf.value = true;
     try {
         const signators = await fetchSignators();
         // console.log(signators);
 
-        await orderFormPdf(heading.value, itemsSelected.value, signators);
+        await orderFormPdf("FACTURE DE PAIEMENT",heading.value, itemsSelected.value, signators);
     } catch (error) {
         console.error('Error generating PDF:', error);
     } finally {
         isSubmittingPdf.value = false;
+        closePrintPreviewDialog();
+    }
+};
+
+const doPurchaseOrderPdf = async () => {
+    isSubmitting2Pdf.value = true;
+    try {
+        const signators = await fetchSignators();
+        // console.log(signators);
+        await purchaseOrderFormPdf("BON DE COMMANDE",heading.value, itemsSelected.value, signators);
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+    } finally {
+        isSubmitting2Pdf.value = false;
         closePrintPreviewDialog();
     }
 };
@@ -328,6 +344,10 @@ onMounted(async () => {
         console.error('Error initializing component:', error);
     }
 });
+
+
+
+
 </script>
 
 
@@ -691,10 +711,35 @@ onMounted(async () => {
                     </div>
                 </div>
             </v-card-text>
-            <v-card-actions>
-                <!-- <v-btn color="primary" @click="doPdf">Print</v-btn> -->
-                <v-btn color="secondary" variant="flat" @click="doPdf" block :loading="isSubmittingPdf">Impression</v-btn>
-                <!-- <v-btn @click="closePrintPreviewDialog">Close</v-btn> -->
+           <v-card-actions class="d-flex justify-space-between px-4">
+                <div class="d-flex gap-4 flex-grow-1">
+                    <v-btn 
+                        color="secondary" 
+                        variant="flat" 
+                        @click="doBillPdf" 
+                        :loading="isSubmittingPdf"
+                        class="flex-grow-1"
+                    >
+                        Facture
+                    </v-btn>
+                    <v-btn 
+                        color="secondary" 
+                        variant="flat" 
+                        @click="doPurchaseOrderPdf" 
+                        :loading="isSubmitting2Pdf"
+                        class="flex-grow-1"
+                    >
+                        Bon de Commande
+                    </v-btn>
+                    <v-btn 
+                        color="error" 
+                        variant="flat" 
+                        @click="closePrintPreviewDialog"
+                        class="flex-grow-1"
+                    >
+                        Fermer
+                    </v-btn>
+                </div>
             </v-card-actions>
         </v-card>
     </v-dialog>

@@ -46,10 +46,13 @@ const signature = (doc: any, signators: any[], montant: number, amount :string, 
     const amountText = `Arrête ce montant à la somme de : ${convertNumberToWords(montant)} (${amount})`;
     const wrappedLines = wrapText(amountText, textWidth);
 
-    // Draw each line of the wrapped text centered
-    wrappedLines.forEach((line, index) => {
-        doc.text(line, centerX, finalY + (index * 0.2), { align: 'center' });
-    });
+    if (montant) {
+        
+        // Draw each line of the wrapped text centered
+        wrappedLines.forEach((line, index) => {
+            doc.text(line, centerX, finalY + (index * 0.2), { align: 'center' });
+        });
+    }
 
     // Restore original font size
     doc.setFontSize(currentFontSize);
