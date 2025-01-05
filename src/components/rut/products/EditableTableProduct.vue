@@ -51,6 +51,8 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
                 if (!value || value[0]?.type.indexOf('image/') === -1) {
                     return 'Veillez selectionez une image';
                 }
+
+                return errorMessage;
             }
             return true;
         },
@@ -228,15 +230,15 @@ const submit = handleSubmit(async (values) => {
 
         console.log(formData);
         if (editedIndex.value === -1) {
-            await addOrUpdateProduct(formData, editedIndex.value);
+            await addOrUpdateProduct(formData);
             showNotification('Signateur ajouté avec succès');
         } else {
-             await addOrUpdateProduct(formData);
+             await addOrUpdateProduct(formData, editedIndex.value);
             showNotification('Signateur modifié avec succès');
         }
 
     } catch (err) {
-        console.log(err);
+        console.log(err, "Erreur");
         // error.value = err instanceof Error ? err.message : 'Une erreur est survenue';
            if (err instanceof Error) {
             const axiosError = err as AxiosError<{[key: string]: string[]}>;
@@ -253,7 +255,6 @@ const submit = handleSubmit(async (values) => {
         }
     } finally {
         isLoading.value = false;
-        close();
         await refreshTable();
         
     }
@@ -721,7 +722,7 @@ const headers = [
             </v-list>
         </v-card-text>
     </v-card>
-</v-dialog>
+</v-dialog>a
     <!-- Existing dialogs remain the same -->
     
     <v-dialog v-model="imageDialog" >
@@ -749,9 +750,6 @@ const headers = [
             </v-card-text>
         </v-card>
     </v-dialog>
-
-
-
 
     <!-- Snackbar pour les notifications -->
     <v-snackbar
