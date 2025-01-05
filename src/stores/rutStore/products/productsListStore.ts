@@ -27,7 +27,25 @@ export const useProductsList = defineStore({
         async fetchItems() {
             try {
                 const response = await new ApiAxios().find(`/items/`);
-                return this.items = response?.data?.results;
+
+               this.items = await response?.data?.results.map((item: any, index: number) => ({
+                    ref: item.ref,
+                    item: {
+                        name: item.name,
+                        image: item.image,
+                        description: item.description,
+                    },
+                    
+                    price: item.price,
+                    rate_per_days: item.rate_per_days,
+                    divider: item.divider,
+                    created_at : new Date(item.created_at),
+                    modified_at : new Date(item.modified_at),
+                    actions: item,
+                    raw: item // Keep raw data for actions
+                }));
+
+                return this.items;
             } catch (error) {
                 alert(error);
                 console.log(error);

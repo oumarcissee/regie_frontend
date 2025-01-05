@@ -346,7 +346,7 @@ onMounted(async () => {
 });
 
 
-
+const loading = ref(false);
 
 </script>
 
@@ -565,6 +565,7 @@ onMounted(async () => {
         :search-value="searchValue"
         :rows-per-page="8"
         v-model:items-selected="itemsSelected"
+        :loading="loading"
         show-index
         buttons-pagination
         itemKey="ref"

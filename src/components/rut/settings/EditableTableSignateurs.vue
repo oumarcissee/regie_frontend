@@ -239,7 +239,6 @@ onMounted(async () => {
                     <v-card-text>
                         <v-form ref="form" v-model="valid" @submit.prevent="submit">
                             <v-row>
-                               
                                 <v-col cols="12" sm="6">
                                     <v-text-field
                                         v-model="first_name.value.value"
@@ -325,7 +324,6 @@ onMounted(async () => {
             </v-dialog>
         </v-col>
     </v-row>
-
     <EasyDataTable
         :headers="headers"
         :items="store.getSignators"
