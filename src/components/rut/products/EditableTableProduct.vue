@@ -339,14 +339,11 @@ const formButton = computed(() => {
 
 
 const headers = [
-    { text: "Référence", value: "ref", width: 100 },
+    { text: "Référence", value: "ref", },
     { text: "Article", value: "item", width: 300 },
-    { text: "Prix", value: "price", width: 100 },
-    { text: "Taux", value: "rate_per_days", width: 100 },
-    { text: "Diviseur", value: "divider", width: 100 },
-    { text: "Créé le", value: "created_at", width: 150 },
-    { text: "Modifié le", value: "modified_at", width: 150 },
-    { text: "Actions", value: "actions", width: 100 }
+    { text: "Prix", value: "price" },
+    { text: "Modifié le", value: "modified_at"},
+    { text: "Actions", value: "actions"}
 ];
 
 </script>
@@ -502,8 +499,8 @@ const headers = [
         :search-value="searchValue"
         :rows-per-page="8"
         v-model:items-selected="itemsSelected"
-        show-index
         buttons-pagination
+        show-index
     >
         <!-- Custom template for Article column -->
         <template #item-item="{ item }">
