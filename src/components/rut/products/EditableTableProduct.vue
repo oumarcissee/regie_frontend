@@ -195,7 +195,6 @@ const submit = handleSubmit(async (values) => {
         isLoading.value = true;
         error.value = null;
         
-        const formData = new FormData(); // Créer un nouveau FormData pour chaque soumission
         
         // Ajouter les valeurs de base au formData
         formData.append('name', values.name);
@@ -213,7 +212,7 @@ const submit = handleSubmit(async (values) => {
             }
         } else {
             const croppedImage = formData.get('image');
-            console.log("Je suis image", cropper)
+            console.log("Je suis image", formData.get('image'))
             // Cas de modification : vérifier si une nouvelle image a été recadrée
             if (croppedImage) {
                 // L'image recadrée est déjà dans le formData depuis handleImage()
