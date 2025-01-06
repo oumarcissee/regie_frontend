@@ -29,8 +29,6 @@ import type { Items } from '@/types/rut/SignatorType';
 import contact from '@/_mockApis/apps/contact';
 import type { Item } from 'vue3-easy-data-table';
 
-const image = ref<File[] | null>(null);
-const { errorMessage } = useField('image'); // On conserve uniquement le message d'erreur
 
 const { addOrUpdateProduct, errors } = useProductsList();
 const store = useProductsList();
@@ -52,7 +50,7 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
                     return 'Veillez selectionez une image';
                 }
 
-                return errorMessage;
+              
             }
             return true;
         },
@@ -114,9 +112,7 @@ const getItems: any = computed(async () => {
     return await store.items;
 });
 
-
 import type { AxiosError } from 'axios';
-
 
 const imageSrc = ref('');
 
@@ -137,34 +133,6 @@ const closeViewDialog = () => {
     selectedProduct.value = null;
 };
 
-
-// Transform items for the table
-
-
-
-// function setImage(e: Event) {
-//   dialogImg.value = true
-//   const target = e.target as HTMLInputElement;
-//   const file = (target.files as FileList)[0];
-
-//   if (!file || file.type.indexOf('image/') === -1) {
-//         dialogImg.value = false
-//         return;
-//   }
-
-//   const reader = new FileReader();
-//   reader.onload = (event) => {
-//     if (event.target && event.target.result) {
-//       imageSrc.value = event.target.result.toString();
-//       if (cropper.value) {
-//           cropper.value.replace(imageSrc.value);
-
-//       }
-//     }
-//   };
-
-//   reader.readAsDataURL(file);
-// }
 
 // La fonction `setImage` pour assigner l'image sélectionnée
 function setImage(event: Event) {
@@ -215,32 +183,63 @@ const rate_per_days = useField('rate_per_days');
 const divider = useField('divider');
 const description = useField('description');
 
+const image = ref<File[] | null>(null);
+const { errorMessage } = useField('image'); // On conserve uniquement le message d'erreur
+
+
 const count = ref(0);
 
 
 const submit = handleSubmit(async (values) => {
     try {
-        console.log(values, "qjmqslkd");
         isLoading.value = true;
         error.value = null;
         
-        const formData = Object.fromEntries(
-            Object.entries(values).map(([key, value]) => [key, value?.trim()])
-        );
-
-        console.log(formData);
+        const formData = new FormData(); // Créer un nouveau FormData pour chaque soumission
+        
+        // Ajouter les valeurs de base au formData
+        formData.append('name', values.name);
+        formData.append('price', values.price);
+        formData.append('unite', values.unite);
+        formData.append('rate_per_days', values.rate_per_days);
+        formData.append('divider', values.divider);
+        formData.append('description', values.description);
+        
+        // Gestion de l'image
         if (editedIndex.value === -1) {
-            await addOrUpdateProduct(formData);
-            showNotification('Signateur ajouté avec succès');
+            // Cas de création : vérifier si une nouvelle image est fournie
+            if (values.image?.[0]) {
+                formData.append('image', values.image[0]);
+            }
         } else {
-             await addOrUpdateProduct(formData, editedIndex.value);
-            showNotification('Signateur modifié avec succès');
+            const croppedImage = formData.get('image');
+            console.log("Je suis image", cropper)
+            // Cas de modification : vérifier si une nouvelle image a été recadrée
+            if (croppedImage) {
+                // L'image recadrée est déjà dans le formData depuis handleImage()
+                console.log('Image recadrée présente');
+            }
         }
 
+        // Appel API avec le bon ID pour la modification
+        if (editedIndex.value !== -1) {
+            await addOrUpdateProduct(formData, editedIndex.value);
+        } else {
+            await addOrUpdateProduct(formData);
+        }
+
+        // Rafraîchir la table et fermer le dialogue
+        await refreshTable();
+        dialog.value = false;
+        
+        // Afficher une notification de succès
+        showNotification(
+            editedIndex.value === -1 ? 'Article ajouté avec succès' : 'Article modifié avec succès',
+            'success'
+        );
+
     } catch (err) {
-        console.log(err, "Erreur");
-        // error.value = err instanceof Error ? err.message : 'Une erreur est survenue';
-           if (err instanceof Error) {
+        if (err instanceof Error) {
             const axiosError = err as AxiosError<{[key: string]: string[]}>;
             if (axiosError.response?.data) {
                 const errorMessages = Object.values(axiosError.response.data)
@@ -255,8 +254,6 @@ const submit = handleSubmit(async (values) => {
         }
     } finally {
         isLoading.value = false;
-        await refreshTable();
-        
     }
 });
 
