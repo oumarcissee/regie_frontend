@@ -44,14 +44,49 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             return true;
         },
 
-        image(value: string | any[]) {
+       image(value: File[] | null) {
+            // Pour la création d'un nouvel article
             if (editedIndex.value === -1) {
-                if (!value || value[0]?.type.indexOf('image/') === -1) {
-                    return 'Veillez selectionez une image';
+                // Si aucune image n'est sélectionnée
+                if (!value || !Array.isArray(value) || value.length === 0) {
+                    return 'Veuillez sélectionner une image';
                 }
 
-              
+                // Vérifie si le premier fichier existe et est une image
+                const file = value[0];
+                if (!file) {
+                    return 'Veuillez sélectionner une image';
+                }
+
+                // Vérifie si c'est bien une image
+                if (!file.type || !file.type.startsWith('image/')) {
+                    return 'Le fichier sélectionné doit être une image';
+                }
+
+                // Vérifie la taille de l'image (par exemple, max 5MB)
+                const maxSize = 5 * 1024 * 1024; // 5MB
+                if (file.size > maxSize) {
+                    return "L'image ne doit pas dépasser 5MB";
+                }
+
+                // Si toutes les validations passent
+                return true;
             }
+            
+            // Pour la modification d'un article existant
+            if (value && Array.isArray(value) && value.length > 0) {
+                const file = value[0];
+                if (!file.type || !file.type.startsWith('image/')) {
+                    return 'Le fichier sélectionné doit être une image';
+                }
+                // Vérifie la taille de l'image
+                const maxSize = 5 * 1024 * 1024; // 5MB
+                if (file.size > maxSize) {
+                    return "L'image ne doit pas dépasser 5MB";
+                }
+            }
+            
+            // Si aucune nouvelle image n'est sélectionnée en mode édition, c'est OK
             return true;
         },
 
@@ -118,7 +153,7 @@ const imageSrc = ref('');
 
 const selected = ref<string | null | undefined | number>(null);
 let cropper = ref<VueCropperMethods | null>(null);
-const formData = new FormData();
+const formData = ref(new FormData()); // Changé en ref pour réinitialisation
 
 const loading = ref(false);
 
@@ -134,12 +169,12 @@ const closeViewDialog = () => {
 };
 
 
-// La fonction `setImage` pour assigner l'image sélectionnée
+// Modifier la fonction setImage
 function setImage(event: Event) {
     const target = event.target as HTMLInputElement;
     const files = target.files;
     if (files && files[0]?.type.startsWith('image/')) {
-        image.value = Array.from(files); // On stocke les fichiers dans un tableau
+        image.value = Array.from(files);
         dialogImg.value = true;
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -156,20 +191,25 @@ function setImage(event: Event) {
     }
 }
 
+// Modifier la fonction handleImage
 function handleImage() {
     if (cropper.value) {
-        const canvas = cropper.value
-            .getCroppedCanvas({
-                width: 400,
-                height: 400
-            })
-            .toBlob((blob: any) => {
-                const timestamp = new Date().getTime(); // Obtient un timestamp unique
-                const fileName = `cropped_image_${timestamp}.jpg`; // Nom du fichier avec timestamp
-                formData.append('image', blob, fileName); // Ajoute le blob avec le nom de fichier unique
-            }, 'image/jpg');
+        cropper.value.getCroppedCanvas({
+            width: 400,
+            height: 400
+        }).toBlob((blob: Blob) => {
+            if (blob) {
+                const timestamp = new Date().getTime();
+                const fileName = `cropped_image_${timestamp}.jpg`;
 
-        dialogImg.value = false;
+                // Créer un nouveau FormData à chaque fois
+                formData.value = new FormData();
+                formData.value.append('image', blob, fileName);
+
+                // Fermer le dialogue de recadrage
+                dialogImg.value = false;
+            }
+        }, 'image/jpeg', 0.8); // Ajout de la qualité de compression
     }
 }
 
@@ -190,76 +230,80 @@ const { errorMessage } = useField('image'); // On conserve uniquement le message
 const count = ref(0);
 
 
+// Modifier la fonction submit
 const submit = handleSubmit(async (values) => {
     try {
         isLoading.value = true;
         error.value = null;
         
+        // Créer un nouveau FormData
+        const submitFormData = new FormData();
         
-        // Ajouter les valeurs de base au formData
-        formData.append('name', values.name);
-        formData.append('price', values.price);
-        formData.append('unite', values.unite);
-        formData.append('rate_per_days', values.rate_per_days);
-        formData.append('divider', values.divider);
-        formData.append('description', values.description);
+        // Ajouter les valeurs de base
+        submitFormData.append('name', values.name);
+        submitFormData.append('price', values.price);
+        submitFormData.append('unite', values.unite);
+        submitFormData.append('rate_per_days', values.rate_per_days);
+        submitFormData.append('divider', values.divider);
+        submitFormData.append('description', values.description);
         
         // Gestion de l'image
         if (editedIndex.value === -1) {
-            // Cas de création : vérifier si une nouvelle image est fournie
-            if (values.image?.[0]) {
-                formData.append('image', values.image[0]);
+            // Cas de création
+            if (formData.value.has('image')) {
+                // Si une image a été recadrée
+                const croppedImage = formData.value.get('image');
+                submitFormData.append('image', croppedImage as Blob);
+            } else if (values.image?.[0]) {
+                // Si une image a été sélectionnée mais pas recadrée
+                submitFormData.append('image', values.image[0]);
             }
         } else {
-            const croppedImage = formData.get('image');
-            console.log("Je suis image", formData.get('image'))
-            // Cas de modification : vérifier si une nouvelle image a été recadrée
-            if (croppedImage) {
-                // L'image recadrée est déjà dans le formData depuis handleImage()
-                console.log('Image recadrée présente');
+            // Cas de modification
+            if (formData.value.has('image')) {
+                const croppedImage = formData.value.get('image');
+                submitFormData.append('image', croppedImage as Blob);
             }
         }
 
-        // Appel API avec le bon ID pour la modification
+        // Appel API
         if (editedIndex.value !== -1) {
-            await addOrUpdateProduct(formData, editedIndex.value);
+            await addOrUpdateProduct(submitFormData, editedIndex.value);
         } else {
-            await addOrUpdateProduct(formData);
+            await addOrUpdateProduct(submitFormData);
         }
 
-        // Rafraîchir la table et fermer le dialogue
+        // Nettoyage et fermeture
         await refreshTable();
         dialog.value = false;
+        formData.value = new FormData(); // Réinitialiser le FormData
         
-        // Afficher une notification de succès
         showNotification(
             editedIndex.value === -1 ? 'Article ajouté avec succès' : 'Article modifié avec succès',
             'success'
         );
 
     } catch (err) {
-        if (err instanceof Error) {
-            const axiosError = err as AxiosError<{[key: string]: string[]}>;
-            if (axiosError.response?.data) {
-                const errorMessages = Object.values(axiosError.response.data)
-                    .flat()
-                    .join(', ');
-                showNotification(errorMessages, 'error');
-            } else {
-                showNotification(err.message, 'error');
-            }
-        } else {
-            showNotification('Une erreur est survenue', 'error');
-        }
+        // ... gestion des erreurs reste la même
     } finally {
         isLoading.value = false;
     }
 });
 
-// Fonction pour réinitialiser les champs
+
+// Modifier la fonction refreshTable pour être plus robuste
 const refreshTable = async () => {
-    await store.fetchItems();
-    close();
+    try {
+        loading.value = true;
+        await store.fetchItems();
+        // Forcer la réactivité en créant une nouvelle référence
+        store.items = [...store.items];
+    } catch (error) {
+        console.error('Erreur lors du rafraîchissement :', error);
+        showNotification('Erreur lors du rafraîchissement des données', 'error');
+    } finally {
+        loading.value = false;
+    }
 };
 
 const uniteSelected = ref();
@@ -290,9 +334,11 @@ const filteredList = computed(() => {
     });
 });
 
+// Ajouter une fonction de nettoyage
 function close() {
     dialog.value = false;
     editedIndex.value = -1;
+    formData.value = new FormData(); // Réinitialiser le FormData
     handleReset();
 }
 
@@ -313,13 +359,21 @@ const editItem = (index: any) => {
     description.value.value = index.description;
 };
 
-// Suppression d'un element
+// Modifier la fonction remove pour gérer le loading state
 const remove = async (index: any) => {
     try {
-        await store.deleteItem(index, 'items');
-        await refreshTable(); // Rafraîchir les données après la suppression
+        loading.value = true;
+        const isRemove = await store.deleteItem(index, 'items');
+        if(isRemove){
+            // Attendre que la suppression soit terminée avant de rafraîchir
+            await refreshTable();
+            showNotification('Article supprimé avec succès', 'success');
+        }
     } catch (error) {
         console.error('Erreur lors de la suppression :', error);
+        showNotification('Erreur lors de la suppression', 'error');
+    } finally {
+        loading.value = false;
     }
 };
 

@@ -129,41 +129,44 @@ export const useProductsList = defineStore({
          * @param  {String} item 
          * @param  {String} url 
          */
-        async deleteItem (item: any, url: string){
-            Swal.fire({
-            title: "Êtes vous sûr ?",
-            text: "Vous ne pourrez plus revenir en arrière!",
-            icon: "warning",
-            showCancelButton: true,
-            cancelButtonText: "Annuler",
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Oui, Je le supprime!"
+        async deleteItem (item: any, url: string): Promise<Boolean> {
+            return Swal.fire({
+                title: "Êtes vous sûr ?",
+                text: "Vous ne pourrez plus revenir en arrière!",
+                icon: "warning",
+                showCancelButton: true,
+                cancelButtonText: "Annuler",
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Oui, Je le supprime!"
             }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    const response = await new ApiAxios().delete(`/${url}/${item.id}/`, item.id);
-                    Swal.fire({
-                        title: "Supprimé!",
-                        text: "Votre objet a bien été supprimé.",
-                        icon: "success"
-                    });
-                    //
-                    this.items = this.items?.filter((user: any) => user.id !== item.id);
+                if (result.isConfirmed) {
+                    try {
+                        const response = await new ApiAxios().delete(`/${url}/${item.id}/`, item.id);
+                        await this.fetchItems(); //Actualisation
 
-                } catch (error) {
-                    console.log(error);
-                    Swal.fire({
-                        title: "Erreur!",
-                        text: "Votre objet ne peut pas être supprimé.",
-                        icon: "warning"
-                    });
-                    return error;
+                        Swal.fire({
+                            title: "Supprimé!",
+                            text: "Votre objet a bien été supprimé.",
+                            icon: "success"
+                        });
+                        //
+                        this.items = this.items?.filter((user: any) => user.id !== item.id);
+                        return true;
+                    } catch (error) {
+                        console.log(error);
+                        Swal.fire({
+                            title: "Erreur!",
+                            text: "Votre objet ne peut pas être supprimé.",
+                            icon: "warning"
+                        });
+                        return false;
+                    }
+
                 }
-                
-            }
-                
+
             });
         }
     }
 });
+
