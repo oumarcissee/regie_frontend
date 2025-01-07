@@ -44,7 +44,7 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             return true;
         },
 
-       image(value: File[] | null) {
+        image(value: File[] | null) {
             // Pour la création d'un nouvel article
             if (editedIndex.value === -1) {
                 // Si aucune image n'est sélectionnée
@@ -102,6 +102,7 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             if (value) return true;
             return "Choisissez l'unité.";
         },
+        
         rate_per_days(value: string | any[]) {
             if (!/^\d+\.\d+$/.test(value as any)) {
                 // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
@@ -127,9 +128,9 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
 });
 
 onMounted(async () => {
-     isLoading.value = true;
+    isLoading.value = true;
     await refreshTable();
-     isLoading.value = false;
+    isLoading.value = false;
 });
 
 const imageDialog = ref(false);
@@ -174,7 +175,9 @@ function setImage(event: Event) {
     const target = event.target as HTMLInputElement;
     const files = target.files;
     if (files && files[0]?.type.startsWith('image/')) {
-        image.value = Array.from(files);
+        imag.value = Array.from(files);
+        image.value.value = [...Array.from(files)];
+
         dialogImg.value = true;
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -205,6 +208,7 @@ function handleImage() {
                 // Créer un nouveau FormData à chaque fois
                 formData.value = new FormData();
                 formData.value.append('image', blob, fileName);
+                // console.log(formData.value.get('image'), "dans la gestion");
 
                 // Fermer le dialogue de recadrage
                 dialogImg.value = false;
@@ -216,6 +220,7 @@ function handleImage() {
 const dialogImg = ref(false) as any;
 
 const name = useField('name');
+const image = useField('image');
 
 const price = useField('price');
 const unite = useField('unite');
@@ -223,73 +228,56 @@ const rate_per_days = useField('rate_per_days');
 const divider = useField('divider');
 const description = useField('description');
 
-const image = ref<File[] | null>(null);
+const imag = ref<File[] | null>(null);
 const { errorMessage } = useField('image'); // On conserve uniquement le message d'erreur
-
 
 const count = ref(0);
 
 
 // Modifier la fonction submit
+const croppedImage = computed(() => formData.value.get('image'));
+
 const submit = handleSubmit(async (values) => {
+    const submitFormData = new FormData();
+    
+    submitFormData.append('name', values.name);
+    submitFormData.append('price', values.price);
+    submitFormData.append('unite', values.unite);
+    submitFormData.append('rate_per_days', values.rate_per_days);
+    submitFormData.append('divider', values.divider);
+    submitFormData.append('description', values.description);
+    
+    
+    if (croppedImage.value) {
+        submitFormData.append('image', croppedImage.value);
+    } else if (values.image?.[0]) {
+        submitFormData.append('image', values.image[0]);
+    }
+
     try {
         isLoading.value = true;
         error.value = null;
         
-        // Créer un nouveau FormData
-        const submitFormData = new FormData();
-        
-        // Ajouter les valeurs de base
-        submitFormData.append('name', values.name);
-        submitFormData.append('price', values.price);
-        submitFormData.append('unite', values.unite);
-        submitFormData.append('rate_per_days', values.rate_per_days);
-        submitFormData.append('divider', values.divider);
-        submitFormData.append('description', values.description);
-        
-        // Gestion de l'image
-        if (editedIndex.value === -1) {
-            // Cas de création
-            if (formData.value.has('image')) {
-                // Si une image a été recadrée
-                const croppedImage = formData.value.get('image');
-                submitFormData.append('image', croppedImage as Blob);
-            } else if (values.image?.[0]) {
-                // Si une image a été sélectionnée mais pas recadrée
-                submitFormData.append('image', values.image[0]);
-            }
-        } else {
-            // Cas de modification
-            if (formData.value.has('image')) {
-                const croppedImage = formData.value.get('image');
-                submitFormData.append('image', croppedImage as Blob);
-            }
-        }
-
-        // Appel API
         if (editedIndex.value !== -1) {
             await addOrUpdateProduct(submitFormData, editedIndex.value);
         } else {
             await addOrUpdateProduct(submitFormData);
         }
 
-        // Nettoyage et fermeture
         await refreshTable();
         dialog.value = false;
-        formData.value = new FormData(); // Réinitialiser le FormData
-        
+        formData.value = new FormData();
         showNotification(
             editedIndex.value === -1 ? 'Article ajouté avec succès' : 'Article modifié avec succès',
             'success'
         );
-
     } catch (err) {
-        // ... gestion des erreurs reste la même
+        // error.value = err.message;
+        showNotification('Erreur lors de l\'opération', 'error');
     } finally {
         isLoading.value = false;
     }
 });
-
 
 // Modifier la fonction refreshTable pour être plus robuste
 const refreshTable = async () => {
@@ -323,7 +311,7 @@ const valid = ref(true);
 const dialog = ref(false);
 
 const search = ref('');
-const rolesbg = ref(['primary', 'secondary', 'error', 'success', 'warning']);
+// const rolesbg = ref(['primary', 'secondary', 'error', 'success', 'warning']);
 const desserts = ref(contact);
 const editedIndex = ref(-1);
 
@@ -462,7 +450,7 @@ const headers = [
                                         label="Importer une image"
                                         variant="outlined"
                                         accept=".jpeg,.jpg,.png"
-                                        v-model="image"
+                                        v-model="imag"
                                         :error-messages="errorMessage"
                                         @change="setImage"
                                     ></v-file-input>
