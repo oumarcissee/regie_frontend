@@ -83,7 +83,6 @@ export const useProductsList = defineStore({
                     });
                 } else {
                     const response = await new ApiAxios().addForm('/items/', data);
-                    console.log(response.data);
         
                     this.$reset()
                     Swal.fire({

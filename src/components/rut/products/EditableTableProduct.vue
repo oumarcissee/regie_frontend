@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 const itemsSelected = ref<Item[]>([]);
-const searchField = ref(['name']);
+const searchField = ref(['ref','item.name']);
 const searchValue = ref('');
 import { EyeIcon } from 'lucide-vue-next';
 
@@ -378,18 +378,27 @@ const formButton = computed(() => {
 
 
 const headers = [
-    { text: "Référence", value: "ref", },
-    { text: "Article", value: "item", width: 300 },
-    { text: "Prix", value: "price" },
-    { text: "Modifié le", value: "modified_at"},
+    { text: "Référence", value: "ref", sortable:true},
+    { text: "Article", value: "item", width: 300 , sortable:true},
+    { text: "Prix", value: "price", sortable:true },
+    { text: "Modifié le", value: "modified_at",sortable:true},
     { text: "Actions", value: "actions"}
 ];
 
 </script>
 <template>
     <v-row>
-        <v-col cols="12" lg="4" md="6">
-            <v-text-field density="compact" v-model="search" label="Rechercher des articles" variant="outlined"></v-text-field>
+         <v-col cols="12" lg="4" md="6">
+            <!-- Modification du champ de recherche -->
+            <v-text-field 
+                density="compact" 
+                v-model="searchValue" 
+                label="Rechercher par nom ou référence" 
+                variant="outlined"
+                placeholder="Entrez un nom ou une référence..."
+                prepend-inner-icon="mdi-magnify"
+                clearable
+            ></v-text-field>
         </v-col>
         <v-col cols="12" lg="8" md="6" class="text-right">
             <!-- Dialogue img -->
@@ -760,7 +769,7 @@ const headers = [
             </v-list>
         </v-card-text>
     </v-card>
-</v-dialog>a
+</v-dialog>
     <!-- Existing dialogs remain the same -->
     
     <v-dialog v-model="imageDialog" >
