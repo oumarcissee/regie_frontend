@@ -61,14 +61,14 @@ const ManagerARoutes = {
 
          /**LA GESTION DISTRIBUTION */
         {
-            name: 'Regions',
-            path: '/rut/dist/area',
-            component: () => import('@/views/rut/settings/SettingsDashboard.vue'),
+            name: 'Unites/Services',
+            path: '/rut/save/unites',
+            component: () => import('@/views/rut/unites/UnitesList.vue'),
         },
 
         {
-            name: 'Unites',
-            path: '/rut/dist/unites',
+            name: 'Sous-Regions',
+            path: '/rut/save/area',
             component: () => import('@/views/rut/settings/SettingsDashboard.vue'),
         },
 

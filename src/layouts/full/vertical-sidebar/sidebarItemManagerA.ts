@@ -170,7 +170,7 @@ const sidebarItemManagerA: menu[] = [
         to: '/rut/save',
         children: [
             {
-                title: 'Unite/Service',
+                title: 'Unites/Services',
                 icon: BoxIcon,
                 chipColor: 'surface',
                 chipBgColor: 'secondary',
@@ -178,7 +178,7 @@ const sidebarItemManagerA: menu[] = [
             },
 
             {
-                title: 'Regions',
+                title: 'Sous-Regions',
                 icon: UserPlusIcon,
                 chipColor: 'surface',
                 chipBgColor: 'secondary',

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useProductsList } from '@/stores/rutStore/products/productsListStore';
-import { truncateText ,notif, formatDate, showNotification} from '@/services/utils';
+import { truncateText, notif, formatDate, showNotification } from '@/services/utils';
 import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 const itemsSelected = ref<Item[]>([]);
-const searchField = ref(['ref','item.name']);
+const searchField = ref(['ref', 'item.name']);
 const searchValue = ref('');
 import { EyeIcon } from 'lucide-vue-next';
 
@@ -28,7 +28,6 @@ import type { Items } from '@/types/rut/SignatorType';
 
 import contact from '@/_mockApis/apps/contact';
 import type { Item } from 'vue3-easy-data-table';
-
 
 const { addOrUpdateProduct, errors } = useProductsList();
 const store = useProductsList();
@@ -72,7 +71,7 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
                 // Si toutes les validations passent
                 return true;
             }
-            
+
             // Pour la modification d'un article existant
             if (value && Array.isArray(value) && value.length > 0) {
                 const file = value[0];
@@ -85,7 +84,7 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
                     return "L'image ne doit pas dépasser 5MB";
                 }
             }
-            
+
             // Si aucune nouvelle image n'est sélectionnée en mode édition, c'est OK
             return true;
         },
@@ -102,7 +101,7 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             if (value) return true;
             return "Choisissez l'unité.";
         },
-        
+
         rate_per_days(value: string | any[]) {
             if (!/^\d+\.\d+$/.test(value as any)) {
                 // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
@@ -136,13 +135,12 @@ onMounted(async () => {
 const imageDialog = ref(false);
 
 const showFullImage = () => {
-  imageDialog.value = true;
+    imageDialog.value = true;
 };
 
 const closeImageDialog = () => {
-  imageDialog.value = false;
+    imageDialog.value = false;
 };
-
 
 const getItems: any = computed(async () => {
     return await store.items;
@@ -168,7 +166,6 @@ const closeViewDialog = () => {
     viewDialog.value = false;
     selectedProduct.value = null;
 };
-
 
 // Modifier la fonction setImage
 function setImage(event: Event) {
@@ -197,23 +194,29 @@ function setImage(event: Event) {
 // Modifier la fonction handleImage
 function handleImage() {
     if (cropper.value) {
-        cropper.value.getCroppedCanvas({
-            width: 400,
-            height: 400
-        }).toBlob((blob: Blob) => {
-            if (blob) {
-                const timestamp = new Date().getTime();
-                const fileName = `cropped_image_${timestamp}.jpg`;
+        cropper.value
+            .getCroppedCanvas({
+                width: 400,
+                height: 400
+            })
+            .toBlob(
+                (blob: Blob) => {
+                    if (blob) {
+                        const timestamp = new Date().getTime();
+                        const fileName = `cropped_image_${timestamp}.jpg`;
 
-                // Créer un nouveau FormData à chaque fois
-                formData.value = new FormData();
-                formData.value.append('image', blob, fileName);
-                // console.log(formData.value.get('image'), "dans la gestion");
+                        // Créer un nouveau FormData à chaque fois
+                        formData.value = new FormData();
+                        formData.value.append('image', blob, fileName);
+                        // console.log(formData.value.get('image'), "dans la gestion");
 
-                // Fermer le dialogue de recadrage
-                dialogImg.value = false;
-            }
-        }, 'image/jpeg', 0.8); // Ajout de la qualité de compression
+                        // Fermer le dialogue de recadrage
+                        dialogImg.value = false;
+                    }
+                },
+                'image/jpeg',
+                0.8
+            ); // Ajout de la qualité de compression
     }
 }
 
@@ -233,21 +236,19 @@ const { errorMessage } = useField('image'); // On conserve uniquement le message
 
 const count = ref(0);
 
-
 // Modifier la fonction submit
 const croppedImage = computed(() => formData.value.get('image'));
 
 const submit = handleSubmit(async (values) => {
     const submitFormData = new FormData();
-    
+
     submitFormData.append('name', values.name);
     submitFormData.append('price', values.price);
     submitFormData.append('unite', values.unite);
     submitFormData.append('rate_per_days', values.rate_per_days);
     submitFormData.append('divider', values.divider);
     submitFormData.append('description', values.description);
-    
-    
+
     if (croppedImage.value) {
         submitFormData.append('image', croppedImage.value);
     } else if (values.image?.[0]) {
@@ -257,7 +258,7 @@ const submit = handleSubmit(async (values) => {
     try {
         isLoading.value = true;
         error.value = null;
-        
+
         if (editedIndex.value !== -1) {
             await addOrUpdateProduct(submitFormData, editedIndex.value);
         } else {
@@ -267,13 +268,10 @@ const submit = handleSubmit(async (values) => {
         await refreshTable();
         dialog.value = false;
         formData.value = new FormData();
-        showNotification(
-            editedIndex.value === -1 ? 'Article ajouté avec succès' : 'Article modifié avec succès',
-            'success'
-        );
+        showNotification(editedIndex.value === -1 ? 'Article ajouté avec succès' : 'Article modifié avec succès', 'success');
     } catch (err) {
         // error.value = err.message;
-        showNotification('Erreur lors de l\'opération', 'error');
+        showNotification("Erreur lors de l'opération", 'error');
     } finally {
         isLoading.value = false;
     }
@@ -352,7 +350,7 @@ const remove = async (index: any) => {
     try {
         loading.value = true;
         const isRemove = await store.deleteItem(index, 'items');
-        if(isRemove){
+        if (isRemove) {
             // Attendre que la suppression soit terminée avant de rafraîchir
             await refreshTable();
             showNotification('Article supprimé avec succès', 'success');
@@ -375,25 +373,22 @@ const formButton = computed(() => {
     return editedIndex.value === -1 ? 'Enregistrer' : 'Modifier';
 });
 
-
-
 const headers = [
-    { text: "Réf", value: "ref", sortable:true},
-    { text: "Article", value: "item", width: 300 , sortable:true},
-    { text: "Prix", value: "price", sortable:true },
-    { text: "Modifié le", value: "modified_at",sortable:true},
-    { text: "Actions", value: "actions"}
+    { text: 'Réf', value: 'ref', sortable: true },
+    { text: 'Article', value: 'item', width: 300, sortable: true },
+    { text: 'Prix', value: 'price', sortable: true },
+    { text: 'Modifié le', value: 'modified_at', sortable: true },
+    { text: 'Actions', value: 'actions' }
 ];
-
 </script>
 <template>
     <v-row>
-         <v-col cols="12" lg="4" md="6">
+        <v-col cols="12" lg="4" md="6">
             <!-- Modification du champ de recherche -->
-            <v-text-field 
-                density="compact" 
-                v-model="searchValue" 
-                label="Rechercher par nom ou référence" 
+            <v-text-field
+                density="compact"
+                v-model="searchValue"
+                label="Rechercher par nom ou référence"
                 variant="outlined"
                 placeholder="Entrez un nom ou une référence..."
                 prepend-inner-icon="mdi-magnify"
@@ -418,7 +413,6 @@ const headers = [
                                     </div>
                                 </div>
                             </v-col>
-
                         </v-row>
                     </v-card-text>
 
@@ -516,27 +510,19 @@ const headers = [
                                     ></VTextarea>
                                 </v-col>
                             </v-row>
-                           
                         </v-form>
                     </v-card-text>
                     <v-card-actions class="pa-4">
-                        <v-btn
-                            color="secondary"
-                            variant="flat"
-                            @click="submit"
-                            block
-                            :loading="isSubmitting"
-                        >
+                        <v-btn color="secondary" variant="flat" @click="submit" block :loading="isSubmitting">
                             {{ formButton }}
                         </v-btn>
                     </v-card-actions>
-
                 </v-card>
             </v-dialog>
         </v-col>
     </v-row>
 
-  <!-- Replace v-table with EasyDataTable -->
+    <!-- Replace v-table with EasyDataTable -->
     <EasyDataTable
         :headers="headers"
         :items="store.items"
@@ -554,12 +540,7 @@ const headers = [
         <template #item-item="{ item }">
             <div class="d-flex align-center">
                 <div class="hoverable">
-                    <v-img 
-                        :lazy-src="item.image" 
-                        :src="item.image" 
-                        width="65px" 
-                        class="rounded img-fluid"
-                    ></v-img>
+                    <v-img :lazy-src="item.image" :src="item.image" width="65px" class="rounded img-fluid"></v-img>
                 </div>
                 <div class="ml-5">
                     <h4 class="text-h6 font-weight-semibold">{{ item.name }}</h4>
@@ -584,195 +565,166 @@ const headers = [
                 </div>
             </div>
         </template>
-        
 
         <!-- Custom template for Actions column -->
-      <template #item-actions="{ raw }">
-        <div class="d-flex align-center">
-            <v-tooltip text="View">
-                <template v-slot:activator="{ props }">
-                    <v-btn 
-                        icon 
-                        flat 
-                        @click="viewItem(raw)" 
-                        v-bind="props"
-                    >
-                        <EyeIcon 
-                            stroke-width="1.5" 
-                            :size="20" 
-                            class="text-success"
-                        />
-                    </v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="Edit">
-                <template v-slot:activator="{ props }">
-                    <v-btn 
-                        icon 
-                        flat 
-                        @click="editItem(raw)" 
-                        v-bind="props"
-                    >
-                        <PencilIcon 
-                            stroke-width="1.5" 
-                            size="20" 
-                            class="text-primary"
-                        />
-                    </v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="Delete">
-                <template v-slot:activator="{ props }">
-                    <v-btn 
-                        icon 
-                        flat 
-                        @click="remove(raw)" 
-                        v-bind="props"
-                    >
-                        <TrashIcon 
-                            stroke-width="1.5" 
-                            size="20" 
-                            class="text-error"
-                        />
-                    </v-btn>
-                </template>
-            </v-tooltip>
-        </div>
-    </template>
+        <template #item-actions="{ raw }">
+            <div class="d-flex align-center">
+                <v-tooltip text="View">
+                    <template v-slot:activator="{ props }">
+                        <v-btn icon flat @click="viewItem(raw)" v-bind="props">
+                            <EyeIcon stroke-width="1.5" :size="20" class="text-success" />
+                        </v-btn>
+                    </template>
+                </v-tooltip>
+                <v-tooltip text="Edit">
+                    <template v-slot:activator="{ props }">
+                        <v-btn icon flat @click="editItem(raw)" v-bind="props">
+                            <PencilIcon stroke-width="1.5" size="20" class="text-primary" />
+                        </v-btn>
+                    </template>
+                </v-tooltip>
+                <v-tooltip text="Delete">
+                    <template v-slot:activator="{ props }">
+                        <v-btn icon flat @click="remove(raw)" v-bind="props">
+                            <TrashIcon stroke-width="1.5" size="20" class="text-error" />
+                        </v-btn>
+                    </template>
+                </v-tooltip>
+            </div>
+        </template>
     </EasyDataTable>
-    
 
-<!-- Add the View Dialog -->
-   <!-- Remplacez le dialogue de visualisation existant par celui-ci -->
-<v-dialog v-model="viewDialog" max-width="900">
-    <v-card>
-        <v-card-title class="pa-4 bg-success d-flex align-center justify-space-between">
-            <span class="title text-white">Détails de l'article</span>
-            <v-icon @click="closeViewDialog" class="ml-auto text-white">mdi-close</v-icon>
-        </v-card-title>
+    <!-- Add the View Dialog -->
+    <!-- Remplacez le dialogue de visualisation existant par celui-ci -->
+    <v-dialog v-model="viewDialog" max-width="900">
+        <v-card>
+            <v-card-title class="pa-4 bg-success d-flex align-center justify-space-between">
+                <span class="title text-white">Détails de l'article</span>
+                <v-icon @click="closeViewDialog" class="ml-auto text-white">mdi-close</v-icon>
+            </v-card-title>
 
-        <v-card-text class="pa-4" style="max-height: 80vh; overflow-y: auto;">
-            <v-list v-if="selectedProduct" class="bg-grey-lighten-4 rounded-lg">
-                <!-- Image Section -->
-                <div class="position-relative mb-6 hover-zoom">
-                    <v-img
-                        :src="selectedProduct.image"
-                        height="300"
-                        class="rounded-lg"
-                        cover
-                        @click="showFullImage"
-                        style="cursor: pointer;"
-                    >
-                        <template v-slot:placeholder>
-                            <v-row class="fill-height ma-0" align="center" justify="center">
-                                <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                            </v-row>
-                        </template>
-                        <div class="image-overlay d-flex align-center justify-center">
-                            <v-icon size="40" color="white">mdi-magnify-plus</v-icon>
-                        </div>
-                    </v-img>
-                </div>
-
-                <!-- Details Grid -->
-                <v-row class="px-2 ma-0">
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="primary" class="mr-2">mdi-barcode</v-icon>
-                                <div class="font-weight-bold">Référence</div>
+            <v-card-text class="pa-4" style="max-height: 80vh; overflow-y: auto">
+                <v-list v-if="selectedProduct" class="bg-grey-lighten-4 rounded-lg">
+                    <!-- Image Section -->
+                    <div class="position-relative mb-6 hover-zoom">
+                        <v-img
+                            :src="selectedProduct.image"
+                            height="300"
+                            class="rounded-lg"
+                            cover
+                            @click="showFullImage"
+                            style="cursor: pointer"
+                        >
+                            <template v-slot:placeholder>
+                                <v-row class="fill-height ma-0" align="center" justify="center">
+                                    <v-progress-circular indeterminate color="primary"></v-progress-circular>
+                                </v-row>
+                            </template>
+                            <div class="image-overlay d-flex align-center justify-center">
+                                <v-icon size="40" color="white">mdi-magnify-plus</v-icon>
                             </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.ref }}</div>
-                        </v-card>
-                    </v-col>
+                        </v-img>
+                    </div>
 
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="primary" class="mr-2">mdi-tag</v-icon>
-                                <div class="font-weight-bold">Nom</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.name }}</div>
-                        </v-card>
-                    </v-col>
+                    <!-- Details Grid -->
+                    <v-row class="px-2 ma-0">
+                        <v-col cols="12" md="6" class="pa-2">
+                            <v-card class="pa-4" elevation="2">
+                                <div class="d-flex align-center mb-2">
+                                    <v-icon color="primary" class="mr-2">mdi-barcode</v-icon>
+                                    <div class="font-weight-bold">Référence</div>
+                                </div>
+                                <div class="text-body-1 ml-8">{{ selectedProduct.ref }}</div>
+                            </v-card>
+                        </v-col>
 
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="success" class="mr-2">mdi-currency-usd</v-icon>
-                                <div class="font-weight-bold">Prix</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.price }} GNF</div>
-                        </v-card>
-                    </v-col>
+                        <v-col cols="12" md="6" class="pa-2">
+                            <v-card class="pa-4" elevation="2">
+                                <div class="d-flex align-center mb-2">
+                                    <v-icon color="primary" class="mr-2">mdi-tag</v-icon>
+                                    <div class="font-weight-bold">Nom</div>
+                                </div>
+                                <div class="text-body-1 ml-8">{{ selectedProduct.name }}</div>
+                            </v-card>
+                        </v-col>
 
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="info" class="mr-2">mdi-package-variant</v-icon>
-                                <div class="font-weight-bold">Unité</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.unite }}</div>
-                        </v-card>
-                    </v-col>
+                        <v-col cols="12" md="6" class="pa-2">
+                            <v-card class="pa-4" elevation="2">
+                                <div class="d-flex align-center mb-2">
+                                    <v-icon color="success" class="mr-2">mdi-currency-usd</v-icon>
+                                    <div class="font-weight-bold">Prix</div>
+                                </div>
+                                <div class="text-body-1 ml-8">{{ selectedProduct.price }} GNF</div>
+                            </v-card>
+                        </v-col>
 
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="warning" class="mr-2">mdi-percent</v-icon>
-                                <div class="font-weight-bold">Taux par jour</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.rate_per_days }}%</div>
-                        </v-card>
-                    </v-col>
+                        <v-col cols="12" md="6" class="pa-2">
+                            <v-card class="pa-4" elevation="2">
+                                <div class="d-flex align-center mb-2">
+                                    <v-icon color="info" class="mr-2">mdi-package-variant</v-icon>
+                                    <div class="font-weight-bold">Unité</div>
+                                </div>
+                                <div class="text-body-1 ml-8">{{ selectedProduct.unite }}</div>
+                            </v-card>
+                        </v-col>
 
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="error" class="mr-2">mdi-division</v-icon>
-                                <div class="font-weight-bold">Diviseur</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.divider }}</div>
-                        </v-card>
-                    </v-col>
+                        <v-col cols="12" md="6" class="pa-2">
+                            <v-card class="pa-4" elevation="2">
+                                <div class="d-flex align-center mb-2">
+                                    <v-icon color="warning" class="mr-2">mdi-percent</v-icon>
+                                    <div class="font-weight-bold">Taux par jour</div>
+                                </div>
+                                <div class="text-body-1 ml-8">{{ selectedProduct.rate_per_days }}%</div>
+                            </v-card>
+                        </v-col>
 
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="success" class="mr-2">mdi-calendar-plus</v-icon>
-                                <div class="font-weight-bold">Date de création</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ formatDate(selectedProduct.created_at) }}</div>
-                        </v-card>
-                    </v-col>
+                        <v-col cols="12" md="6" class="pa-2">
+                            <v-card class="pa-4" elevation="2">
+                                <div class="d-flex align-center mb-2">
+                                    <v-icon color="error" class="mr-2">mdi-division</v-icon>
+                                    <div class="font-weight-bold">Diviseur</div>
+                                </div>
+                                <div class="text-body-1 ml-8">{{ selectedProduct.divider }}</div>
+                            </v-card>
+                        </v-col>
 
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="info" class="mr-2">mdi-calendar-edit</v-icon>
-                                <div class="font-weight-bold">Dernière modification</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ formatDate(selectedProduct.modified_at) }}</div>
-                        </v-card>
-                    </v-col>
+                        <v-col cols="12" md="6" class="pa-2">
+                            <v-card class="pa-4" elevation="2">
+                                <div class="d-flex align-center mb-2">
+                                    <v-icon color="success" class="mr-2">mdi-calendar-plus</v-icon>
+                                    <div class="font-weight-bold">Date de création</div>
+                                </div>
+                                <div class="text-body-1 ml-8">{{ formatDate(selectedProduct.created_at) }}</div>
+                            </v-card>
+                        </v-col>
 
-                    <v-col cols="12" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="primary" class="mr-2">mdi-text-box</v-icon>
-                                <div class="font-weight-bold">Description</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.description }}</div>
-                        </v-card>
-                    </v-col>
-                </v-row>
-            </v-list>
-        </v-card-text>
-    </v-card>
-</v-dialog>
+                        <v-col cols="12" md="6" class="pa-2">
+                            <v-card class="pa-4" elevation="2">
+                                <div class="d-flex align-center mb-2">
+                                    <v-icon color="info" class="mr-2">mdi-calendar-edit</v-icon>
+                                    <div class="font-weight-bold">Dernière modification</div>
+                                </div>
+                                <div class="text-body-1 ml-8">{{ formatDate(selectedProduct.modified_at) }}</div>
+                            </v-card>
+                        </v-col>
+
+                        <v-col cols="12" class="pa-2">
+                            <v-card class="pa-4" elevation="2">
+                                <div class="d-flex align-center mb-2">
+                                    <v-icon color="primary" class="mr-2">mdi-text-box</v-icon>
+                                    <div class="font-weight-bold">Description</div>
+                                </div>
+                                <div class="text-body-1 ml-8">{{ selectedProduct.description }}</div>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+                </v-list>
+            </v-card-text>
+        </v-card>
+    </v-dialog>
     <!-- Existing dialogs remain the same -->
-    
-    <v-dialog v-model="imageDialog" >
+
+    <v-dialog v-model="imageDialog">
         <v-card>
             <v-card-title class="pa-4 bg-grey-darken-3">
                 <span class="text-white">{{ selectedProduct?.name }}</span>
@@ -782,12 +734,7 @@ const headers = [
                 </v-btn>
             </v-card-title>
             <v-card-text class="pa-0">
-                <v-img
-                    :src="selectedProduct?.image"
-                    max-height="80vh"
-                    contain
-                    class="bg-grey-darken-4"
-                >
+                <v-img :src="selectedProduct?.image" max-height="80vh" contain class="bg-grey-darken-4">
                     <template v-slot:placeholder>
                         <v-row class="fill-height ma-0" align="center" justify="center">
                             <v-progress-circular indeterminate color="primary"></v-progress-circular>
@@ -799,35 +746,17 @@ const headers = [
     </v-dialog>
 
     <!-- Snackbar pour les notifications -->
-    <v-snackbar
-        v-model="notif.snackbar.value"
-        :color="notif.snackbarColor.value"
-        :timeout="3000"
-        location="top"
-    >
+    <v-snackbar v-model="notif.snackbar.value" :color="notif.snackbarColor.value" :timeout="3000" location="top">
         {{ notif.snackbarMessage }}
-        
+
         <template v-slot:actions>
-            <v-btn
-                color="white"
-                variant="text"
-                @click="notif.snackbar.value = false"
-            >
-                Fermer
-            </v-btn>
+            <v-btn color="white" variant="text" @click="notif.snackbar.value = false"> Fermer </v-btn>
         </template>
     </v-snackbar>
 
     <!-- Loading Overlay -->
-    <v-overlay
-        :model-value="isLoading"
-        class="align-center justify-center"
-    >
-        <v-progress-circular
-            color="primary"
-            indeterminate
-            size="64"
-        ></v-progress-circular>
+    <v-overlay :model-value="isLoading" class="align-center justify-center">
+        <v-progress-circular color="primary" indeterminate size="64"></v-progress-circular>
     </v-overlay>
 
     <!-- Error Alert -->
@@ -840,8 +769,6 @@ const headers = [
     >
         {{ error }}
     </v-alert> -->
-
-
 </template>
 
 <style scoped>
