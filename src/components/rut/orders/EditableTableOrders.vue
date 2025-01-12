@@ -413,7 +413,7 @@ const loading = ref(false);
                                <v-col cols="12" sm="6">
                                     <CustomComBoxProduct
                                         ref="refProduct"
-                                        :items="useProduct.getProducts"
+                                        :items="useProduct.getProducts.item"
                                         label="Selectionner un article"
                                         title="name"
                                         v-model="products.value.value"

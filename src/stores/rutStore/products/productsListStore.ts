@@ -12,6 +12,7 @@ export const useProductsList = defineStore({
     id: 'productsListStore',
     state: () => ({
         items: [] as any,
+        products: [] as any,
         errors: {
             nameError: null as any,
             nameText: null as any,
@@ -19,7 +20,7 @@ export const useProductsList = defineStore({
     }),
     getters: {
         getProducts(state) {
-            return state.items;
+            return state.products;
         }
     },
     actions: {
@@ -27,6 +28,7 @@ export const useProductsList = defineStore({
         async fetchItems() {
             try {
                 const response = await new ApiAxios().find(`/items/`);
+                console.log("Avant", response?.data?.results)
 
                this.items = await response?.data?.results.map((item: any, index: number) => ({
                     ref: item.ref,
