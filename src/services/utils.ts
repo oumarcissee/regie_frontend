@@ -42,7 +42,6 @@ const signatorPosition = (chaine: string): string => {
     }
 }
 
-
 /**
  *
  * @param {String} text

@@ -115,7 +115,7 @@ const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
     increment.value++;
     
     try {
-        const product = useProduct.items.find((item: { id?: any }) => item?.id === data.products);
+        const product = useProduct.products.find((item: { id?: any }) => item?.id === data.products);
         
         if (productSelected.value.length >= 10) {
             setErrors({ products: 'Le maximum de produits sélectionnés est atteint.' });
@@ -129,7 +129,7 @@ const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
         }];
 
         isSelected.value = productSelected.value.length > 0;
-        useProduct.items = useProduct.items.filter((item: { id: string }) => item.id !== data.products);
+        useProduct.products = useProduct.products.filter((item: { id: string }) => item.id !== data.products);
         products.resetField();
         
     } catch (error) {
@@ -161,7 +161,7 @@ const submit = async () => {
                 (item: { order?: any }) => item?.order?.id === editedIndex.value
             );
             const itemIds = ordersLine.map((item: any) => item.item.id);
-            useProduct.items = useProduct.items.filter((item: any) => !itemIds.includes(item.id));
+            useProduct.products = useProduct.products.filter((item: any) => !itemIds.includes(item.id));
             
             await store.addOrUpdateOrder(data, editedIndex.value);
             showNotification('Commande ajoutée avec succès');
@@ -227,7 +227,7 @@ const editItem = async (item: { user: number; id: number; status: boolean }) => 
         productSelected.value = arrayProducts;
 
         const itemIds = arrayProducts.map((line: any) => line.item?.id).filter(Boolean);
-        useProduct.items = useProduct.items.filter((product: any) => !itemIds.includes(product.id));
+        useProduct.products = useProduct.products.filter((product: any) => !itemIds.includes(product.id));
     } catch (error) {
         console.error('Error editing item:', error);
     }
@@ -251,7 +251,7 @@ const remove = (item: any) => {
     if (productSelected.value.length > 1) {
         productSelected.value = productSelected.value.filter((i: any) => i.id !== item?.id);
     }
-    useProduct.items.push(item.item);
+    useProduct.products.push(item.item);
 };
 
 const deletion = async (index: any) => {
