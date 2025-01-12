@@ -28,7 +28,7 @@ export const useProductsList = defineStore({
         async fetchItems() {
             try {
                 const response = await new ApiAxios().find(`/items/`);
-                console.log("Avant", response?.data?.results)
+                this.products = response.data.results;
 
                this.items = await response?.data?.results.map((item: any, index: number) => ({
                     ref: item.ref,

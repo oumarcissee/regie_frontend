@@ -51,7 +51,7 @@ const signatorPosition = (chaine: string): string => {
  */
 
 const truncateText = (text: string | any, limit: number) => {
-  if (text && text.length > limit) {
+  if (text.length > limit) {
     let truncated = text.slice(0, limit);
     // Trouver l'index du dernier espace dans la partie tronquée du texte
     const lastSpaceIndex = truncated.lastIndexOf(' ');
