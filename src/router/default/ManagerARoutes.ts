@@ -52,13 +52,25 @@ const ManagerARoutes = {
             component: () => import('@/views/rut/settings/SettingsDashboard.vue'),
         },
 
-         /**LA GESTION DE PARAMETRE */
         {
             name: 'SettingsRUTSignateurs',
             path: '/rut/settings/signateurs',
             component: () => import('@/views/rut/settings/Signators.vue'),
             
-        }
+        },
+
+         /**LA GESTION DISTRIBUTION */
+        {
+            name: 'Regions',
+            path: '/rut/dist/area',
+            component: () => import('@/views/rut/settings/SettingsDashboard.vue'),
+        },
+
+        {
+            name: 'Unites',
+            path: '/rut/dist/unites',
+            component: () => import('@/views/rut/settings/SettingsDashboard.vue'),
+        },
 
 
         

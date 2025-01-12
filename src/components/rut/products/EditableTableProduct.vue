@@ -378,7 +378,7 @@ const formButton = computed(() => {
 
 
 const headers = [
-    { text: "Référence", value: "ref", sortable:true},
+    { text: "Réf", value: "ref", sortable:true},
     { text: "Article", value: "item", width: 300 , sortable:true},
     { text: "Prix", value: "price", sortable:true },
     { text: "Modifié le", value: "modified_at",sortable:true},

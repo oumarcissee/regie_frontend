@@ -1,3 +1,4 @@
+import { AreaChartIcon } from 'lucide-vue-next';
 import {
     CircleOffIcon,
     BoxMultipleIcon,
@@ -135,7 +136,7 @@ const sidebarItemManagerA: menu[] = [
         title: 'Commandes',
         icon: ShoppingCartIcon,
         to: '/rut/orders',
-         children: [
+        children: [
             {
                 title: 'Liste',
                 icon: BoxIcon,
@@ -162,12 +163,38 @@ const sidebarItemManagerA: menu[] = [
     },
   
     { header: 'DISTRIBUTION' },
+
+    {
+        title: 'Enregistrement',
+        icon: BorderAllIcon,
+        to: '/rut/save',
+        children: [
+            {
+                title: 'Unite/Service',
+                icon: BoxIcon,
+                chipColor: 'surface',
+                chipBgColor: 'secondary',
+                to: '/rut/save/unites'
+            },
+
+            {
+                title: 'Regions',
+                icon: UserPlusIcon,
+                chipColor: 'surface',
+                chipBgColor: 'secondary',
+                to: '/rut/save/area'
+            },
+        ]
+
+    },
+  
     {
         title: 'Boredereaux',
         icon: BorderAllIcon,
         to: '/rut/boredereaux',
 
     },
+
 
     {
         title: 'Unites/services',

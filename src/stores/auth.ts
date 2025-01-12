@@ -17,8 +17,8 @@ export const useAuthStore = defineStore({
         dashboard: '',
         user: Object(),
         isAuthenticated: false,
-        accessToken: null,
-        refreshToken: null,
+        accessToken: "",
+        refreshToken: "",
         
         dates: [] as any,
         
