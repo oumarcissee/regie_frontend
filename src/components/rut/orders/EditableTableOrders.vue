@@ -410,7 +410,7 @@ const loading = ref(false);
                                     />
                                 </v-col>
 
-                                <v-col cols="12" sm="6">
+                               <v-col cols="12" sm="6">
                                     <CustomComBoxProduct
                                         ref="refProduct"
                                         :items="useProduct.getProducts"
