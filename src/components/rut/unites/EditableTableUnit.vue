@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useProductsList } from '@/stores/rutStore/products/productsListStore';
-import { truncateText ,notif, formatDate, showNotification} from '@/services/utils';
+import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
+import { truncateText ,notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas} from '@/services/utils';
 import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
 
@@ -28,8 +28,9 @@ import contact from '@/_mockApis/apps/contact';
 import type { Item } from 'vue3-easy-data-table';
 
 
-const { addOrUpdateProduct, errors } = useProductsList();
-const store = useProductsList();
+const { addOrUpdateUnit, errors, getUnites, fetchUnites } = useUnitStore();
+const store = useUnitStore();
+
 
 const { handleSubmit, handleReset, isSubmitting } = useForm({
     validationSchema: {
@@ -43,7 +44,7 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
         },
 
         short_name(value: string | any[]) {
-            if (value?.length <= 4 || !value) {
+            if (value?.length <= 2 || !value) {
                 return 'Le libéllé doit avoir au moins 2 lettres.';
             } else if (errors.nameError && errors.nameText === value) {
                 return errors.nameError;
@@ -120,8 +121,8 @@ const closeImageDialog = () => {
 };
 
 
-const getItems: any = computed(async () => {
-    return await store.items;
+const getUnite: any = computed(async () => {
+    return await getUnites;
 });
 
 import type { AxiosError } from 'axios';
@@ -142,41 +143,41 @@ const closeViewDialog = () => {
 };
 
 
-const name = useField('name');
-const short_name = useField('short_name');
-const g_staff = useField('g_staff');
-const area = useField('area');
-const effective = useField('effective');
-const type_of_unit = useField('type_of_unit');
-
-
+const name          = useField('name');
+const short_name    = useField('short_name');
+const g_staff       = useField('g_staff');
+const area          = useField('area');
+const effective     = useField('effective');
+const type_of_unit  = useField('type_of_unit');
 const description = useField('description');
 
 
 const count = ref(0);
 
-
 // Modifier la fonction submit
 
 const submit = handleSubmit(async (values) => {
-    const submitFormData = new FormData();
     
-    submitFormData.append('name', values.name);
-    submitFormData.append('price', values.price);
-    submitFormData.append('unite', values.unite);
-    submitFormData.append('rate_per_days', values.rate_per_days);
-    submitFormData.append('divider', values.divider);
-    submitFormData.append('description', values.description);
-    
-
     try {
+
+        const submitFormData = new FormData();
+        
+        submitFormData.append('name', values.name);
+        submitFormData.append('short_name', values.short_name);
+        submitFormData.append('g_staff', values.g_staff);
+        submitFormData.append('area', values.area);
+        submitFormData.append('type_of_unit', values.type_of_unit);
+        submitFormData.append('effective', values.effective);
+        submitFormData.append('category', 'unit'); // Categorie de l'unité
+        submitFormData.append('description', values.description);
+      
         isLoading.value = true;
         error.value = null;
         
         if (editedIndex.value !== -1) {
-            await addOrUpdateProduct(submitFormData, editedIndex.value);
+            await addOrUpdateUnit(submitFormData, editedIndex.value);
         } else {
-            await addOrUpdateProduct(submitFormData);
+            await addOrUpdateUnit(submitFormData);
         }
 
         await refreshTable();
@@ -187,6 +188,7 @@ const submit = handleSubmit(async (values) => {
         );
     } catch (err) {
         // error.value = err.message;
+        console.log(error)
         showNotification('Erreur lors de l\'opération', 'error');
     } finally {
         isLoading.value = false;
@@ -197,9 +199,9 @@ const submit = handleSubmit(async (values) => {
 const refreshTable = async () => {
     try {
         loading.value = true;
-        await store.fetchItems();
+        await store.fetchUnites();
         // Forcer la réactivité en créant une nouvelle référence
-        store.items = [...store.items];
+        store.unites = [...store.unites];
     } catch (error) {
         console.error('Erreur lors du rafraîchissement :', error);
         showNotification('Erreur lors du rafraîchissement des données', 'error');
@@ -215,26 +217,13 @@ const changed = (value: string | any) => {
     return value;
 };
 
-const unites = ref([
-    { title: 'Sac(s)', value: 'bag' },
-    { title: 'Bidon(s)', value: 'can' },
-    { title: 'Carton(s)', value: 'cardboard' }
-]);
-
 const valid = ref(true);
 const dialog = ref(false);
 
-const search = ref('');
-// const rolesbg = ref(['primary', 'secondary', 'error', 'success', 'warning']);
-const desserts = ref(contact);
+
 const editedIndex = ref(-1);
 
 //Methods
-const filteredList = computed(() => {
-    return getItems.filter((item: any) => {
-        return item.name.toLowerCase().includes(search.value.toLowerCase());
-    });
-});
 
 // Ajouter une fonction de nettoyage
 function close() {
@@ -257,7 +246,7 @@ const editItem = (index: any) => {
 const remove = async (index: any) => {
     try {
         loading.value = true;
-        const isRemove = await store.deleteItem(index, 'items');
+        const isRemove = await store.deleteItem(index, 'unites');
         if(isRemove){
             // Attendre que la suppression soit terminée avant de rafraîchir
             await refreshTable();
@@ -285,16 +274,17 @@ const formButton = computed(() => {
 
 const headers = [
     { text: "Réf", value: "ref", sortable:true},
-    { text: "Article", value: "item", width: 300 , sortable:true},
-    { text: "Prix", value: "price", sortable:true },
-    { text: "Modifié le", value: "modified_at",sortable:true},
+    { text: "Unité", value: "short_name" , sortable:true},
+    { text: "Armée", value: "area", sortable:true },
+    { text: "Type", value: "type_of_unit",sortable:true},
+    { text: "Effectif", value: "effective",sortable:true},
     { text: "Actions", value: "actions"}
 ];
 
 </script>
 <template>
     <v-row>
-         <v-col cols="12" lg="4" md="6">
+         <v-col cols="6" lg="4" md="6">
             <!-- Modification du champ de recherche -->
             <v-text-field 
                 density="compact" 
@@ -306,7 +296,7 @@ const headers = [
                 clearable
             ></v-text-field>
         </v-col>
-        <v-col cols="12" lg="8" md="6" class="text-right">
+        <v-col cols="6" lg="8" md="6" class="text-right">
             <!-- Dialogue img -->
             <!-- <v-dialog v-model="dialogImg" max-width="1000">
                 <v-card>
@@ -459,7 +449,7 @@ const headers = [
   <!-- Replace v-table with EasyDataTable -->
     <EasyDataTable
         :headers="headers"
-        :items="store.items"
+        :items="store.unites"
         :loading="loading"
         :theme-color="themeColor"
         table-class-name="customize-table"
@@ -471,21 +461,30 @@ const headers = [
         show-index
     >
         <!-- Custom template for Article column -->
-        <template #item-item="{ item }">
+        <template #item-name="{ name }">
             <div class="d-flex align-center">
-                <div class="hoverable">
-                    <v-img 
-                        :lazy-src="item.image" 
-                        :src="item.image" 
-                        width="65px" 
-                        class="rounded img-fluid"
-                    ></v-img>
-                </div>
                 <div class="ml-5">
-                    <h4 class="text-h6 font-weight-semibold">{{ item.name }}</h4>
-                    <span class="text-subtitle-1 d-block mt-1 textSecondary">
+                    <h4 class="text-h6 font-weight-semibold">{{ name }}</h4>
+                    <!-- <span class="text-subtitle-1 d-block mt-1 textSecondary">
                         {{ truncateText(item.description, 20) }}
-                    </span>
+                    </span> -->
+                </div>
+            </div>
+        </template>
+        <!-- Custom template for Article column -->
+        <template #item-type_of_unit="{ type_of_unit }">
+            <div class="d-flex align-center">
+                <div class="ml-5">
+                    <h4 class="text-h6 font-weight-semibold">{{ get_unite_type(type_of_unit)}}</h4>
+                   
+                </div>
+            </div>
+        </template>
+         <template #item-area="{ area }">
+            <div class="d-flex align-center">
+                <div class="ml-5">
+                    <h4 class="text-h6 font-weight-semibold">{{ get_areas(area)}}</h4>
+                   
                 </div>
             </div>
         </template>

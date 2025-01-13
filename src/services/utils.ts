@@ -67,10 +67,8 @@ const truncateText = (text: string | any, limit: number) => {
 const formatSlug = (chaine: string) => {
     // Convertir en minuscules
     chaine = chaine.toLowerCase();
-
     // Remplacer les caractères non alphanumériques par des tirets
     chaine = chaine.replace(/[^a-z0-9]+/g, '-');
-
     // Supprimer les tirets en début et fin de chaîne
     chaine = chaine.replace(/^-|-$/g, '');
 
@@ -137,7 +135,6 @@ const deleteItem = async (item: any, url: string, data: Array<any> ) => {
 
 //Affichge des rôles des utilisateurs
 const get_full_role = (role: string) => {
-
   switch (role) {
     case 'manager_a': return "Regisseur des Unités Territoriales";
     case 'manager_b': return "Regisseur des Centres de formations et OPEX";
@@ -197,7 +194,6 @@ const notif = reactive({
   snackbarColor: { value: '' },
   snackbarMessage: ''  // String direct, pas un ref
 });
-
 
 
 // Gestion des notifications
@@ -302,9 +298,99 @@ function convertNumberToWords(number: number) {
     return result.trim() + " GNF";
 }
 
+
+const get_staffs = (g_staff: string, type = false) => {
+  if (type) {
+    switch (g_staff) {
+      case 'emat': return "ETAT MAJOR DE L'ARMEE DE TERRE";
+      case 'emaa': return "ETAT MOJOR DE L'ARMEE DE L'AIR";
+      case 'emam': return "ETAT MAJOR DE L'ARMEE DE MERE";
+      case 'hcgn': return "HAUT COMMENDEMENT DE LA GENDARMERIE NATIONAL, DIRECTION DE LA JUSTICE MILITAIRE";
+      default: return "ERREUR";
+      
+    } 
+  } else {
+    switch (g_staff) {
+      case 'emat': return "EMAT";
+      case 'emaa': return "EMAA";
+      case 'emam': return "EMAM";
+      case 'hcgn': return "HCGN-DJM";
+      default: return "ERREUR"; 
+    } 
+  }
+}
+
+
+const get_areas = (area: string, type = false) => {
+  
+  if (type) {
+    switch (area) {
+      case 'speciale':return "ZONE SPECIALE (CONAKRY)";
+      case 'first': return  "PREMIÈRE REGION MILITAIRE";
+      case 'second': return "DEUXIÈME REGION MILITAIRE";
+      case 'third': return "TROISIÈME REGION MILITAIRE";
+      case 'fourth': return "QUATRIÈME REGION MILITAIRE";
+      default: return "ERREUR";
+    } 
+  } else {
+    
+    switch (area) {
+      case 'speciale': return "ZS (Conakry)";
+      case 'first': return    "1ere RM";
+      case 'second': return   "2eme RM";
+      case 'third': return    "3eme RM";
+      case 'fourth': return   "4eme RM";
+      default: return "ERREUR";
+    } 
+  }
+ 
+}
+
+
+/**
+ * 
+ * @param type 
+ * @returns 
+ */
+const get_unite_type = (type: string) => {
+  switch (type) {
+    case 'current':return "COURANT";
+    case 'mission': return  "MISSION";
+    default: return "ERREUR";
+  } 
+  
+}
+
+
+/**
+ * 
+ * @param type 
+ * @returns 
+ */
+const get_category_of_unite = (categroy: string, type = false) => {
+  
+  if (type) {
+      switch (categroy) {
+      case 'unit':return "UNITES TERRITORIALES";
+      case 'school': return  "CENTRE DES FORMATIONS & OPEX";
+      default: return "ERREUR";
+    } 
+  } else {
+    switch (categroy) {
+      case 'unit':return "UNITE";
+      case 'school': return  "ECOLE";
+      default: return "ERREUR";
+    } 
+
+  }
+}
+
+
+
+
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
   confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getCurrentMonth, currentMonth,
-  get_full_unite, formatDate, signatorPosition,showNotification,notif,convertNumberToWords
+  get_full_unite, formatDate, signatorPosition,showNotification,notif,convertNumberToWords, get_staffs,get_areas,get_unite_type,get_category_of_unite
 }
