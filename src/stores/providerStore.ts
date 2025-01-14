@@ -24,7 +24,7 @@ export const useProdiverStore = defineStore({
             passwordText: null as any,
            
         },
-        itemSelected: null,
+        itemSelected: null as any,
         store: Object(),
     }),
     actions: {

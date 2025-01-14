@@ -24,6 +24,9 @@ export const useUnitStore = defineStore({
         errors: {
             nameError: null as any,
             nameText: null as any,
+
+            short_name_error: null as any,
+            short_name_text: null as any,
         },
     }),
     getters: {
@@ -39,7 +42,27 @@ export const useUnitStore = defineStore({
         async fetchUnites() {
             try {
                 const response = await new ApiAxios().find(`/${this.url}/`);
-                this.unites = response.data.results;    
+
+                // this.unites = await response?.data?.results;
+
+                // const response = await new ApiAxios().find(`/${this.url}/`);
+        
+                // Formater les données pour EasyDataTable
+                this.unites = (response?.data?.results || []).map((unite: any) => ({
+                    ref: unite.ref || 'N/A',
+                    short_name: unite.short_name || unite.name || 'N/A',
+                    name: unite.name || 'N/A',
+                    area: unite.area || 'N/A',
+                    type_of_unit: unite.type_of_unit || 'N/A',
+                    effective: unite.effective || 0,
+                    g_staff: unite.g_staff || 'N/A',
+                    description: unite.description || 'Aucune description',
+                    created_at: unite.created_at || null,
+                    modified_at: unite.modified_at || null,
+                   
+                    actions: unite,
+                    raw: unite // Keep raw data for actions
+                }));
                 return true;
 
             } catch (error) {
@@ -51,65 +74,66 @@ export const useUnitStore = defineStore({
         //Ajout d'un élement
         async addOrUpdateUnit(data: any, param?: any) {
             try {
-
-                //Si c'est une modification
                 if (param) {
-               
                     const response = await new ApiAxios().updatePartialForm(`/${this.url}/${param}/`, data, param);
-                    // Swal.fire({
-                    //     position: "center",
-                    //     icon: "success",
-                    //     title: "Commande modifiée avec succès!",
-                    //     showConfirmButton: false,
-                    //     timer: 2000,
-                    //     showClass: {
-                    //         popup: `
-                    //         animate__animated
-                    //         animate__fadeInRight
-                    //         animate__faster
-                    //         `
-                    //     },
-                    //     hideClass: {
-                    //         popup: `
-                    //         animate__animated
-                    //         animate__fadeInRight
-                    //         animate__faster
-                    //         `
-                    //     }
-                    // });
                 } else {
-                    //Ajout de la commande
                     const response = await new ApiAxios().addForm(`/${this.url}/`, data);
-
-                    this.$reset()
-                    
-                    // Swal.fire({
-                    //     position: "center",
-                    //     icon: "success",
-                    //     title: "Unité enregistrée avec succès!",
-                    //     showConfirmButton: false,
-                    //     timer: 2000,
-                    //     showClass: {
-                    //         popup: `
-                    //         animate__animated
-                    //         animate__fadeInRight
-                    //         animate__faster
-                    //         `
-                    //     },
-                    //     hideClass: {
-                    //         popup: `
-                    //         animate__animated
-                    //         animate__fadeInRight
-                    //         animate__faster
-                    //         `
-                    //     }
-                    // });
+                    this.$reset();
                 }
                 return true;
-             
-            } catch (error) {
+            } catch (error: any) {
+                // Vérification du type d'erreur
+                console.log(error)
+                if (error.response) {
+                    // Si c'est une erreur de doublon (généralement code 400 ou 409)
+                    if (error.response.status === 400 || error.response.status === 409) {
+                        // Si le message d'erreur contient une indication de doublon
+                        if (error.response.data) {
 
-                return Promise.reject(error + "Autres erreur");
+                            const responseData = error.response.data as { name: string[], short_name: string[] };
+                            
+                            this.errors.nameError = responseData.name ? responseData.name[0] : null;
+                            this.errors.nameText = data.name
+                            
+                            // Retourner un objet d'erreur personnalisé
+                            return Promise.reject({
+                                type: 'DUPLICATE_ERROR',
+                                message: 'Cette unité existe déjà dans la base de données',
+                                originalError: error.response.data
+                            });
+                        }
+                    }
+
+                    //  if (isAxiosError(error)) {
+                    //     if (error.response && error.response.data) {
+                    //         console.log(error.response.data);
+                
+                    //         const responseData = error.response.data as { username: string[], email: string[], phone_number: string[], error: string[], password: string[]};
+    
+                    //         this.errors.usernameError = responseData.username ? responseData.username[0] : null;
+                    //         this.errors.usernameText = data.username
+    
+                    //         this.errors.emailError = responseData.email ? responseData.email[0] : null;
+                    //         this.errors.emailText = data.email;
+    
+                    //         this.errors.phone_numberError = responseData.phone_number ? responseData.phone_number[0] : null;
+                    //         this.errors.phone_numberText = data.phone_number;
+            
+                            
+                    //         if (responseData.error) {
+                    //             router.push({name: 'Providers'})
+                    //         }
+                    //     }
+                    // }
+                }
+                
+                // Pour les autres types d'erreurs
+                console.error('Erreur lors de l\'opération:', error);
+                return Promise.reject({
+                    type: 'GENERAL_ERROR',
+                    message: 'Une erreur est survenue lors de l\'opération',
+                    originalError: error
+                });
             }
         },
          /**

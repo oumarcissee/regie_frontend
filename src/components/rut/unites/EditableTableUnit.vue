@@ -13,7 +13,7 @@ import { EyeIcon } from 'lucide-vue-next';
 
 // Add these new refs
 const viewDialog = ref(false);
-const selectedProduct = ref(null);
+const selectedUnited = ref(null);
 
 const locale = fr; // or en, or es
 const isLoading = ref(false);
@@ -110,19 +110,10 @@ onMounted(async () => {
     isLoading.value = false;
 });
 
-const imageDialog = ref(false);
-
-const showFullImage = () => {
-  imageDialog.value = true;
-};
-
-const closeImageDialog = () => {
-  imageDialog.value = false;
-};
 
 
 const getUnite: any = computed(async () => {
-    return await getUnites;
+    return await store.unites;
 });
 
 import type { AxiosError } from 'axios';
@@ -131,15 +122,17 @@ const selected = ref<string | null | undefined | number>(null);
 
 const loading = ref(false);
 
-// Add this new method
+// // Add this new method
 const viewItem = (item: any) => {
-    selectedProduct.value = item;
+    // console.log('Item clicked:', item); // Pour le debug
+    selectedUnited.value = { ...item }; // Faire une copie de l'objet
     viewDialog.value = true;
 };
 
+
 const closeViewDialog = () => {
     viewDialog.value = false;
-    selectedProduct.value = null;
+    selectedUnited.value = null;
 };
 
 
@@ -187,8 +180,14 @@ const submit = handleSubmit(async (values) => {
             'success'
         );
     } catch (err) {
-        // error.value = err.message;
-        console.log(error)
+        //  if (error.type === 'DUPLICATE_ERROR') {
+        //     // Gérer spécifiquement l'erreur de doublon
+        //     console.log(error.message); // "Cette unité existe déjà dans la base de données"
+        //     // Afficher un message à l'utilisateur par exemple
+        // } else {
+        //     // Gérer les autres types d'erreurs
+        //     console.log(error.message);
+        // }
         showNotification('Erreur lors de l\'opération', 'error');
     } finally {
         isLoading.value = false;
@@ -234,13 +233,21 @@ function close() {
 
 
 // Méthode pour modifier un élément
-const editItem = (index: any) => {
-    dialog.value = true;
-    editedIndex.value = index.id;
+const editItem = (item: any) => {
+    editedIndex.value = item.id;
+    // Remplir le formulaire avec les donnéeses
+    name.value.value = item.name;
+    short_name.value.value = item.short_name;
+    g_staff.value.value = item.g_staff;
+    area.value.value = item.area;
+    effective.value.value = item.effective;
+    type_of_unit.value.value = item.type_of_unit;
+    description.value.value = item.description;
 
-    name.value.value = index.name;
-    description.value.value = index.description;
+    dialog.value = true;
 };
+
+
 
 // Modifier la fonction remove pour gérer le loading state
 const remove = async (index: any) => {
@@ -275,11 +282,14 @@ const formButton = computed(() => {
 const headers = [
     { text: "Réf", value: "ref", sortable:true},
     { text: "Unité", value: "short_name" , sortable:true},
-    { text: "Armée", value: "area", sortable:true },
-    { text: "Type", value: "type_of_unit",sortable:true},
+    { text: "Région", value: "area", sortable:true },
+    { text: "Type", value: "type_of_unit", sortable: true },
+    { text: "Crée le", value: "created_at",sortable:true},
     { text: "Effectif", value: "effective",sortable:true},
     { text: "Actions", value: "actions"}
 ];
+
+
 
 </script>
 <template>
@@ -297,33 +307,6 @@ const headers = [
             ></v-text-field>
         </v-col>
         <v-col cols="6" lg="8" md="6" class="text-right">
-            <!-- Dialogue img -->
-            <!-- <v-dialog v-model="dialogImg" max-width="1000">
-                <v-card>
-                    <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
-                        <span class="title text-white">Recadrement de l'image</span>
-                        <v-icon @click="closeImg()" class="ml-auto">mdi-close</v-icon>
-                    </v-card-title>
-
-                    <v-card-text>
-                        <v-row>
-                            <v-col cols="12">
-                                <div class="content">
-                                    <div class="img-cropper">
-                                        <VueCropper ref="cropper" :aspect-ratio="16 / 9" :src="imageSrc" preview=".preview" />
-                                    </div>
-                                </div>
-                            </v-col>
-
-                        </v-row>
-                    </v-card-text>
-
-                    <v-card-actions class="pa-4">
-                        <v-btn color="secondary" variant="flat" block @click="handleImage">Recadrer l'image</v-btn>
-                    </v-card-actions>
-                </v-card>
-            </v-dialog> -->
-            <!-- End dialogue img -->
 
             <v-dialog v-model="dialog" max-width="800">
                 <template v-slot:activator="{ props }">
@@ -465,9 +448,7 @@ const headers = [
             <div class="d-flex align-center">
                 <div class="ml-5">
                     <h4 class="text-h6 font-weight-semibold">{{ name }}</h4>
-                    <!-- <span class="text-subtitle-1 d-block mt-1 textSecondary">
-                        {{ truncateText(item.description, 20) }}
-                    </span> -->
+                   
                 </div>
             </div>
         </template>
@@ -480,7 +461,8 @@ const headers = [
                 </div>
             </div>
         </template>
-         <template #item-area="{ area }">
+
+        <template #item-area="{ area }">
             <div class="d-flex align-center">
                 <div class="ml-5">
                     <h4 class="text-h6 font-weight-semibold">{{ get_areas(area)}}</h4>
@@ -488,6 +470,7 @@ const headers = [
                 </div>
             </div>
         </template>
+     
         <template #item-created_at="{ created_at }">
             <div class="d-flex align-center">
                 <div class="ml-5">
@@ -503,219 +486,157 @@ const headers = [
                 </div>
             </div>
         </template>
-        
 
-        <!-- Custom template for Actions column -->
-      <template #item-actions="{ raw }">
-        <div class="d-flex align-center">
-            <v-tooltip text="View">
-                <template v-slot:activator="{ props }">
-                    <v-btn 
-                        icon 
-                        flat 
-                        @click="viewItem(raw)" 
-                        v-bind="props"
-                    >
-                        <EyeIcon 
-                            stroke-width="1.5" 
-                            :size="20" 
-                            class="text-success"
-                        />
-                    </v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="Edit">
-                <template v-slot:activator="{ props }">
-                    <v-btn 
-                        icon 
-                        flat 
-                        @click="editItem(raw)" 
-                        v-bind="props"
-                    >
-                        <PencilIcon 
-                            stroke-width="1.5" 
-                            size="20" 
-                            class="text-primary"
-                        />
-                    </v-btn>
-                </template>
-            </v-tooltip>
-            <v-tooltip text="Delete">
-                <template v-slot:activator="{ props }">
-                    <v-btn 
-                        icon 
-                        flat 
-                        @click="remove(raw)" 
-                        v-bind="props"
-                    >
-                        <TrashIcon 
-                            stroke-width="1.5" 
-                            size="20" 
-                            class="text-error"
-                        />
-                    </v-btn>
-                </template>
-            </v-tooltip>
-        </div>
-    </template>
+          <!-- Custom template for Actions column -->
+        <template #item-actions="{ raw }">
+            <div class="d-flex align-center">
+                <v-tooltip text="Voir">
+                    <template v-slot:activator="{ props }">
+                        <v-btn icon flat @click="viewItem(raw)" v-bind="props">
+                            <EyeIcon stroke-width="1.5" :size="20" class="text-success" />
+                        </v-btn>
+                    </template>
+                </v-tooltip>
+                <v-tooltip text="Editer">
+                    <template v-slot:activator="{ props }">
+                        <v-btn icon flat @click="editItem(raw)" v-bind="props">
+                            <PencilIcon stroke-width="1.5" size="20" class="text-primary" />
+                        </v-btn>
+                    </template>
+                </v-tooltip>
+                <v-tooltip text="Supprimer">
+                    <template v-slot:activator="{ props }">
+                        <v-btn icon flat @click="remove(raw)" v-bind="props">
+                            <TrashIcon stroke-width="1.5" size="20" class="text-error" />
+                        </v-btn>
+                    </template>
+                </v-tooltip>
+            </div>
+        </template>
+    
     </EasyDataTable>
     
 
 <!-- Add the View Dialog -->
    <!-- Remplacez le dialogue de visualisation existant par celui-ci -->
-<v-dialog v-model="viewDialog" max-width="900">
+<template>
+  <v-dialog v-model="viewDialog" fullscreen
+      :scrim="false"
+      transition="dialog-bottom-transition" >
     <v-card>
-        <v-card-title class="pa-4 bg-success d-flex align-center justify-space-between">
-            <span class="title text-white">Détails de l'article</span>
-            <v-icon @click="closeViewDialog" class="ml-auto text-white">mdi-close</v-icon>
-        </v-card-title>
+      <v-card-title class="pa-4 bg-primary d-flex align-center justify-space-between">
+        <span class="text-h5 text-white">Détails de l'unité</span>
+        <v-icon @click="closeViewDialog" class="ml-auto text-white" size="large">mdi-close</v-icon>
+      </v-card-title>
 
-        <v-card-text class="pa-4" style="max-height: 80vh; overflow-y: auto;">
-            <v-list v-if="selectedProduct" class="bg-grey-lighten-4 rounded-lg">
-                <!-- Image Section -->
-                <div class="position-relative mb-6 hover-zoom">
-                    <v-img
-                        :src="selectedProduct.image"
-                        height="300"
-                        class="rounded-lg"
-                        cover
-                        @click="showFullImage"
-                        style="cursor: pointer;"
-                    >
-                        <template v-slot:placeholder>
-                            <v-row class="fill-height ma-0" align="center" justify="center">
-                                <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                            </v-row>
-                        </template>
-                        <div class="image-overlay d-flex align-center justify-center">
-                            <v-icon size="40" color="white">mdi-magnify-plus</v-icon>
-                        </div>
-                    </v-img>
-                </div>
+      <v-card-text class="pa-4" v-if="selectedUnited">
+        <v-container fluid>
+          <v-row>
+            <!-- Informations principales -->
+            <v-col cols="12" md="6">
+              <v-card class="mb-4" elevation="2">
+                <v-card-text>
+                  <h3 class="text-h5 mb-4">Informations principales</h3>
+                  <v-list density="comfortable">
+                    <v-list-item>
+                      <template v-slot:prepend>
+                        <v-icon color="primary" size="large">mdi-identifier</v-icon>
+                      </template>
+                      <v-list-item-title class="text-body-1 font-weight-medium">Référence</v-list-item-title>
+                      <v-list-item-subtitle class="text-subtitle-1">{{ selectedUnited.ref }}</v-list-item-subtitle>
+                    </v-list-item>
+                    
+                    <v-list-item>
+                      <template v-slot:prepend>
+                        <v-icon color="primary" size="large">mdi-office-building</v-icon>
+                      </template>
+                      <v-list-item-title class="text-body-1 font-weight-medium">Nom complet</v-list-item-title>
+                      <v-list-item-subtitle class="text-subtitle-1">{{ selectedUnited.name }}</v-list-item-subtitle>
+                    </v-list-item>
 
-                <!-- Details Grid -->
-                <v-row class="px-2 ma-0">
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="primary" class="mr-2">mdi-barcode</v-icon>
-                                <div class="font-weight-bold">Référence</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.ref }}</div>
-                        </v-card>
-                    </v-col>
+                    <v-list-item>
+                      <template v-slot:prepend>
+                        <v-icon color="primary" size="large">mdi-format-letter-case</v-icon>
+                      </template>
+                      <v-list-item-title class="text-body-1 font-weight-medium">Nom abrégé</v-list-item-title>
+                      <v-list-item-subtitle class="text-subtitle-1">{{ selectedUnited.short_name }}</v-list-item-subtitle>
+                    </v-list-item>
+                  </v-list>
+                </v-card-text>
+              </v-card>
+            </v-col>
 
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="primary" class="mr-2">mdi-tag</v-icon>
-                                <div class="font-weight-bold">Nom</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.name }}</div>
-                        </v-card>
-                    </v-col>
+            <!-- Informations organisationnelles -->
+            <v-col cols="12" md="6">
+              <v-card class="mb-4" elevation="2">
+                <v-card-text>
+                  <h3 class="text-h5 mb-4">Détails organisationnels</h3>
+                  <v-list density="comfortable">
+                    <v-list-item>
+                      <template v-slot:prepend>
+                        <v-icon color="success" size="large">mdi-army</v-icon>
+                      </template>
+                      <v-list-item-title class="text-body-1 font-weight-medium">État-Major</v-list-item-title>
+                      <v-list-item-subtitle class="text-subtitle-1">{{ get_staffs(selectedUnited.g_staff, true) }}</v-list-item-subtitle>
+                    </v-list-item>
 
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="success" class="mr-2">mdi-currency-usd</v-icon>
-                                <div class="font-weight-bold">Prix</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.price }} GNF</div>
-                        </v-card>
-                    </v-col>
+                    <v-list-item>
+                      <template v-slot:prepend>
+                        <v-icon color="success" size="large">mdi-map-marker</v-icon>
+                      </template>
+                      <v-list-item-title class="text-body-1 font-weight-medium">Région Militaire</v-list-item-title>
+                      <v-list-item-subtitle class="text-subtitle-1">{{ get_areas(selectedUnited.area, true) }}</v-list-item-subtitle>
+                    </v-list-item>
 
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="info" class="mr-2">mdi-package-variant</v-icon>
-                                <div class="font-weight-bold">Unité</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.unite }}</div>
-                        </v-card>
-                    </v-col>
+                    <v-list-item>
+                      <template v-slot:prepend>
+                        <v-icon color="success" size="large">mdi-account-group</v-icon>
+                      </template>
+                      <v-list-item-title class="text-body-1 font-weight-medium">Effectif</v-list-item-title>
+                      <v-list-item-subtitle class="text-subtitle-1">{{ selectedUnited.effective }}</v-list-item-subtitle>
+                    </v-list-item>
+                  </v-list>
+                </v-card-text>
+              </v-card>
+            </v-col>
 
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="warning" class="mr-2">mdi-percent</v-icon>
-                                <div class="font-weight-bold">Taux par jour</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.rate_per_days }}%</div>
-                        </v-card>
-                    </v-col>
+            <!-- Dates et description -->
+            <v-col cols="12">
+              <v-card elevation="2">
+                <v-card-text>
+                  <h3 class="text-h5 mb-4">Informations complémentaires</h3>
+                  
+                  <div class="d-flex mb-4">
+                    <div class="flex-grow-1">
+                      <v-icon color="info" size="large">mdi-calendar</v-icon>
+                      <span class="ml-2 text-subtitle-1">Créé le: {{ formatDate(selectedUnited.created_at) }}</span>
+                    </div>
+                    <div>
+                      <v-icon color="warning" size="large">mdi-calendar-clock</v-icon>
+                      <span class="ml-2 text-subtitle-1">Modifié le: {{ formatDate(selectedUnited.modified_at) }}</span>
+                    </div>
+                  </div>
 
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="error" class="mr-2">mdi-division</v-icon>
-                                <div class="font-weight-bold">Diviseur</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.divider }}</div>
-                        </v-card>
-                    </v-col>
+                  <v-divider class="mb-4"></v-divider>
 
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="success" class="mr-2">mdi-calendar-plus</v-icon>
-                                <div class="font-weight-bold">Date de création</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ formatDate(selectedProduct.created_at) }}</div>
-                        </v-card>
-                    </v-col>
-
-                    <v-col cols="12" md="6" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="info" class="mr-2">mdi-calendar-edit</v-icon>
-                                <div class="font-weight-bold">Dernière modification</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ formatDate(selectedProduct.modified_at) }}</div>
-                        </v-card>
-                    </v-col>
-
-                    <v-col cols="12" class="pa-2">
-                        <v-card class="pa-4" elevation="2">
-                            <div class="d-flex align-center mb-2">
-                                <v-icon color="primary" class="mr-2">mdi-text-box</v-icon>
-                                <div class="font-weight-bold">Description</div>
-                            </div>
-                            <div class="text-body-1 ml-8">{{ selectedProduct.description }}</div>
-                        </v-card>
-                    </v-col>
-                </v-row>
-            </v-list>
-        </v-card-text>
+                  <div>
+                    <div class="text-h6 font-weight-bold mb-2">
+                      <v-icon color="deep-purple" size="large">mdi-text-box</v-icon>
+                      <span class="ml-2">Description</span>
+                    </div>
+                    <v-card class="pa-4 bg-grey-lighten-4">
+                      <p class="text-body-1">{{ selectedUnited.description || 'Aucune description disponible' }}</p>
+                    </v-card>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-container>
+      </v-card-text>
     </v-card>
-</v-dialog>
-    <!-- Existing dialogs remain the same -->
-    
-    <v-dialog v-model="imageDialog" >
-        <v-card>
-            <v-card-title class="pa-4 bg-grey-darken-3">
-                <span class="text-white">{{ selectedProduct?.name }}</span>
-                <v-spacer></v-spacer>
-                <v-btn icon flat @click="closeImageDialog">
-                    <v-icon color="white">mdi-close</v-icon>
-                </v-btn>
-            </v-card-title>
-            <v-card-text class="pa-0">
-                <v-img
-                    :src="selectedProduct?.image"
-                    max-height="80vh"
-                    contain
-                    class="bg-grey-darken-4"
-                >
-                    <template v-slot:placeholder>
-                        <v-row class="fill-height ma-0" align="center" justify="center">
-                            <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                        </v-row>
-                    </template>
-                </v-img>
-            </v-card-text>
-        </v-card>
-    </v-dialog>
+  </v-dialog>
+</template>
 
     <!-- Snackbar pour les notifications -->
     <v-snackbar
