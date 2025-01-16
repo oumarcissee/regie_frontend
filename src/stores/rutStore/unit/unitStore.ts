@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 // project imports
-import { isAxiosError, currentMonth } from '@/services/utils';
+import { isAxiosError, currentMonth ,showNotification } from '@/services/utils';
 
 // import { router } from '@/router';
 
@@ -10,6 +10,7 @@ import Swal from 'sweetalert2'
 import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
 import { da } from 'date-fns/locale';
+import { ref } from 'vue';
 const locale = fr; // or en, or es
 
 export const useUnitStore = defineStore({
@@ -21,13 +22,15 @@ export const useUnitStore = defineStore({
         unitesLine: [] as any,
         months: [] as any,
         dialog: false,
-        errors: {
-            nameError: null as any,
-            nameText: null as any,
 
-            short_name_error: null as any,
-            short_name_text: null as any,
-        },
+        errors : ref({
+            nameError: null,
+            nameText: null,
+            
+            shortNameError: null,
+            shortNameText: null
+        })
+    
     }),
     getters: {
         getUnites(state) {
@@ -42,10 +45,6 @@ export const useUnitStore = defineStore({
         async fetchUnites() {
             try {
                 const response = await new ApiAxios().find(`/${this.url}/`);
-
-                // this.unites = await response?.data?.results;
-
-                // const response = await new ApiAxios().find(`/${this.url}/`);
         
                 // Formater les données pour EasyDataTable
                 this.unites = (response?.data?.results || []).map((unite: any) => ({
@@ -72,7 +71,7 @@ export const useUnitStore = defineStore({
         },
 
         //Ajout d'un élement
-        async addOrUpdateUnit(data: any, param?: any) {
+        async addOrUpdateUnit(data: FormData, param?: any) {
             try {
                 if (param) {
                     const response = await new ApiAxios().updatePartialForm(`/${this.url}/${param}/`, data, param);
@@ -83,7 +82,7 @@ export const useUnitStore = defineStore({
                 return true;
             } catch (error: any) {
                 // Vérification du type d'erreur
-                console.log(error)
+                // console.log(error)
                 if (error.response) {
                     // Si c'est une erreur de doublon (généralement code 400 ou 409)
                     if (error.response.status === 400 || error.response.status === 409) {
@@ -93,7 +92,11 @@ export const useUnitStore = defineStore({
                             const responseData = error.response.data as { name: string[], short_name: string[] };
                             
                             this.errors.nameError = responseData.name ? responseData.name[0] : null;
-                            this.errors.nameText = data.name
+                            this.errors.nameText = data.get('name')
+
+                            this.errors.shortNameError = responseData.short_name ? responseData.short_name[0] : null;
+                            this.errors.shortNameText = data.get('short_name');
+
                             
                             // Retourner un objet d'erreur personnalisé
                             return Promise.reject({
@@ -104,36 +107,11 @@ export const useUnitStore = defineStore({
                         }
                     }
 
-                    //  if (isAxiosError(error)) {
-                    //     if (error.response && error.response.data) {
-                    //         console.log(error.response.data);
-                
-                    //         const responseData = error.response.data as { username: string[], email: string[], phone_number: string[], error: string[], password: string[]};
-    
-                    //         this.errors.usernameError = responseData.username ? responseData.username[0] : null;
-                    //         this.errors.usernameText = data.username
-    
-                    //         this.errors.emailError = responseData.email ? responseData.email[0] : null;
-                    //         this.errors.emailText = data.email;
-    
-                    //         this.errors.phone_numberError = responseData.phone_number ? responseData.phone_number[0] : null;
-                    //         this.errors.phone_numberText = data.phone_number;
-            
-                            
-                    //         if (responseData.error) {
-                    //             router.push({name: 'Providers'})
-                    //         }
-                    //     }
-                    // }
+                 
                 }
-                
-                // Pour les autres types d'erreurs
-                console.error('Erreur lors de l\'opération:', error);
-                return Promise.reject({
-                    type: 'GENERAL_ERROR',
-                    message: 'Une erreur est survenue lors de l\'opération',
-                    originalError: error
-                });
+             
+                showNotification("Y'a une erreur serveur.", 'error');
+            
             }
         },
          /**

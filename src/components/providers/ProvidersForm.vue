@@ -201,7 +201,7 @@ const submit = handleSubmit(async (data: any, { setErrors }: any) => {
         pError.value = error  
         irreur++;
 
-        submit()
+        submit();
 
         return setErrors({ apiError: error });
     }

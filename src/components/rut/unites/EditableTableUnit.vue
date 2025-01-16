@@ -34,11 +34,11 @@ const store = useUnitStore();
 
 const { handleSubmit, handleReset, isSubmitting } = useForm({
     validationSchema: {
-        name(value: string | any[]) {
+         name(value: string | any[]) {
             if (value?.length <= 4 || !value) {
                 return 'Le libéllé doit avoir au moins 4 lettres.';
-            } else if (errors.nameError && errors.nameText === value) {
-                return errors.nameError;
+            } else if (store.errors.nameError && store.errors.nameText === value) { // Utiliser store.errors au lieu de errors
+                return store.errors.nameError;
             }
             return true;
         },
@@ -46,8 +46,8 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
         short_name(value: string | any[]) {
             if (value?.length <= 2 || !value) {
                 return 'Le libéllé doit avoir au moins 2 lettres.';
-            } else if (errors.nameError && errors.nameText === value) {
-                return errors.nameError;
+            } else if (store.errors.shortNameError && store.errors.shortNameText === value) { // Même chose ici
+                return store.errors.shortNameError;
             }
             return true;
         },
@@ -146,12 +146,17 @@ const description = useField('description');
 
 
 const count = ref(0);
+const pError = ref();
 
 // Modifier la fonction submit
 
-const submit = handleSubmit(async (values) => {
+const submit = handleSubmit(async (values, { setErrors }: any ) => {
     
     try {
+
+        pError.value = null
+        errors.nameError = null
+        errors.shortNameError = null
 
         const submitFormData = new FormData();
         
@@ -180,15 +185,14 @@ const submit = handleSubmit(async (values) => {
             'success'
         );
     } catch (err) {
-        //  if (error.type === 'DUPLICATE_ERROR') {
-        //     // Gérer spécifiquement l'erreur de doublon
-        //     console.log(error.message); // "Cette unité existe déjà dans la base de données"
-        //     // Afficher un message à l'utilisateur par exemple
-        // } else {
-        //     // Gérer les autres types d'erreurs
-        //     console.log(error.message);
-        // }
-        showNotification('Erreur lors de l\'opération', 'error');
+        pError.value = error  
+        count.value++;
+        if (count.value <= 1)
+            submit();
+
+        return setErrors({ apiError: error });
+
+        // showNotification('Erreur lors de l\'opération', 'error');
     } finally {
         isLoading.value = false;
     }
