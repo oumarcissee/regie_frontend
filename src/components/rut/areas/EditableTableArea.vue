@@ -120,6 +120,7 @@ const submit = handleSubmit(async (values, { setErrors }: any) => {
         } else {
             await addOrUpdateSubArea(submitFormData);
         }
+        handleReset();//reset
 
         await refreshTable();
         dialog.value = false;
@@ -134,7 +135,7 @@ const submit = handleSubmit(async (values, { setErrors }: any) => {
         // showNotification('Erreur lors de l\'opération', 'error');
     } finally {
         isLoading.value = false;
-        handleReset();
+        
     }
 });
 

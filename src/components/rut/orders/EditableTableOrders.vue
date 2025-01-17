@@ -293,6 +293,8 @@ const printContent = () => {
     newWin.close();
 };
 
+
+// PDF methods
 const doBillPdf = async () => {
     isSubmittingPdf.value = true;
     try {
@@ -352,42 +354,58 @@ const loading = ref(false);
 
 
 <template>
+
+     <div class="d-flex align-center gap-4 mb-4">
+        <!-- Zone de recherche -->
+        <v-text-field 
+            density="compact" 
+            v-model="searchValue" 
+            label="Rechercher une commande" 
+            variant="outlined"
+            placeholder="Entrez un nom..."
+            prepend-inner-icon="mdi-magnify"
+            clearable
+            class="flex-grow-1"
+            hide-details
+        ></v-text-field>
+        
+        <!-- Filtre par type -->
+        <!-- <v-select
+            density="compact"
+            v-model="typeFilter"
+            :items="type_of_unites"
+            label="Filtrer par type"
+            variant="outlined"
+            clearable
+            hide-details
+            style="min-width: 200px;"
+        ></v-select> -->
+
+        <!-- Bouton d'ajout -->
+        <v-btn 
+            v-if="!itemsSelected.length"
+            color="primary" 
+            prepend-icon="mdi-account-multiple-plus"
+            @click="store.dialog = true"
+            class="ml-auto"
+        >
+            Ajouter une unite/service
+        </v-btn>
+
+        <v-btn v-else="itemsSelected.length" icon variant="text" @click="openPrintPreview()" flat class="ml-auto">
+            <PrinterIcon size="20" />
+        </v-btn>
+
+         <!-- <v-btn icon variant="text" @click="printContent">
+            <FilterIcon size="20" />
+        </v-btn> -->
+    </div>
+
+  
     <v-row class="mb-4">
-        <v-col cols="12" lg="4" md="6">
-            <v-text-field
-                type="text"
-                variant="outlined"
-                placeholder="Rechercher une commande"
-                v-model="searchValue"
-                density="compact"
-                hide-details
-                prepend-inner-icon="mdi-magnify"
-                class="ml-auto"
-            />
-        </v-col>
+        
         <v-col cols="12" lg="8" md="6" class="text-right">
             <v-dialog v-model="store.dialog" max-width="800" persistent class="dialog-mw">
-                <template v-slot:activator="{ props }">
-                    <v-col v-if="itemsSelected.length">
-                        <div class="d-flex gap-2 justify-end">
-                            <!-- <v-btn icon variant="text" >
-                                    <CopyIcon size="20" />
-                                </v-btn> -->
-                            <v-btn icon variant="text" @click="openPrintPreview()" flat class="ml-auto">
-                                <PrinterIcon size="20" />
-                            </v-btn>
-                            <v-btn icon variant="text" @click="printContent">
-                                <FilterIcon size="20" />
-                            </v-btn>
-                        </div>
-                    </v-col>
-
-                    <v-col v-else>
-                        <v-btn color="primary" v-bind="props" flat class="ml-auto">
-                            <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Passer une commande
-                        </v-btn>
-                    </v-col>
-                </template>
 
                 <!-- Formulaire de commande -->
                 <v-card>
@@ -410,7 +428,7 @@ const loading = ref(false);
                                     />
                                 </v-col>
 
-                               <v-col cols="12" sm="6">
+                                <v-col cols="12" sm="6">
                                     <CustomComBoxProduct
                                         ref="refProduct"
                                         :items="useProduct.getProducts"
@@ -712,7 +730,7 @@ const loading = ref(false);
                     </div>
                 </div>
             </v-card-text>
-           <v-card-actions class="d-flex justify-space-between px-4">
+            <v-card-actions class="d-flex justify-space-between px-4">
                 <div class="d-flex gap-4 flex-grow-1">
                     <v-btn 
                         color="secondary" 
@@ -744,6 +762,9 @@ const loading = ref(false);
             </v-card-actions>
         </v-card>
     </v-dialog>
+
+ 
+
 
 
         <!-- Loading Overlay -->

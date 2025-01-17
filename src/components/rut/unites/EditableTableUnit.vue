@@ -7,7 +7,8 @@ import { format } from 'date-fns';
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 const itemsSelected = ref<Item[]>([]);
-const searchField = ref(['ref','item.name']);
+const searchField = ref(['name', 'type_of_unit']);
+
 const searchValue = ref('');
 import { EyeIcon } from 'lucide-vue-next';
 
@@ -112,8 +113,28 @@ onMounted(async () => {
 
 
 
-const getUnite: any = computed(async () => {
-    return await store.unites;
+
+
+// Add type filter
+const typeFilter = ref('');
+const filteredUnits = computed(() => {
+    let units = store.unites;
+    
+    // Filter by type if a type is selected
+    if (typeFilter.value) {
+        units = units.filter((unit: any) => unit.type_of_unit === typeFilter.value);
+    }
+    
+    // Filter by search value if present
+    if (searchValue.value) {
+        const searchTerm = searchValue.value.toLowerCase();
+        units = units.filter((unit: any) => 
+            unit.name.toLowerCase().includes(searchTerm) ||
+            get_unite_type(unit.type_of_unit).toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    return units;
 });
 
 import type { AxiosError } from 'axios';
@@ -149,12 +170,12 @@ const count = ref(0);
 const pError = ref();
 
 // Modifier la fonction submit
-let submitFormData = new FormData();
 
 const submit = handleSubmit(async (values, { setErrors }: any ) => {
     
     try {
-
+    const submitFormData = new FormData();
+        
         pError.value = null
         errors.nameError = null
         errors.shortNameError = null
@@ -177,6 +198,7 @@ const submit = handleSubmit(async (values, { setErrors }: any ) => {
         } else {
             await addOrUpdateUnit(submitFormData);
         }
+        handleReset();
 
         await refreshTable();
         dialog.value = false;
@@ -195,7 +217,6 @@ const submit = handleSubmit(async (values, { setErrors }: any ) => {
         // showNotification('Erreur lors de l\'opération', 'error');
     } finally {
         isLoading.value = false;
-        handleReset();
     }
 });
 
@@ -298,146 +319,169 @@ const headers = [
 
 </script>
 <template>
-    <v-row>
-         <v-col cols="6" lg="4" md="6">
-            <!-- Modification du champ de recherche -->
-            <v-text-field 
-                density="compact" 
-                v-model="searchValue" 
-                label="Rechercher par nom ou référence" 
-                variant="outlined"
-                placeholder="Entrez un nom ou une référence..."
-                prepend-inner-icon="mdi-magnify"
-                clearable
-            ></v-text-field>
-        </v-col>
-        <v-col cols="6" lg="8" md="6" class="text-right">
 
-            <v-dialog v-model="dialog" max-width="800" persistent>
-                <template v-slot:activator="{ props }">
-                    <v-btn color="primary" v-bind="props" flat class="ml-auto">
-                        <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Ajouter une unite/service
-                    </v-btn>
-                </template>
-                <v-card>
-                    <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
-                        <span class="title text-white">{{ formTitle }}</span>
-                        <v-icon @click="close()" class="ml-auto">mdi-close</v-icon>
-                    </v-card-title>
+    <div class="d-flex align-center gap-4 mb-4">
+        <!-- Zone de recherche -->
+        <v-text-field 
+            density="compact" 
+            v-model="searchValue" 
+            label="Rechercher par nom" 
+            variant="outlined"
+            placeholder="Entrez un nom..."
+            prepend-inner-icon="mdi-magnify"
+            clearable
+            class="flex-grow-1"
+            hide-details
+        ></v-text-field>
+        
+        <!-- Filtre par type -->
+        <v-select
+            density="compact"
+            v-model="typeFilter"
+            :items="type_of_unites"
+            label="Filtrer par type"
+            variant="outlined"
+            clearable
+            hide-details
+            style="min-width: 200px;"
+        ></v-select>
 
-                    <v-card-text>
-                        <v-form ref="form" v-model="valid" @submit.prevent="submit">
-                            <v-row>
-                                <v-col cols="12" sm="12">
-                                    <v-text-field
-                                        placeholder="Saisissez le nom en integralité"
-                                        variant="outlined"
-                                        v-model="name.value.value"
-                                        :error-messages="name.errorMessage.value"
-                                        label="Libéllé"
-                                    >
-                                    </v-text-field>
-                                </v-col>
+        <!-- Bouton d'ajout -->
+        <v-btn 
+            color="primary" 
+            prepend-icon="mdi-account-multiple-plus"
+            @click="dialog = true"
+            class="ml-auto"
+        >
+            Ajouter une unite/service
+        </v-btn>
+    </div>
 
-                                <v-col cols="12" sm="12">
-                                    <v-text-field
-                                        placeholder="nom abrégé"
-                                        variant="outlined"
-                                        v-model="short_name.value.value"
-                                        :error-messages="short_name.errorMessage.value"
-                                        label="Libéllé abrégé"
-                                    >
-                                    </v-text-field>
-                                </v-col>
-                               
-                               
+
+    <template >
+
+        <v-row class="align-center">
+            <!-- Colonne pour le bouton -->
+            <v-col cols="12" md="4" class="d-flex justify-end">
+                <v-dialog v-model="dialog" max-width="800" persistent>
+                    <v-card>
+                        <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
+                            <span class="title text-white">{{ formTitle }}</span>
+                            <v-icon @click="close()" class="ml-auto">mdi-close</v-icon>
+                        </v-card-title>
+
+                        <v-card-text>
+                            <v-form ref="form" v-model="valid" @submit.prevent="submit">
+                                <v-row>
+                                    <v-col cols="12" sm="12">
+                                        <v-text-field
+                                            placeholder="Saisissez le nom en integralité"
+                                            variant="outlined"
+                                            v-model="name.value.value"
+                                            :error-messages="name.errorMessage.value"
+                                            label="Libéllé"
+                                        >
+                                        </v-text-field>
+                                    </v-col>
+
+                                    <v-col cols="12" sm="12">
+                                        <v-text-field
+                                            placeholder="nom abrégé"
+                                            variant="outlined"
+                                            v-model="short_name.value.value"
+                                            :error-messages="short_name.errorMessage.value"
+                                            label="Libéllé abrégé"
+                                        >
+                                        </v-text-field>
+                                    </v-col>
                                 
-                                <v-col cols="12" sm="6">
-                                    <v-select
-                                        label="Etat-Major"
-                                        :items="g_staffs"
-                                        @update:modelValue="changed"
-                                        single-line
-                                        variant="outlined"
-                                        v-model="g_staff.value.value"
-                                        :error-messages="g_staff.errorMessage.value"
-                                    >
-                                    </v-select>
-                                </v-col>
+                                    <v-col cols="12" sm="6">
+                                        <v-select
+                                            label="Etat-Major"
+                                            :items="g_staffs"
+                                            @update:modelValue="changed"
+                                            single-line
+                                            variant="outlined"
+                                            v-model="g_staff.value.value"
+                                            :error-messages="g_staff.errorMessage.value"
+                                        >
+                                        </v-select>
+                                    </v-col>
 
-                                 <v-col cols="12" sm="6">
-                                    <v-select
-                                        label="Region-Militaire"
-                                        :items="areas"
-                                        @update:modelValue="changed"
-                                        single-line
-                                        variant="outlined"
-                                        v-model="area.value.value"
-                                        :error-messages="area.errorMessage.value"
-                                    >
-                                    </v-select>
-                                </v-col>
+                                    <v-col cols="12" sm="6">
+                                        <v-select
+                                            label="Region-Militaire"
+                                            :items="areas"
+                                            @update:modelValue="changed"
+                                            single-line
+                                            variant="outlined"
+                                            v-model="area.value.value"
+                                            :error-messages="area.errorMessage.value"
+                                        >
+                                        </v-select>
+                                    </v-col>
 
-                                 <v-col cols="12" sm="6">
-                                    <v-select
-                                        label="Type de l'unité"
-                                        :items="type_of_unites"
-                                        @update:modelValue="changed"
-                                        single-line
-                                        variant="outlined"
-                                        v-model="type_of_unit.value.value"
-                                        :error-messages="type_of_unit.errorMessage.value"
-                                    >
-                                    </v-select>
-                                </v-col>
+                                    <v-col cols="12" sm="6">
+                                        <v-select
+                                            label="Type de l'unité"
+                                            :items="type_of_unites"
+                                            @update:modelValue="changed"
+                                            single-line
+                                            variant="outlined"
+                                            v-model="type_of_unit.value.value"
+                                            :error-messages="type_of_unit.errorMessage.value"
+                                        >
+                                        </v-select>
+                                    </v-col>
 
-                                 <v-col cols="12" sm="6">
-                                    <v-text-field
-                                        variant="outlined"
-                                        v-model="effective.value.value"
-                                        :error-messages="effective.errorMessage.value"
-                                        label="Effectif"
-                                    ></v-text-field>
-                                </v-col>
+                                    <v-col cols="12" sm="6">
+                                        <v-text-field
+                                            variant="outlined"
+                                            v-model="effective.value.value"
+                                            :error-messages="effective.errorMessage.value"
+                                            label="Effectif"
+                                        ></v-text-field>
+                                    </v-col>
 
-                                <v-col cols="12" sm="12">
-                                    <VTextarea
-                                        label="Description"
-                                        auto-grow
-                                        placeholder="Salut, avez-vous quel que chose a dire?"
-                                        rows="2"
-                                        color="primary"
-                                        row-height="25"
-                                        shaped
-                                        v-model="description.value.value"
-                                        :error-messages="description.errorMessage.value"
-                                    ></VTextarea>
-                                </v-col>
-                            </v-row>
-                           
-                        </v-form>
-                    </v-card-text>
-                    <v-card-actions class="pa-4">
-                        <v-btn
-                            color="secondary"
-                            variant="flat"
-                            @click="submit"
-                            block
-                            :loading="isSubmitting"
-                        >
-                            {{ formButton }}
-                        </v-btn>
-                    </v-card-actions>
+                                    <v-col cols="12" sm="12">
+                                        <VTextarea
+                                            label="Description"
+                                            auto-grow
+                                            placeholder="Salut, avez-vous quel que chose a dire?"
+                                            rows="2"
+                                            color="primary"
+                                            row-height="25"
+                                            shaped
+                                            v-model="description.value.value"
+                                            :error-messages="description.errorMessage.value"
+                                        ></VTextarea>
+                                    </v-col>
+                                </v-row>
+                            
+                            </v-form>
+                        </v-card-text>
+                        <v-card-actions class="pa-4">
+                            <v-btn
+                                color="secondary"
+                                variant="flat"
+                                @click="submit"
+                                block
+                                :loading="isSubmitting"
+                            >
+                                {{ formButton }}
+                            </v-btn>
+                        </v-card-actions>
 
-                </v-card>
-            </v-dialog>
-        </v-col>
-    </v-row>
+                    </v-card>
+                </v-dialog>
+            </v-col>
+        </v-row>
+    </template>
 
   <!-- Replace v-table with EasyDataTable -->
     <EasyDataTable
         :headers="headers"
-        :items="store.unites"
+        :items="filteredUnits"
         :loading="loading"
         :theme-color="themeColor"
         table-class-name="customize-table"
