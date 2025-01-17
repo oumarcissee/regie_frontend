@@ -149,6 +149,7 @@ const count = ref(0);
 const pError = ref();
 
 // Modifier la fonction submit
+let submitFormData = new FormData();
 
 const submit = handleSubmit(async (values, { setErrors }: any ) => {
     
@@ -158,7 +159,6 @@ const submit = handleSubmit(async (values, { setErrors }: any ) => {
         errors.nameError = null
         errors.shortNameError = null
 
-        const submitFormData = new FormData();
         
         submitFormData.append('name', values.name);
         submitFormData.append('short_name', values.short_name);
@@ -195,6 +195,7 @@ const submit = handleSubmit(async (values, { setErrors }: any ) => {
         // showNotification('Erreur lors de l\'opération', 'error');
     } finally {
         isLoading.value = false;
+        handleReset();
     }
 });
 
@@ -312,7 +313,7 @@ const headers = [
         </v-col>
         <v-col cols="6" lg="8" md="6" class="text-right">
 
-            <v-dialog v-model="dialog" max-width="800">
+            <v-dialog v-model="dialog" max-width="800" persistent>
                 <template v-slot:activator="{ props }">
                     <v-btn color="primary" v-bind="props" flat class="ml-auto">
                         <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Ajouter une unite/service

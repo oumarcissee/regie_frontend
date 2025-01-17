@@ -182,7 +182,7 @@ const sidebarItemManagerA: menu[] = [
                 icon: UserPlusIcon,
                 chipColor: 'surface',
                 chipBgColor: 'secondary',
-                to: '/rut/save/area'
+                to: '/rut/save/areas'
             },
         ]
 

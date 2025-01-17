@@ -68,8 +68,8 @@ const ManagerARoutes = {
 
         {
             name: 'Sous-Regions',
-            path: '/rut/save/area',
-            component: () => import('@/views/rut/settings/SettingsDashboard.vue'),
+            path: '/rut/save/areas',
+            component: () => import('@/views/rut/areas/SubAreaList.vue'),
         },
 
 

@@ -1,80 +1,53 @@
 import { defineStore } from 'pinia';
-// project imports
 import { isAxiosError, currentMonth ,showNotification } from '@/services/utils';
-
-// import { router } from '@/router';
 
 import ApiAxios from '@/services/ApiAxios';
 import Swal from 'sweetalert2'
 
-import fr from 'date-fns/locale/fr';
-import { format } from 'date-fns';
-import { da } from 'date-fns/locale';
 import { ref } from 'vue';
-const locale = fr; // or en, or es
 
-export const useUnitStore = defineStore({
-    id: 'unitStore',
+export const useSubAreStore = defineStore({
+    id: 'subAreaStore',
     state: () => ({
-        url: 'unites',
-        categroy: 'unit',
-        unites: [] as any,
-        areas: [] as any,
-        months: [] as any,
+        url: 'subareas',
+        lineUrl: 'line-sub-area',
+        sub_areas: [] as any,
+        
         dialog: false,
 
         errors : ref({
             nameError: null,
             nameText: null,
-            
-            shortNameError: null,
-            shortNameText: null
+
         })
     
     }),
     getters: {
         getUnites(state) {
-            return state.unites;
+            return state.sub_areas;
         },
-        getMonths(state) {
-            return state.months;
-        }
+        // getMonths(state) {
+        //     return state.months;
+        // }
     },
     actions: {
-
-        async fetchAllAreas() {
-            try {
-                const response = await new ApiAxios().find(`/${this.url}/`);
-                // Formater les données pour EasyDataTable
-                this.areas = response.data.results;
-                console.log(this.areas);
-                return true;
-
-            } catch (error) {
-                console.log(error);
-                return false;
-            }
-        },
     
-        async fetchUnites() {
+        async fetchSoubArea() {
             try {
                 const response = await new ApiAxios().find(`/${this.url}/`);
         
                 // Formater les données pour EasyDataTable
-                this.unites = (response?.data?.results || []).map((unite: any) => ({
-                    ref: unite.ref || 'N/A',
-                    short_name: unite.short_name || unite.name || 'N/A',
-                    name: unite.name || 'N/A',
-                    area: unite.area || 'N/A',
-                    type_of_unit: unite.type_of_unit || 'N/A',
-                    effective: unite.effective || 0,
-                    g_staff: unite.g_staff || 'N/A',
-                    description: unite.description || 'Aucune description',
-                    created_at: unite.created_at || null,
-                    modified_at: unite.modified_at || null,
+                this.sub_areas = (response?.data?.results || []).map((item: any) => ({
+                    ref: item.ref || 'N/A',
+                    name: item.name || 'N/A',
+                    area: item.area || 'N/A',
                    
-                    actions: unite,
-                    raw: unite // Keep raw data for actions
+                    created_at: item.created_at || null,
+                    modified_at: item.modified_at || null,
+                    description: item.description || 'Aucune description',
+                    
+                    actions: item,
+                    raw: item // Keep raw data for actions
                 }));
                 return true;
 
@@ -85,7 +58,7 @@ export const useUnitStore = defineStore({
         },
 
         //Ajout d'un élement
-        async addOrUpdateUnit(data: FormData, param?: any) {
+        async addOrUpdateSubArea(data: FormData, param?: any) {
             try {
                 if (param) {
                     const response = await new ApiAxios().updatePartialForm(`/${this.url}/${param}/`, data, param);
@@ -108,10 +81,7 @@ export const useUnitStore = defineStore({
                             this.errors.nameError = responseData.name ? responseData.name[0] : null;
                             this.errors.nameText = data.get('name')
 
-                            this.errors.shortNameError = responseData.short_name ? responseData.short_name[0] : null;
-                            this.errors.shortNameText = data.get('short_name');
-
-                            
+            
                             // Retourner un objet d'erreur personnalisé
                             return Promise.reject({
                                 type: 'DUPLICATE_ERROR',
@@ -152,7 +122,7 @@ export const useUnitStore = defineStore({
                             icon: "success"
                         });
                         //
-                        this.unites = this.unites?.filter((user: any) => user.id !== item.id);
+                        this.sub_areas = this.sub_areas?.filter((user: any) => user.id !== item.id);
                         return true;
                     } catch (error) {
                         console.log(error);
