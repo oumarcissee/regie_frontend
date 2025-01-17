@@ -67,6 +67,7 @@ export const useUnitStore = defineStore({
                     name: unite.name || 'N/A',
                     area: unite.area || 'N/A',
                     type_of_unit: unite.type_of_unit || 'N/A',
+                    category: unite.category || 'N/A',
                     effective: unite.effective || 0,
                     g_staff: unite.g_staff || 'N/A',
                     description: unite.description || 'Aucune description',

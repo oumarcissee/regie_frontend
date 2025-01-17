@@ -372,13 +372,15 @@ const get_category_of_unite = (categroy: string, type = false) => {
   if (type) {
       switch (categroy) {
       case 'unit':return "UNITES TERRITORIALES";
-      case 'school': return  "CENTRE DES FORMATIONS & OPEX";
+        case 'school': return "CENTRE DES FORMATIONS & OPEX";
+        case 'service': return  "SERVICE";
       default: return "ERREUR";
     } 
   } else {
     switch (categroy) {
       case 'unit':return "UNITE";
-      case 'school': return  "ECOLE";
+      case 'school': return "ECOLE";
+      case 'service': return  "SERVICE";
       default: return "ERREUR";
     } 
 

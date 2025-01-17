@@ -278,20 +278,6 @@ const Preview = (item: any) => {
     openPrintPreview();
 };
 
-const printContent = () => {
-    const printDiv = document.getElementById('printableArea');
-    if (!printDiv) return;
-    
-    const newWin = window.open('');
-    if (!newWin) return;
-    
-    newWin.document.write('<html><head><title>Print</title></head><body>');
-    newWin.document.write(printDiv.outerHTML);
-    newWin.document.write('</body></html>');
-    newWin.document.close();
-    newWin.print();
-    newWin.close();
-};
 
 
 // PDF methods
@@ -362,7 +348,7 @@ const loading = ref(false);
             v-model="searchValue" 
             label="Rechercher une commande" 
             variant="outlined"
-            placeholder="Entrez un nom..."
+            placeholder="Entrez un nom le libéllé"
             prepend-inner-icon="mdi-magnify"
             clearable
             class="flex-grow-1"

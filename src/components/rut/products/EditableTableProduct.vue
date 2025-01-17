@@ -596,7 +596,9 @@ const headers = [
 
     <!-- Add the View Dialog -->
     <!-- Remplacez le dialogue de visualisation existant par celui-ci -->
-    <v-dialog v-model="viewDialog" max-width="900">
+    <v-dialog v-model="viewDialog" fullscreen   
+      :scrim="false"
+      transition="dialog-bottom-transition">
         <v-card>
             <v-card-title class="pa-4 bg-success d-flex align-center justify-space-between">
                 <span class="title text-white">Détails de l'article</span>

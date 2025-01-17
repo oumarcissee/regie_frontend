@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
-import { truncateText ,notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas} from '@/services/utils';
+import { truncateText ,notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite} from '@/services/utils';
 import fr from 'date-fns/locale/fr';
 import { format } from 'date-fns';
 
@@ -57,6 +57,10 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             if (value) return true;
             return "Choisissez un type.";
         },
+         category(value: string | any[]) {
+            if (value) return true;
+            return "Choisissez une categorie.";
+        },
         g_staff(value: string | any[]) {
             if (value) return true;
             return "Choisissez un Etat-Major.";
@@ -104,6 +108,12 @@ const type_of_unites = ref([
     // { title: '4eme RM', value: 'single' }
 ]);
 
+const category_of = ref([
+    { title: 'UNITE', value: 'unit' },
+    { title: 'SERVICE', value: 'service' },
+    // { title: 'ECOLE', value: 'school' }
+]);
+
 
 onMounted(async () => {
     isLoading.value = true;
@@ -112,11 +122,8 @@ onMounted(async () => {
 });
 
 
-
-
-
 // Add type filter
-const typeFilter = ref('');
+const typeFilter = ref('current');
 const filteredUnits = computed(() => {
     let units = store.unites;
     
@@ -160,6 +167,7 @@ const closeViewDialog = () => {
 const name          = useField('name');
 const short_name    = useField('short_name');
 const g_staff       = useField('g_staff');
+const category      = useField('category');
 const area          = useField('area');
 const effective     = useField('effective');
 const type_of_unit  = useField('type_of_unit');
@@ -187,7 +195,7 @@ const submit = handleSubmit(async (values, { setErrors }: any ) => {
         submitFormData.append('area', values.area);
         submitFormData.append('type_of_unit', values.type_of_unit);
         submitFormData.append('effective', values.effective);
-        submitFormData.append('category', 'unit'); // Categorie de l'unité
+        submitFormData.append('category', values.category); // Categorie de l'unité
         submitFormData.append('description', values.description);
       
         isLoading.value = true;
@@ -309,7 +317,7 @@ const headers = [
     { text: "Réf", value: "ref", sortable:true},
     { text: "Unité", value: "short_name" , sortable:true},
     { text: "Région", value: "area", sortable:true },
-    { text: "Type", value: "type_of_unit", sortable: true },
+    { text: "Type", value: "category", sortable: true },
     { text: "Crée le", value: "created_at",sortable:true},
     { text: "Effectif", value: "effective",sortable:true},
     { text: "Actions", value: "actions"}
@@ -384,7 +392,7 @@ const headers = [
                                         </v-text-field>
                                     </v-col>
 
-                                    <v-col cols="12" sm="12">
+                                    <v-col cols="12" sm="6">
                                         <v-text-field
                                             placeholder="nom abrégé"
                                             variant="outlined"
@@ -393,6 +401,19 @@ const headers = [
                                             label="Libéllé abrégé"
                                         >
                                         </v-text-field>
+                                    </v-col>
+
+                                    <v-col cols="12" sm="6">
+                                        <v-select
+                                            label="Type"
+                                            :items="category_of"
+                                            @update:modelValue="changed"
+                                            single-line
+                                            variant="outlined"
+                                            v-model="category.value.value"
+                                            :error-messages="category.errorMessage.value"
+                                        >
+                                        </v-select>
                                     </v-col>
                                 
                                     <v-col cols="12" sm="6">
@@ -502,11 +523,10 @@ const headers = [
             </div>
         </template>
         <!-- Custom template for Article column -->
-        <template #item-type_of_unit="{ type_of_unit }">
+        <template #item-category="{ category }">
             <div class="d-flex align-center">
                 <div class="ml-5">
-                    <h4 class="text-h6 font-weight-semibold">{{ get_unite_type(type_of_unit)}}</h4>
-                   
+                    <h4 class="text-h6 font-weight-semibold">{{ get_category_of_unite(category)}}</h4>
                 </div>
             </div>
         </template>

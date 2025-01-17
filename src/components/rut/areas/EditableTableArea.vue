@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 const itemsSelected = ref<Item[]>([]);
-const searchField = ref(['ref', 'item.name']);
+const searchField = ref(['ref', 'name']);
 const searchValue = ref('');
 import { EyeIcon } from 'lucide-vue-next';
 
