@@ -2,8 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
 import { truncateText ,notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite} from '@/services/utils';
-import fr from 'date-fns/locale/fr';
-import { format } from 'date-fns';
+
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 const itemsSelected = ref<Item[]>([]);
@@ -16,7 +15,6 @@ import { EyeIcon } from 'lucide-vue-next';
 const viewDialog = ref(false);
 const selectedUnited = ref(null);
 
-const locale = fr; // or en, or es
 const isLoading = ref(false);
 const error = ref<string | null>(null);
 
@@ -25,7 +23,6 @@ import { useField, useForm } from 'vee-validate';
 
 import type { Items } from '@/types/rut/SignatorType';
 
-import contact from '@/_mockApis/apps/contact';
 import type { Item } from 'vue3-easy-data-table';
 
 
