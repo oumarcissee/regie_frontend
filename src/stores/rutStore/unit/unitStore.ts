@@ -63,12 +63,14 @@ export const useUnitStore = defineStore({
                 // Formater les données pour EasyDataTable
                 this.unites = (response?.data?.results || []).map((unite: any) => ({
                     ref: unite.ref || 'N/A',
-                    short_name: unite.short_name || unite.name || 'N/A',
+                    short_name: unite.short_name  || 'N/A',
                     name: unite.name || 'N/A',
                     area: unite.area || 'N/A',
+                    image: unite.image ,
                     type_of_unit: unite.type_of_unit || 'N/A',
                     category: unite.category || 'N/A',
                     effective: unite.effective || 0,
+                    status: unite.status || 0,
                     g_staff: unite.g_staff || 'N/A',
                     description: unite.description || 'Aucune description',
                     created_at: unite.created_at || null,
@@ -97,7 +99,7 @@ export const useUnitStore = defineStore({
                 return true;
             } catch (error: any) {
                 // Vérification du type d'erreur
-                // console.log(error)
+                console.log(error)
                 if (error.response) {
                     // Si c'est une erreur de doublon (généralement code 400 ou 409)
                     if (error.response.status === 400 || error.response.status === 409) {

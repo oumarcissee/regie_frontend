@@ -43,28 +43,6 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             }
             return true;
         },
-         imag(value: File[] | null) {
-    
-
-            // Pour la modification d'un article existant
-            if (value && Array.isArray(value) && value.length > 0) {
-                const file = value[0];
-                if (!file.type || !file.type.startsWith('image/')) {
-                    return 'Le fichier sélectionné doit être une image';
-                }
-                // console.log("C'est une image", file.size,"+", 1 * 1024 * 1024);
-                // Vérifie la taille de l'image
-                const maxSize = 2 * 1024 * 1024; // 5MB
-                if (file.size > maxSize) {
-                    return "L'image ne doit pas dépasser 2MB";
-                }
-
-                return true;
-            }
-
-            // Si aucune nouvelle image n'est sélectionnée en mode édition, c'est OK
-            return true;
-        },
 
         short_name(value: string | any[]) {
             if (value?.length <= 2 || !value) {
@@ -144,7 +122,6 @@ onMounted(async () => {
 });
 
 
-
 // Add type filter
 const typeFilter = ref('current');
 const filteredUnits = computed(() => {
@@ -188,31 +165,13 @@ const closeViewDialog = () => {
 
 
 const name          = useField('name');
-const imag          = useField('imag');
 const short_name    = useField('short_name');
 const g_staff       = useField('g_staff');
 const category      = useField('category');
 const area          = useField('area');
 const effective     = useField('effective');
 const type_of_unit  = useField('type_of_unit');
-const description   = useField('description');
-
-const image = ref<File[] | null>(null);
-const { errorMessage } = useField('imag'); // On conserve uniquement le message d'erreur
-
-
-function setImage(event: Event) {
-    // image.value = null;
-    const target = event.target as HTMLInputElement;
-    const files = target.files;
-
-    if (files && files[0]?.type.startsWith('image/')) {
-        image.value = Array.from(files);
-        imag.value.value = [...Array.from(files)];
-
-    }
-}
-
+const description = useField('description');
 
 
 const count = ref(0);
@@ -238,9 +197,6 @@ const submit = handleSubmit(async (values, { setErrors }: any ) => {
         submitFormData.append('effective', values.effective);
         submitFormData.append('category', values.category); // Categorie de l'unité
         submitFormData.append('description', values.description);
-
-        if(values.imag)
-            submitFormData.append('image', values.imag[0]);
       
         isLoading.value = true;
         error.value = null;
@@ -436,18 +392,6 @@ const headers = [
                                         </v-text-field>
                                     </v-col>
 
-                                     <v-col cols="12" sm="12">
-                                        <v-file-input
-                                        chips
-                                        label="Importer une image"
-                                        variant="outlined"
-                                        accept=".jpeg,.jpg,.png"
-                                        v-model="image"
-                                        :error-messages="errorMessage"
-                                        @change="setImage"
-                                    ></v-file-input>
-                                    </v-col>
-
                                     <v-col cols="12" sm="6">
                                         <v-text-field
                                             placeholder="nom abrégé"
@@ -463,6 +407,7 @@ const headers = [
                                         <v-select
                                             label="Type"
                                             :items="category_of"
+                                            @update:modelValue="changed"
                                             single-line
                                             variant="outlined"
                                             v-model="category.value.value"
@@ -643,11 +588,10 @@ const headers = [
 
 <!-- Add the View Dialog -->
    <!-- Remplacez le dialogue de visualisation existant par celui-ci -->
-
-  <template>
+<template>
   <v-dialog v-model="viewDialog" fullscreen
       :scrim="false"
-      transition="dialog-bottom-transition">
+      transition="dialog-bottom-transition" >
     <v-card>
       <v-card-title class="pa-4 bg-primary d-flex align-center justify-space-between">
         <span class="text-h5 text-white">Détails de l'unité</span>
@@ -657,47 +601,12 @@ const headers = [
       <v-card-text class="pa-4" v-if="selectedUnited">
         <v-container fluid>
           <v-row>
-            <!-- Section Image agrandie -->
-            <v-col cols="12" class="mb-4">
-              <v-card elevation="2">
-                <v-card-text class="text-center">
-                  <h3 class="text-h5 mb-4">Image de l'unité</h3>
-                  <div v-if="selectedUnited.image" class="d-flex justify-center">
-                    <v-img
-                      :src="`${selectedUnited.image}`"
-                      max-height="500"
-                      max-width="800"
-                      cover
-                      class="rounded-lg"
-                    >
-                      <template v-slot:placeholder>
-                        <v-row class="fill-height ma-0" align="center" justify="center">
-                          <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                        </v-row>
-                      </template>
-                    </v-img>
-                  </div>
-                  <v-alert v-else type="info" variant="tonal" class="mt-2">
-                    Aucune image disponible pour cette unité
-                  </v-alert>
-                </v-card-text>
-              </v-card>
-            </v-col>
-
-            <!-- Informations détaillées -->
+            <!-- Informations principales -->
             <v-col cols="12" md="6">
               <v-card class="mb-4" elevation="2">
                 <v-card-text>
                   <h3 class="text-h5 mb-4">Informations principales</h3>
                   <v-list density="comfortable">
-                    <v-list-item>
-                      <template v-slot:prepend>
-                        <v-icon color="primary" size="large">mdi-identifier</v-icon>
-                      </template>
-                      <v-list-item-title class="text-body-1 font-weight-medium">ID</v-list-item-title>
-                      <v-list-item-subtitle class="text-subtitle-1">{{ selectedUnited.id }}</v-list-item-subtitle>
-                    </v-list-item>
-
                     <v-list-item>
                       <template v-slot:prepend>
                         <v-icon color="primary" size="large">mdi-identifier</v-icon>
@@ -721,14 +630,6 @@ const headers = [
                       <v-list-item-title class="text-body-1 font-weight-medium">Nom abrégé</v-list-item-title>
                       <v-list-item-subtitle class="text-subtitle-1">{{ selectedUnited.short_name }}</v-list-item-subtitle>
                     </v-list-item>
-
-                    <v-list-item>
-                      <template v-slot:prepend>
-                        <v-icon color="primary" size="large">mdi-shape</v-icon>
-                      </template>
-                      <v-list-item-title class="text-body-1 font-weight-medium">Type</v-list-item-title>
-                      <v-list-item-subtitle class="text-subtitle-1">{{ selectedUnited.type_of_unit }} - {{ get_unite_type(selectedUnited.type_of_unit) }}</v-list-item-subtitle>
-                    </v-list-item>
                   </v-list>
                 </v-card-text>
               </v-card>
@@ -745,9 +646,7 @@ const headers = [
                         <v-icon color="success" size="large">mdi-army</v-icon>
                       </template>
                       <v-list-item-title class="text-body-1 font-weight-medium">État-Major</v-list-item-title>
-                      <v-list-item-subtitle class="text-subtitle-1">
-                        {{ selectedUnited.g_staff }} - {{ get_staffs(selectedUnited.g_staff) }}
-                      </v-list-item-subtitle>
+                      <v-list-item-subtitle class="text-subtitle-1">{{ get_staffs(selectedUnited.g_staff, true) }}</v-list-item-subtitle>
                     </v-list-item>
 
                     <v-list-item>
@@ -755,9 +654,7 @@ const headers = [
                         <v-icon color="success" size="large">mdi-map-marker</v-icon>
                       </template>
                       <v-list-item-title class="text-body-1 font-weight-medium">Région Militaire</v-list-item-title>
-                      <v-list-item-subtitle class="text-subtitle-1">
-                        {{ selectedUnited.area }} - {{ get_areas(selectedUnited.area) }}
-                      </v-list-item-subtitle>
+                      <v-list-item-subtitle class="text-subtitle-1">{{ get_areas(selectedUnited.area, true) }}</v-list-item-subtitle>
                     </v-list-item>
 
                     <v-list-item>
@@ -767,58 +664,39 @@ const headers = [
                       <v-list-item-title class="text-body-1 font-weight-medium">Effectif</v-list-item-title>
                       <v-list-item-subtitle class="text-subtitle-1">{{ selectedUnited.effective }}</v-list-item-subtitle>
                     </v-list-item>
-
-                    <v-list-item>
-                      <template v-slot:prepend>
-                        <v-icon color="success" size="large">mdi-format-list-checks</v-icon>
-                      </template>
-                      <v-list-item-title class="text-body-1 font-weight-medium">Catégorie</v-list-item-title>
-                      <v-list-item-subtitle class="text-subtitle-1">
-                        {{ selectedUnited.category }} - {{ get_category_of_unite(selectedUnited.category) }}
-                      </v-list-item-subtitle>
-                    </v-list-item>
                   </v-list>
                 </v-card-text>
               </v-card>
             </v-col>
 
-            <!-- Dates et métadonnées -->
-            <v-col cols="12" md="6">
-              <v-card elevation="2">
-                <v-card-text>
-                  <h3 class="text-h5 mb-4">Métadonnées</h3>
-                  <v-list density="comfortable">
-                    <v-list-item>
-                      <template v-slot:prepend>
-                        <v-icon color="info" size="large">mdi-calendar-plus</v-icon>
-                      </template>
-                      <v-list-item-title class="text-body-1 font-weight-medium">Créé le</v-list-item-title>
-                      <v-list-item-subtitle class="text-subtitle-1">{{ formatDate(selectedUnited.created_at) }}</v-list-item-subtitle>
-                    </v-list-item>
-
-                    <v-list-item>
-                      <template v-slot:prepend>
-                        <v-icon color="info" size="large">mdi-calendar-edit</v-icon>
-                      </template>
-                      <v-list-item-title class="text-body-1 font-weight-medium">Modifié le</v-list-item-title>
-                      <v-list-item-subtitle class="text-subtitle-1">{{ formatDate(selectedUnited.modified_at) }}</v-list-item-subtitle>
-                    </v-list-item>
-                  </v-list>
-                </v-card-text>
-              </v-card>
-            </v-col>
-
-            <!-- Description -->
+            <!-- Dates et description -->
             <v-col cols="12">
               <v-card elevation="2">
                 <v-card-text>
-                  <h3 class="text-h5 mb-4">
-                    <v-icon color="deep-purple" size="large" class="mr-2">mdi-text-box</v-icon>
-                    Description
-                  </h3>
-                  <v-card class="pa-4 bg-grey-lighten-4">
-                    <p class="text-body-1">{{ selectedUnited.description || 'Aucune description disponible' }}</p>
-                  </v-card>
+                  <h3 class="text-h5 mb-4">Informations complémentaires</h3>
+                  
+                  <div class="d-flex mb-4">
+                    <div class="flex-grow-1">
+                      <v-icon color="info" size="large">mdi-calendar</v-icon>
+                      <span class="ml-2 text-subtitle-1">Créé le: {{ formatDate(selectedUnited.created_at) }}</span>
+                    </div>
+                    <div>
+                      <v-icon color="warning" size="large">mdi-calendar-clock</v-icon>
+                      <span class="ml-2 text-subtitle-1">Modifié le: {{ formatDate(selectedUnited.modified_at) }}</span>
+                    </div>
+                  </div>
+
+                  <v-divider class="mb-4"></v-divider>
+
+                  <div>
+                    <div class="text-h6 font-weight-bold mb-2">
+                      <v-icon color="deep-purple" size="large">mdi-text-box</v-icon>
+                      <span class="ml-2">Description</span>
+                    </div>
+                    <v-card class="pa-4 bg-grey-lighten-4">
+                      <p class="text-body-1">{{ selectedUnited.description || 'Aucune description disponible' }}</p>
+                    </v-card>
+                  </div>
                 </v-card-text>
               </v-card>
             </v-col>
@@ -828,7 +706,6 @@ const headers = [
     </v-card>
   </v-dialog>
 </template>
-
 
     <!-- Snackbar pour les notifications -->
     <v-snackbar
@@ -877,24 +754,14 @@ const headers = [
 </template>
 
 <style scoped>
+/* ... (previous styles remain the same) */
+/* .v-list-item-title {
+    color: rgba(0, 0, 0, 0.87);
+}
+
 .v-list-item-subtitle {
-  white-space: normal !important;
-  overflow: visible;
-  text-overflow: unset;
-  word-wrap: break-word;
-}
-
-.v-img {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.v-card {
-  transition: all 0.3s ease;
-}
-
-.v-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 1rem;
+    margin-top: 4px;
+} */
 </style>

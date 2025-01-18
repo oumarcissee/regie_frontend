@@ -72,6 +72,12 @@ const ManagerARoutes = {
             component: () => import('@/views/rut/areas/SubAreaList.vue'),
         },
 
+        {
+            name: 'Boredereaux',
+            path: '/rut/boredereaux',
+            component: () => import('@/views/rut/discharge/DischargeList.vue'),
+        },
+
 
         
        
