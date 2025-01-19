@@ -12,6 +12,9 @@ export default defineConfig({
             styles: { configFile: 'src/scss/variables.scss' }
         })
     ],
+    define: {
+        __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false'
+    },
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url)),

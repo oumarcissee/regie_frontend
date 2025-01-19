@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
+import { useDischargeStore } from '@/stores/rutStore/discharge/dischargeStore';
 import { truncateText ,notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite} from '@/services/utils';
 
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 const itemsSelected = ref<Item[]>([]);
 const searchField = ref(['name', 'type_of_unit']);
+const printPreviewDialog = ref(false);
 
 const searchValue = ref('');
 import { EyeIcon } from 'lucide-vue-next';
@@ -26,8 +27,8 @@ import type { Items } from '@/types/rut/SignatorType';
 import type { Item } from 'vue3-easy-data-table';
 
 
-const { addOrUpdateUnit, errors, getUnites, fetchUnites } = useUnitStore();
-const store = useUnitStore();
+const { addOrUpdateUnit, errors, } = useDischargeStore();
+const store = useDischargeStore();
 
 
 const { handleSubmit, handleReset, isSubmitting } = useForm({
@@ -122,7 +123,7 @@ onMounted(async () => {
 // Add type filter
 const typeFilter = ref('current');
 const filteredUnits = computed(() => {
-    let units = store.unites;
+    let units = store.boredereaux;
     
     // Filter by type if a type is selected
     if (typeFilter.value) {
@@ -229,9 +230,9 @@ const submit = handleSubmit(async (values, { setErrors }: any ) => {
 const refreshTable = async () => {
     try {
         loading.value = true;
-        await store.fetchUnites();
+        await store.fetcDischarge();
         // Forcer la réactivité en créant une nouvelle référence
-        store.unites = [...store.unites];
+        store.boredereaux = [...store.boredereaux];
     } catch (error) {
         console.error('Erreur lors du rafraîchissement :', error);
         showNotification('Erreur lors du rafraîchissement des données', 'error');
@@ -278,6 +279,12 @@ const editItem = (item: any) => {
     dialog.value = true;
 };
 
+// PDF related methods
+const openPrintPreview = () => {
+    printPreviewDialog.value = true;
+};
+
+
 
 
 // Modifier la fonction remove pour gérer le loading state
@@ -300,7 +307,7 @@ const remove = async (index: any) => {
 
 //Computed Property
 const formTitle = computed(() => {
-    return editedIndex.value === -1 ? 'Nouvelle Unite/service' : 'Editer un Unite/service';
+    return editedIndex.value === -1 ? 'Nouveau Bordereaux' : 'Editer un Bordereau';
 });
 
 //Computed Property
@@ -352,13 +359,18 @@ const headers = [
         ></v-select>
 
         <!-- Bouton d'ajout -->
-        <v-btn 
+       <v-btn 
+            v-if="!itemsSelected.length"
             color="primary" 
             prepend-icon="mdi-account-multiple-plus"
             @click="dialog = true"
             class="ml-auto"
         >
-            Ajouter une unite/service
+            Ajouter un boredereau
+        </v-btn>
+
+        <v-btn v-else="itemsSelected.length" icon variant="text" @click="openPrintPreview()" flat class="ml-auto">
+            <PrinterIcon size="20" />
         </v-btn>
     </div>
 
@@ -377,7 +389,7 @@ const headers = [
 
                         <v-card-text>
                             <v-form ref="form" v-model="valid" @submit.prevent="submit">
-                                <v-row>
+                                <!-- <v-row>
                                     <v-col cols="12" sm="12">
                                         <v-text-field
                                             placeholder="Saisissez le nom en integralité"
@@ -474,8 +486,126 @@ const headers = [
                                             :error-messages="description.errorMessage.value"
                                         ></VTextarea>
                                     </v-col>
-                                </v-row>
+                                </v-row> -->
                             
+                                <!-- <v-row>
+                                <v-col cols="12">
+                                    <CustomComBox
+                                        :items="editedIndex === -1 ? providersFiltred : userStore.getProviders"
+                                        label="Selectionner un fournisseur (Client)"
+                                        title="last_name"
+                                        v-model="provider.value.value"
+                                        :error-messages="provider.errorMessage.value"
+                                        :isDisabled="isSelected"
+                                    />
+                                </v-col>
+
+                                <v-col cols="12" sm="6">
+                                    <CustomComBoxProduct
+                                        ref="refProduct"
+                                        :items="useProduct.getProducts"
+                                        label="Selectionner un article"
+                                        title="name"
+                                        v-model="products.value.value"
+                                        :error-messages="products.errorMessage.value"
+                                    />
+                                </v-col>
+                                <v-col cols="12" sm="6">
+                                    <v-row>
+                                        <v-col cols="12" sm="6">
+                                            <v-text-field
+                                                variant="outlined"
+                                                v-model="quantity.value.value"
+                                                :error-messages="quantity.errorMessage.value"
+                                                label="La quantité"
+                                            ></v-text-field>
+                                        </v-col>
+
+                                        <v-col cols="12" sm="6">
+                                            
+                                            <v-btn color="primary" variant="outlined" size="large" block flat @click="productsSubmit">
+                                                Ajouter
+                                            </v-btn>
+                                        </v-col>
+                                    </v-row>
+                                </v-col>
+                                <v-col cols="12">
+                                    <v-switch
+                                        color="primary"
+                                        @update:model-value="getStatus(status)"
+                                        v-model="status"
+                                        label="Statut"
+                                    ></v-switch>
+                                </v-col>
+
+                                <v-col cols="12" sm="12">
+                                    <v-table class="mt-5" id="myTable">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-subtitle-1 font-weight-semibold">N°</th>
+                                               
+                                                <th class="text-subtitle-1 font-weight-semibold">Article</th>
+                                                <th class="text-subtitle-1 font-weight-semibold">Quantité</th>
+                                                <th class="text-subtitle-1 font-weight-semibold">Unité</th>
+
+                                                <th class="text-subtitle-1 font-weight-semibold">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-if="!productSelected">
+                                                <td colspan="4" class="text-subtitle-1 text-center">Aucun article</td>
+                                            </tr>
+                                            <tr v-else v-for="(item, index) in productSelected" :key="index">
+                                                <td class="text-subtitle-1">{{ index + 1 }}</td>
+                                                
+
+                                                <td class="text-subtitle-1">
+                                                    <div class="d-flex align-center py-4">
+                                                        <div class="hoverable">
+                                                            <v-img
+                                                                :lazy-src="item.item?.image"
+                                                                :src="item.item?.image"
+                                                                :title="item.item?.name"
+                                                                width="65px"
+                                                                class="rounded img-fluid"
+                                                            ></v-img>
+                                                        </div>
+
+                                                        <div class="ml-5">
+                                                            <h4 class="text-h6 font-weight-semibold">{{ item.item.name }}</h4>
+                                                            <span class="text-subtitle-1 d-block mt-1 textSecondary">{{
+                                                                truncateText(item.item?.description, 20)
+                                                            }}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                <td class="text-subtitle-1">{{ item.quantity }}</td>
+                                                <td class="text-subtitle-1">{{ get_full_unite(item?.item?.unite) }}</td>
+
+                                                <td>
+                                                    <div class="d-flex align-center">
+                                                        <v-tooltip text="Editer">
+                                                            <template v-slot:activator>
+                                                                <v-btn icon flat @click="editQuantity(item)"
+                                                                    ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
+                                                                /></v-btn>
+                                                            </template>
+                                                        </v-tooltip>
+                                                        <v-tooltip text="Retirer">
+                                                            <template v-slot:activator>
+                                                                <v-btn icon flat @click="remove(item)"
+                                                                    ><TrashIcon stroke-width="1.5" size="20" class="text-error"
+                                                                /></v-btn>
+                                                            </template>
+                                                        </v-tooltip>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </v-table>
+                                </v-col>
+                                </v-row> -->
                             </v-form>
                         </v-card-text>
                         <v-card-actions class="pa-4">
