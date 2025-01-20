@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useDischargeStore } from '@/stores/rutStore/discharge/dischargeStore';
+import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
 import { truncateText ,notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite} from '@/services/utils';
-
+import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBoxUnites.vue';
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 const itemsSelected = ref<Item[]>([]);
@@ -29,60 +30,52 @@ import type { Item } from 'vue3-easy-data-table';
 
 const { addOrUpdateUnit, errors, } = useDischargeStore();
 const store = useDischargeStore();
+const uniteSotre = useUnitStore();
 
 
 const { handleSubmit, handleReset, isSubmitting } = useForm({
     validationSchema: {
-         name(value: string | any[]) {
-            if (value?.length <= 4 || !value) {
-                return 'Le libéllé doit avoir au moins 4 lettres.';
-            } else if (store.errors.nameError && store.errors.nameText === value) { // Utiliser store.errors au lieu de errors
-                return store.errors.nameError;
-            }
-            return true;
-        },
-
-        short_name(value: string | any[]) {
-            if (value?.length <= 2 || !value) {
-                return 'Le libéllé doit avoir au moins 2 lettres.';
-            } else if (store.errors.shortNameError && store.errors.shortNameText === value) { // Même chose ici
-                return store.errors.shortNameError;
-            }
-            return true;
-        },
-
-        type_of_unit(value: string | any[]) {
+        
+        unites(value: string | any[]) {
             if (value) return true;
-            return "Choisissez un type.";
+            return "Séléctionner une unité.";
         },
-         category(value: string | any[]) {
+        items(value: string | any[]) {
             if (value) return true;
-            return "Choisissez une categorie.";
-        },
-        g_staff(value: string | any[]) {
-            if (value) return true;
-            return "Choisissez un Etat-Major.";
-        },
-
-        area(value: string | any[]) {
-            if (value) return true;
-            return "Choisissez une Region-Militaire.";
-        },
-
-        effective(value: string | any[]) {
-            if (!/^[0-9]*[1-9][0-9]*$/.test(value as any)) {
-                // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
-                return "Entrer l'effectif de l'unité";
-            }
-            return true;
-        },
-
-        description(value: string | any[]) {
-            if (value) return true;
-            return true;
+            return "Séléctionner une unité.";
         }
+    //     g_staff(value: string | any[]) {
+    //         if (value) return true;
+    //         return "Choisissez un Etat-Major.";
+    //     },
+
+    //     area(value: string | any[]) {
+    //         if (value) return true;
+    //         return "Choisissez une Region-Militaire.";
+    //     },
+
+    //     effective(value: string | any[]) {
+    //         if (!/^[0-9]*[1-9][0-9]*$/.test(value as any)) {
+    //             // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
+    //             return "Entrer l'effectif de l'unité";
+    //         }
+    //         return true;
+    //     },
+
+    //     description(value: string | any[]) {
+    //         if (value) return true;
+    //         return true;
+    //     }
     }
 });
+
+
+const unites        = useField('unites');
+const items         = useField('items');
+// const offset        = useField('offset');
+// const menus         = useField('menus');
+
+
 
 
 const g_staffs = ref([
@@ -115,6 +108,8 @@ const category_of = ref([
 
 onMounted(async () => {
     isLoading.value = true;
+    await uniteSotre.fetchUnites();
+    console.log(uniteSotre.unites);
     await refreshTable();
     isLoading.value = false;
 });
@@ -161,15 +156,6 @@ const closeViewDialog = () => {
     selectedUnited.value = null;
 };
 
-
-const name          = useField('name');
-const short_name    = useField('short_name');
-const g_staff       = useField('g_staff');
-const category      = useField('category');
-const area          = useField('area');
-const effective     = useField('effective');
-const type_of_unit  = useField('type_of_unit');
-const description = useField('description');
 
 
 const count = ref(0);
@@ -268,13 +254,15 @@ function close() {
 const editItem = (item: any) => {
     editedIndex.value = item.id;
     // Remplir le formulaire avec les donnéeses
-    name.value.value = item.name;
-    short_name.value.value = item.short_name;
-    g_staff.value.value = item.g_staff;
-    area.value.value = item.area;
-    effective.value.value = item.effective;
-    type_of_unit.value.value = item.type_of_unit;
-    description.value.value = item.description;
+    unites.value.value = item.unites;
+    items.value.value  = item.items;
+     
+    // short_name.value.value = item.short_name;
+    // g_staff.value.value = item.g_staff;
+    // area.value.value = item.area;
+    // effective.value.value = item.effective;
+    // type_of_unit.value.value = item.type_of_unit;
+    // description.value.value = item.description;
 
     dialog.value = true;
 };
@@ -328,6 +316,36 @@ const headers = [
 ];
 
 
+const unitesFiltred = computed(() => {
+    return uniteSotre.unites
+});
+
+
+// Add new ref for selected unite details
+const selectedUniteDetails = ref(null);
+
+// Update the unitedChanged function to handle selection
+const unitedChanged = (value: any) => {
+    if (!value) {
+        selectedUniteDetails.value = null;
+        return;
+    }
+    console.log(value);
+    
+    // Find the selected unite in the unites array
+    const selectedUnite = uniteSotre.unites.find((unite: { id: any; }) => unite.id === value.id);
+    if (selectedUnite) {
+        selectedUniteDetails.value = selectedUnite;
+        
+        // Update the form fields with the selected unite's details
+        items.value.value = []; // Reset items if needed
+        
+        // You might want to trigger other actions here
+        // console.log('Selected unite details:', selectedUniteDetails.value);
+    }
+};
+
+
 
 </script>
 <template>
@@ -374,13 +392,12 @@ const headers = [
         </v-btn>
     </div>
 
-
     <template >
 
         <v-row class="align-center">
             <!-- Colonne pour le bouton -->
             <v-col cols="12" md="4" class="d-flex justify-end">
-                <v-dialog v-model="dialog" max-width="800" persistent>
+                <v-dialog v-model="dialog" max-width="900" persistent>
                     <v-card>
                         <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
                             <span class="title text-white">{{ formTitle }}</span>
@@ -488,19 +505,20 @@ const headers = [
                                     </v-col>
                                 </v-row> -->
                             
-                                <!-- <v-row>
+                                <v-row>
                                 <v-col cols="12">
                                     <CustomComBox
-                                        :items="editedIndex === -1 ? providersFiltred : userStore.getProviders"
-                                        label="Selectionner un fournisseur (Client)"
-                                        title="last_name"
-                                        v-model="provider.value.value"
-                                        :error-messages="provider.errorMessage.value"
-                                        :isDisabled="isSelected"
+                                        :items="editedIndex === -1 ? unitesFiltred : uniteSotre.unites"
+                                        label="Selecionner une unité"
+                                        title="short_name"
+                                        v-model="unites.value.value"
+                                        :error-messages="unites.errorMessage.value"
+                                        @update:modelValue="unitedChanged"
                                     />
+                                  
                                 </v-col>
 
-                                <v-col cols="12" sm="6">
+                                <!-- <v-col cols="12" sm="6">
                                     <CustomComBoxProduct
                                         ref="refProduct"
                                         :items="useProduct.getProducts"
@@ -509,33 +527,33 @@ const headers = [
                                         v-model="products.value.value"
                                         :error-messages="products.errorMessage.value"
                                     />
-                                </v-col>
+                                </v-col> -->
                                 <v-col cols="12" sm="6">
                                     <v-row>
                                         <v-col cols="12" sm="6">
-                                            <v-text-field
+                                            <!-- <v-text-field
                                                 variant="outlined"
                                                 v-model="quantity.value.value"
                                                 :error-messages="quantity.errorMessage.value"
                                                 label="La quantité"
-                                            ></v-text-field>
+                                            ></v-text-field> -->
                                         </v-col>
 
                                         <v-col cols="12" sm="6">
                                             
-                                            <v-btn color="primary" variant="outlined" size="large" block flat @click="productsSubmit">
+                                            <!-- <v-btn color="primary" variant="outlined" size="large" block flat @click="productsSubmit">
                                                 Ajouter
-                                            </v-btn>
+                                            </v-btn> -->
                                         </v-col>
                                     </v-row>
                                 </v-col>
                                 <v-col cols="12">
-                                    <v-switch
+                                    <!-- <v-switch
                                         color="primary"
                                         @update:model-value="getStatus(status)"
                                         v-model="status"
                                         label="Statut"
-                                    ></v-switch>
+                                    ></v-switch> -->
                                 </v-col>
 
                                 <v-col cols="12" sm="12">
@@ -551,7 +569,7 @@ const headers = [
                                                 <th class="text-subtitle-1 font-weight-semibold">Actions</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <!-- <tbody>
                                             <tr v-if="!productSelected">
                                                 <td colspan="4" class="text-subtitle-1 text-center">Aucun article</td>
                                             </tr>
@@ -587,7 +605,7 @@ const headers = [
                                                     <div class="d-flex align-center">
                                                         <v-tooltip text="Editer">
                                                             <template v-slot:activator>
-                                                                <v-btn icon flat @click="editQuantity(item)"
+                                                                <v-btn icon flat @click=""
                                                                     ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
                                                                 /></v-btn>
                                                             </template>
@@ -602,11 +620,11 @@ const headers = [
                                                     </div>
                                                 </td>
                                             </tr>
-                                        </tbody>
+                                        </tbody> -->
                                     </v-table>
                                 </v-col>
-                                </v-row> -->
-                            </v-form>
+                                </v-row>
+                            </v-form> 
                         </v-card-text>
                         <v-card-actions class="pa-4">
                             <v-btn
@@ -624,6 +642,55 @@ const headers = [
                 </v-dialog>
             </v-col>
         </v-row>
+    </template>
+
+    <template>
+        <!-- Add this after CustomComBox -->
+        <v-expand-transition>
+            <v-card v-if="selectedUniteDetails" class="mt-4 pa-4">
+                <v-row>
+                    <v-col cols="12" md="6">
+                        <h3 class="text-h6 mb-4">Informations de l'unité</h3>
+                        <v-list density="compact">
+                            <v-list-item>
+                                <v-list-item-title>Référence</v-list-item-title>
+                                <v-list-item-subtitle>{{ selectedUniteDetails.ref }}</v-list-item-subtitle>
+                            </v-list-item>
+                            
+                            <v-list-item>
+                                <v-list-item-title>Nom</v-list-item-title>
+                                <v-list-item-subtitle>{{ selectedUniteDetails.name }}</v-list-item-subtitle>
+                            </v-list-item>
+                            
+                            <v-list-item>
+                                <v-list-item-title>Nom abrégé</v-list-item-title>
+                                <v-list-item-subtitle>{{ selectedUniteDetails.short_name }}</v-list-item-subtitle>
+                            </v-list-item>
+                        </v-list>
+                    </v-col>
+                    
+                    <v-col cols="12" md="6">
+                        <h3 class="text-h6 mb-4">Détails supplémentaires</h3>
+                        <v-list density="compact">
+                            <v-list-item>
+                                <v-list-item-title>État-Major</v-list-item-title>
+                                <v-list-item-subtitle>{{ get_staffs(selectedUniteDetails.g_staff) }}</v-list-item-subtitle>
+                            </v-list-item>
+                            
+                            <v-list-item>
+                                <v-list-item-title>Région Militaire</v-list-item-title>
+                                <v-list-item-subtitle>{{ get_areas(selectedUniteDetails.area) }}</v-list-item-subtitle>
+                            </v-list-item>
+                            
+                            <v-list-item>
+                                <v-list-item-title>Effectif</v-list-item-title>
+                                <v-list-item-subtitle>{{ selectedUniteDetails.effective }}</v-list-item-subtitle>
+                            </v-list-item>
+                        </v-list>
+                    </v-col>
+                </v-row>
+            </v-card>
+        </v-expand-transition>
     </template>
 
   <!-- Replace v-table with EasyDataTable -->
