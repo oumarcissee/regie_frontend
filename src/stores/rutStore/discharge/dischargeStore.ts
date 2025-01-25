@@ -13,11 +13,11 @@ import { ref } from 'vue';
 export const useDischargeStore = defineStore({
     id: 'useDischarge',
     state: () => ({
-        url: 'unites',
+        url: 'boredereaux',
         categroy: 'unit',
         boredereaux: [] as any,
         areas: [] as any,
-        months: [] as any,
+        products: [] as any,
         dialog: false,
 
         errors : ref({
@@ -33,11 +33,42 @@ export const useDischargeStore = defineStore({
         getDischarge(state) {
             return state.boredereaux;
         },
-        getMonths(state) {
-            return state.months;
+        getProducts(state) {
+            return state.products;
         }
     },
     actions: {
+         async fetchProducts() {
+            try {
+                const response = await new ApiAxios().find(`/items/`);
+
+               this.products = await response?.data?.results.map((item: any, index: number) => ({
+                    ref: item.ref,
+                    item: {
+                        name: item.name,
+                        image: item.image,
+                        description: item.description,
+                    },
+                    
+                    price: item.price,
+                    unite: item.unite,
+                    choise: item.choise,
+                    quantity: item.quantity,
+                    rate_per_days: item.rate_per_days,
+                    divider: item.divider,
+                    created_at : new Date(item.created_at),
+                    modified_at : new Date(item.modified_at),
+                    actions: item,
+                    raw: item // Keep raw data for actions
+               }).choise = true);
+                console.log(response?.data?.results);
+
+                return this.products;
+            } catch (error) {
+                alert(error);
+                console.log(error);
+            }
+        },
 
         async fetchAllAreas() {
             try {
@@ -53,29 +84,30 @@ export const useDischargeStore = defineStore({
             }
         },
     
-        async fetcDischarge() {
+        async fetchDischarge() {
             try {
                 const response = await new ApiAxios().find(`/${this.url}/`);
-        
+                this.boredereaux = response?.data?.results;
+                console.log(this.boredereaux);
+                
                 // Formater les données pour EasyDataTable
-                this.boredereaux = (response?.data?.results || []).map((unite: any) => ({
-                    ref: unite.ref || 'N/A',
-                    short_name: unite.short_name  || 'N/A',
-                    name: unite.name || 'N/A',
-                    area: unite.area || 'N/A',
-                    image: unite.image ,
-                    type_of_unit: unite.type_of_unit || 'N/A',
-                    category: unite.category || 'N/A',
-                    effective: unite.effective || 0,
-                    status: unite.status || 0,
-                    g_staff: unite.g_staff || 'N/A',
-                    description: unite.description || 'Aucune description',
-                    created_at: unite.created_at || null,
-                    modified_at: unite.modified_at || null,
+                // this.boredereaux = (response?.data?.results || []).map((bor: any) => ({
+                //     ref: bor.ref || 'N/A',
+                //     name: bor.name || 'N/A',
+                //     area: bor.area || 'N/A',
+                //     image: bor.image ,
+                //     type_of_unit: bor.type_of_unit || 'N/A',
+                //     category: bor.category || 'N/A',
+                //     effective: bor.effective || 0,
+                //     status: bor.status || 0,
+                //     g_staff: bor.g_staff || 'N/A',
+                //     description: bor.description || 'Aucune description',
+                //     created_at: bor.created_at || null,
+                //     modified_at: bor.modified_at || null,
                    
-                    actions: unite,
-                    raw: unite // Keep raw data for actions
-                }));
+                //     actions: bor,
+                //     raw: bor // Keep raw data for actions
+                // }));
                 return true;
 
             } catch (error) {

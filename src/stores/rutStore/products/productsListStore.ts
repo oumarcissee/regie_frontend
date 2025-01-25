@@ -39,6 +39,7 @@ export const useProductsList = defineStore({
                     },
                     
                     price: item.price,
+                    choice: item.choice === 'true' ? true : false,
                     rate_per_days: item.rate_per_days,
                     divider: item.divider,
                     created_at : new Date(item.created_at),

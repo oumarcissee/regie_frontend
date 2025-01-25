@@ -41,7 +41,7 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             return "Séléctionner une unité.";
         },
         items(value: string | any[]) {
-            if (value) return true;
+            if (!value) return true;
             return "Séléctionner une unité.";
         }
     //     g_staff(value: string | any[]) {
@@ -72,7 +72,7 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
 
 const unites        = useField('unites');
 const items         = useField('items');
-// const offset        = useField('offset');
+const quantity      = useField('quantity');
 // const menus         = useField('menus');
 
 
@@ -216,7 +216,8 @@ const submit = handleSubmit(async (values, { setErrors }: any ) => {
 const refreshTable = async () => {
     try {
         loading.value = true;
-        await store.fetcDischarge();
+        await store.fetchDischarge();
+        store.fetchProducts();
         // Forcer la réactivité en créant une nouvelle référence
         store.boredereaux = [...store.boredereaux];
     } catch (error) {
@@ -333,10 +334,12 @@ const unitedChanged = (value: any) => {
     console.log(value);
     
     // Find the selected unite in the unites array
-    const selectedUnite = uniteSotre.unites.find((unite: { id: any; }) => unite.id === value.id);
+    const selectedUnite = uniteSotre.unites.find((unite: { short_name: any; }) => unite.short_name === value);
     if (selectedUnite) {
-        selectedUniteDetails.value = selectedUnite;
-        
+        selectedUniteDetails.value 
+        quantity.value.value
+        console.log(selectedUnite);
+                                                                                                                                                                                                                                                                                                                      
         // Update the form fields with the selected unite's details
         items.value.value = []; // Reset items if needed
         
@@ -344,6 +347,17 @@ const unitedChanged = (value: any) => {
         // console.log('Selected unite details:', selectedUniteDetails.value);
     }
 };
+
+const productsHeaders = [
+    { text: 'Article', value: 'item', sortable: true ,width: 200},
+    { text: 'Taux', value: 'rate_per_days', sortable: true,width: 50 },
+    { text: 'Quantité', value: 'quantity', sortable: true ,width: 50 },
+    { text: 'Diviseur', value: 'divider', sortable: true },
+    { text: 'Unité', value: 'unite', sortable: true },
+    { text: 'Rajout', value: 'rate_per_days', sortable: true },
+    { text: 'Type', value: 'rate_per_days', sortable: true },
+    { text: 'Actions', value: 'actions' }
+];
 
 
 
@@ -397,7 +411,8 @@ const unitedChanged = (value: any) => {
         <v-row class="align-center">
             <!-- Colonne pour le bouton -->
             <v-col cols="12" md="4" class="d-flex justify-end">
-                <v-dialog v-model="dialog" max-width="900" persistent>
+                <v-dialog v-model="dialog"  
+                                                        >
                     <v-card>
                         <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
                             <span class="title text-white">{{ formTitle }}</span>
@@ -504,125 +519,147 @@ const unitedChanged = (value: any) => {
                                         ></VTextarea>
                                     </v-col>
                                 </v-row> -->
-                            
                                 <v-row>
-                                <v-col cols="12">
-                                    <CustomComBox
-                                        :items="editedIndex === -1 ? unitesFiltred : uniteSotre.unites"
-                                        label="Selecionner une unité"
-                                        title="short_name"
-                                        v-model="unites.value.value"
-                                        :error-messages="unites.errorMessage.value"
-                                        @update:modelValue="unitedChanged"
-                                    />
-                                  
-                                </v-col>
-
-                                <!-- <v-col cols="12" sm="6">
-                                    <CustomComBoxProduct
-                                        ref="refProduct"
-                                        :items="useProduct.getProducts"
-                                        label="Selectionner un article"
-                                        title="name"
-                                        v-model="products.value.value"
-                                        :error-messages="products.errorMessage.value"
-                                    />
-                                </v-col> -->
-                                <v-col cols="12" sm="6">
-                                    <v-row>
+                                    <v-col cols="12" sm="8" >
+                                        
+                                        <v-col cols="12">
+                                            <CustomComBox
+                                                :items="editedIndex === -1 ? unitesFiltred : uniteSotre.unites"
+                                                label="Selecionner une unité"
+                                                title="short_name"
+                                                v-model="unites.value.value"
+                                                :error-messages="unites.errorMessage.value"
+                                                @update:modelValue="unitedChanged"
+                                            />
+                                        
+                                        </v-col>
+    
+                                        <!-- <v-col cols="12" sm="6">
+                                            <CustomComBoxProduct
+                                                ref="refProduct"
+                                                :items="useProduct.getProducts"
+                                                label="Selectionner un article"
+                                                title="name"
+                                                v-model="products.value.value"
+                                                :error-messages="products.errorMessage.value"
+                                            />
+                                        </v-col> -->
                                         <v-col cols="12" sm="6">
-                                            <!-- <v-text-field
-                                                variant="outlined"
-                                                v-model="quantity.value.value"
-                                                :error-messages="quantity.errorMessage.value"
-                                                label="La quantité"
-                                            ></v-text-field> -->
+                                            <v-row>
+                                                <v-col cols="12" sm="6">
+                                                    <v-text-field
+                                                        variant="outlined"
+                                                        v-model="quantity.value.value"
+                                                        :error-messages="quantity.errorMessage.value"
+                                                        label="La quantité"
+                                                    ></v-text-field>
+                                                </v-col>
+    
+                                                <v-col cols="12" sm="6">
+                                                    
+                                                    <!-- <v-btn color="primary" variant="outlined" size="large" block flat @click="productsSubmit">
+                                                        Ajouter
+                                                    </v-btn> -->
+                                                </v-col>
+                                            </v-row>
+                                        </v-col>
+                                        <v-col cols="12">
+                                            <!-- <v-switch
+                                                color="primary"
+                                                @update:model-value="getStatus(status)"
+                                                v-model="status"
+                                                label="Statut"
+                                            ></v-switch> -->
+                                        </v-col>
+    
+                                        <v-col cols="12" sm="12">
+                                            <!-- Replace v-table with EasyDataTable -->
+                                            <v-row>
+                                                    <v-col cols="12" sm="12">
+    
+                                                        <EasyDataTable
+                                                            :headers="productsHeaders"
+                                                            :items="store.products"
+                                                            :loading="loading"
+                                                            :theme-color="themeColor"
+                                                            table-class-name="customize-table"
+                                                            :search-field="searchField"
+                                                            :search-value="searchValue"
+                                                            :rows-per-page="8"
+                                                            v-model:items-selected="itemsSelected"
+                                                            buttons-pagination
+                                                            show-index
+                                                        >
+                                                            <!-- Custom template for Article column -->
+                                                            <template #item-item="{ item }">
+                                                                <div class="d-flex align-center">
+                                                                    <div class="hoverable">
+                                                                        <v-img :lazy-src="item.image" :src="item.image" width="65px" class="rounded img-fluid"></v-img>
+                                                                    </div>
+                                                                    <div class="ml-5">
+                                                                        <h4 class="text-h6 font-weight-semibold">{{ item.name }}</h4>
+                                                                        <span class="text-subtitle-1 d-block mt-1 textSecondary">
+                                                                            {{ truncateText(item.description, 20) }}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+                                                            <template #item-created_at="{ created_at }">
+                                                                <div class="d-flex align-center">
+                                                                    <div class="ml-5">
+                                                                        <h4 class=" ">{{ formatDate(created_at) }}</h4>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+                    
+                                                            <template #item-modified_at="{ modified_at }">
+                                                                <div class="d-flex align-center">
+                                                                    <div class="ml-5">
+                                                                        <h4 class=" ">{{ formatDate(modified_at) }}</h4>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+                    
+                                                            <!-- Custom template for Actions column -->
+                                                            <template #item-actions="{ raw }">
+                                                                <div class="d-flex align-center">
+                                                                    <!-- <v-tooltip text="View">
+                                                                        <template v-slot:activator="{ props }">
+                                                                            <v-btn icon flat @click="viewItem(raw)" v-bind="props">
+                                                                                <EyeIcon stroke-width="1.5" :size="20" class="text-success" />
+                                                                            </v-btn>
+                                                                        </template>
+                                                                    </v-tooltip> -->
+                                                                    <v-tooltip text="Edit">
+                                                                        <template v-slot:activator="{ props }">
+                                                                            <v-btn icon flat @click="editItem(raw)" v-bind="props">
+                                                                                <PencilIcon stroke-width="1.5" size="20" class="text-primary" />
+                                                                            </v-btn>
+                                                                        </template>
+                                                                    </v-tooltip>
+                                                                    <v-tooltip text="Delete">
+                                                                        <template v-slot:activator="{ props }">
+                                                                            <v-btn icon flat @click="remove(raw)" v-bind="props">
+                                                                                <TrashIcon stroke-width="1.5" size="20" class="text-error" />
+                                                                            </v-btn>
+                                                                        </template>
+                                                                    </v-tooltip>
+                                                                </div>
+                                                            </template>
+                                                        </EasyDataTable>
+    
+                                                    </v-col>
+                                                    <v-col cols="12" sm="12">menu</v-col>
+                                            </v-row>
+    
                                         </v-col>
 
-                                        <v-col cols="12" sm="6">
-                                            
-                                            <!-- <v-btn color="primary" variant="outlined" size="large" block flat @click="productsSubmit">
-                                                Ajouter
-                                            </v-btn> -->
-                                        </v-col>
-                                    </v-row>
-                                </v-col>
-                                <v-col cols="12">
-                                    <!-- <v-switch
-                                        color="primary"
-                                        @update:model-value="getStatus(status)"
-                                        v-model="status"
-                                        label="Statut"
-                                    ></v-switch> -->
-                                </v-col>
+                                    </v-col>
 
-                                <v-col cols="12" sm="12">
-                                    <v-table class="mt-5" id="myTable">
-                                        <thead>
-                                            <tr>
-                                                <th class="text-subtitle-1 font-weight-semibold">N°</th>
-                                               
-                                                <th class="text-subtitle-1 font-weight-semibold">Article</th>
-                                                <th class="text-subtitle-1 font-weight-semibold">Quantité</th>
-                                                <th class="text-subtitle-1 font-weight-semibold">Unité</th>
-
-                                                <th class="text-subtitle-1 font-weight-semibold">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <!-- <tbody>
-                                            <tr v-if="!productSelected">
-                                                <td colspan="4" class="text-subtitle-1 text-center">Aucun article</td>
-                                            </tr>
-                                            <tr v-else v-for="(item, index) in productSelected" :key="index">
-                                                <td class="text-subtitle-1">{{ index + 1 }}</td>
-                                                
-
-                                                <td class="text-subtitle-1">
-                                                    <div class="d-flex align-center py-4">
-                                                        <div class="hoverable">
-                                                            <v-img
-                                                                :lazy-src="item.item?.image"
-                                                                :src="item.item?.image"
-                                                                :title="item.item?.name"
-                                                                width="65px"
-                                                                class="rounded img-fluid"
-                                                            ></v-img>
-                                                        </div>
-
-                                                        <div class="ml-5">
-                                                            <h4 class="text-h6 font-weight-semibold">{{ item.item.name }}</h4>
-                                                            <span class="text-subtitle-1 d-block mt-1 textSecondary">{{
-                                                                truncateText(item.item?.description, 20)
-                                                            }}</span>
-                                                        </div>
-                                                    </div>
-                                                </td>
-
-                                                <td class="text-subtitle-1">{{ item.quantity }}</td>
-                                                <td class="text-subtitle-1">{{ get_full_unite(item?.item?.unite) }}</td>
-
-                                                <td>
-                                                    <div class="d-flex align-center">
-                                                        <v-tooltip text="Editer">
-                                                            <template v-slot:activator>
-                                                                <v-btn icon flat @click=""
-                                                                    ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
-                                                                /></v-btn>
-                                                            </template>
-                                                        </v-tooltip>
-                                                        <v-tooltip text="Retirer">
-                                                            <template v-slot:activator>
-                                                                <v-btn icon flat @click="remove(item)"
-                                                                    ><TrashIcon stroke-width="1.5" size="20" class="text-error"
-                                                                /></v-btn>
-                                                            </template>
-                                                        </v-tooltip>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody> -->
-                                    </v-table>
-                                </v-col>
+                                    <v-col cols="12" sm="4">
+                                        menu
+                                    </v-col>
+                                    
                                 </v-row>
                             </v-form> 
                         </v-card-text>
@@ -642,55 +679,6 @@ const unitedChanged = (value: any) => {
                 </v-dialog>
             </v-col>
         </v-row>
-    </template>
-
-    <template>
-        <!-- Add this after CustomComBox -->
-        <v-expand-transition>
-            <v-card v-if="selectedUniteDetails" class="mt-4 pa-4">
-                <v-row>
-                    <v-col cols="12" md="6">
-                        <h3 class="text-h6 mb-4">Informations de l'unité</h3>
-                        <v-list density="compact">
-                            <v-list-item>
-                                <v-list-item-title>Référence</v-list-item-title>
-                                <v-list-item-subtitle>{{ selectedUniteDetails.ref }}</v-list-item-subtitle>
-                            </v-list-item>
-                            
-                            <v-list-item>
-                                <v-list-item-title>Nom</v-list-item-title>
-                                <v-list-item-subtitle>{{ selectedUniteDetails.name }}</v-list-item-subtitle>
-                            </v-list-item>
-                            
-                            <v-list-item>
-                                <v-list-item-title>Nom abrégé</v-list-item-title>
-                                <v-list-item-subtitle>{{ selectedUniteDetails.short_name }}</v-list-item-subtitle>
-                            </v-list-item>
-                        </v-list>
-                    </v-col>
-                    
-                    <v-col cols="12" md="6">
-                        <h3 class="text-h6 mb-4">Détails supplémentaires</h3>
-                        <v-list density="compact">
-                            <v-list-item>
-                                <v-list-item-title>État-Major</v-list-item-title>
-                                <v-list-item-subtitle>{{ get_staffs(selectedUniteDetails.g_staff) }}</v-list-item-subtitle>
-                            </v-list-item>
-                            
-                            <v-list-item>
-                                <v-list-item-title>Région Militaire</v-list-item-title>
-                                <v-list-item-subtitle>{{ get_areas(selectedUniteDetails.area) }}</v-list-item-subtitle>
-                            </v-list-item>
-                            
-                            <v-list-item>
-                                <v-list-item-title>Effectif</v-list-item-title>
-                                <v-list-item-subtitle>{{ selectedUniteDetails.effective }}</v-list-item-subtitle>
-                            </v-list-item>
-                        </v-list>
-                    </v-col>
-                </v-row>
-            </v-card>
-        </v-expand-transition>
     </template>
 
   <!-- Replace v-table with EasyDataTable -->

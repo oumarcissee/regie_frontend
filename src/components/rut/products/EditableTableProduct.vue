@@ -118,6 +118,9 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             }
             return true;
         },
+        choice(value: boolean) {
+            return true; // Simple validation, always passes
+        },
 
         description(value: string | any[]) {
             if (value) return true;
@@ -224,6 +227,7 @@ const dialogImg = ref(false) as any;
 
 const name = useField('name');
 const image = useField('image');
+const choice = useField('choice');
 
 const price = useField('price');
 const unite = useField('unite');
@@ -241,6 +245,7 @@ const croppedImage = computed(() => formData.value.get('image'));
 
 const submit = handleSubmit(async (values) => {
     const submitFormData = new FormData();
+    console.log(values);
 
     submitFormData.append('name', values.name);
     submitFormData.append('price', values.price);
@@ -248,6 +253,8 @@ const submit = handleSubmit(async (values) => {
     submitFormData.append('rate_per_days', values.rate_per_days);
     submitFormData.append('divider', values.divider);
     submitFormData.append('description', values.description);
+    
+    submitFormData.append('choice', values.choice ? 'true' : 'false');
 
     if (croppedImage.value) {
         submitFormData.append('image', croppedImage.value);
@@ -336,6 +343,7 @@ function closeImg() {
 const editItem = (index: any) => {
     dialog.value = true;
     editedIndex.value = index.id;
+    choice.value.value = index.choice === 'true' ? true : false;
 
     name.value.value = index.name;
     price.value.value = index.price;
@@ -494,6 +502,14 @@ const headers = [
                                         :error-messages="unite.errorMessage.value"
                                     >
                                     </v-select>
+                                </v-col>
+                                <v-col cols="12" sm="12">
+                                     <v-switch
+                                        color="primary"
+                                        variant="outlined"
+                                        v-model="choice.value.value"
+                                        label="Choice"
+                                    ></v-switch>
                                 </v-col>
 
                                 <v-col cols="12" sm="12">
@@ -687,6 +703,16 @@ const headers = [
                                     <div class="font-weight-bold">Diviseur</div>
                                 </div>
                                 <div class="text-body-1 ml-8">{{ selectedProduct.divider }}</div>
+                            </v-card>
+                        </v-col>
+
+                        <v-col cols="12" md="6" class="pa-2">
+                            <v-card class="pa-4" elevation="2">
+                                <div class="d-flex align-center mb-2">
+                                    <v-icon color="primary" class="mr-2">mdi-checkbox-marked-circle</v-icon>
+                                    <div class="font-weight-bold">Choice</div>
+                                </div>
+                                <div class="text-body-1 ml-8">{{ selectedProduct.choice ? 'Yes' : 'No' }}</div>
                             </v-card>
                         </v-col>
 
