@@ -388,11 +388,28 @@ const get_category_of_unite = (categroy: string, type = false) => {
 }
 
 
+const  filterAndOrderObjects =  (dataArrays: any[], choice: boolean = true) => {
+  const prefixes = ['Riz', 'Hui', 'Tom', 'Oig', 'Lai', 'Suc', 'Sav', 'Sar', 'Sel', 'Caf', 'Pat', 'Eau'];
+  return dataArrays.flat()
+    .filter((obj: { status: boolean; }) => obj.status === choice)
+    .sort((a: { name: string; }, b: { name: string; }) => {
+      const aPrefix = prefixes.find(prefix => a.name.startsWith(prefix));
+      const bPrefix = prefixes.find(prefix => b.name.startsWith(prefix));
+      
+      const aIndex = aPrefix ? prefixes.indexOf(aPrefix) : Infinity;
+      const bIndex = bPrefix ? prefixes.indexOf(bPrefix) : Infinity;
+      
+      if (aIndex !== bIndex) return aIndex - bIndex;
+      return a.name.localeCompare(b.name);
+    });
+}
+
 
 
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
   confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getCurrentMonth, currentMonth,
-  get_full_unite, formatDate, signatorPosition,showNotification,notif,convertNumberToWords, get_staffs,get_areas,get_unite_type,get_category_of_unite
+  get_full_unite, formatDate, signatorPosition, showNotification, notif, convertNumberToWords, get_staffs, get_areas, get_unite_type, get_category_of_unite,
+  filterAndOrderObjects
 }

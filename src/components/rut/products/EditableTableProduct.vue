@@ -118,7 +118,7 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             }
             return true;
         },
-        choice(value: boolean) {
+        status(value: boolean) {
             return true; // Simple validation, always passes
         },
 
@@ -227,7 +227,7 @@ const dialogImg = ref(false) as any;
 
 const name = useField('name');
 const image = useField('image');
-const choice = useField('choice');
+const status = useField('status');
 
 const price = useField('price');
 const unite = useField('unite');
@@ -245,7 +245,6 @@ const croppedImage = computed(() => formData.value.get('image'));
 
 const submit = handleSubmit(async (values) => {
     const submitFormData = new FormData();
-    console.log(values);
 
     submitFormData.append('name', values.name);
     submitFormData.append('price', values.price);
@@ -254,7 +253,7 @@ const submit = handleSubmit(async (values) => {
     submitFormData.append('divider', values.divider);
     submitFormData.append('description', values.description);
     
-    submitFormData.append('choice', values.choice ? 'true' : 'false');
+    submitFormData.append('status', values.status.toString());
 
     if (croppedImage.value) {
         submitFormData.append('image', croppedImage.value);
@@ -287,6 +286,8 @@ const submit = handleSubmit(async (values) => {
 // Modifier la fonction refreshTable pour être plus robuste
 const refreshTable = async () => {
     try {
+        handleReset();
+        imag.value = null;
         loading.value = true;
         await store.fetchItems();
         // Forcer la réactivité en créant une nouvelle référence
@@ -343,7 +344,7 @@ function closeImg() {
 const editItem = (index: any) => {
     dialog.value = true;
     editedIndex.value = index.id;
-    choice.value.value = index.choice === 'true' ? true : false;
+    status.value.value = index.status;
 
     name.value.value = index.name;
     price.value.value = index.price;
@@ -431,7 +432,7 @@ const headers = [
             </v-dialog>
             <!-- End dialogue img -->
 
-            <v-dialog v-model="dialog" max-width="800">
+            <v-dialog v-model="dialog" max-width="800" persistent>
                 <template v-slot:activator="{ props }">
                     <v-btn color="primary" v-bind="props" flat class="ml-auto">
                         <v-icon class="mr-2">mdi-account-multiple-plus</v-icon>Ajouter un article
@@ -507,7 +508,7 @@ const headers = [
                                      <v-switch
                                         color="primary"
                                         variant="outlined"
-                                        v-model="choice.value.value"
+                                        v-model="status.value.value"
                                         label="Choice"
                                     ></v-switch>
                                 </v-col>
@@ -712,7 +713,7 @@ const headers = [
                                     <v-icon color="primary" class="mr-2">mdi-checkbox-marked-circle</v-icon>
                                     <div class="font-weight-bold">Choice</div>
                                 </div>
-                                <div class="text-body-1 ml-8">{{ selectedProduct.choice ? 'Yes' : 'No' }}</div>
+                                <div class="text-body-1 ml-8">{{ selectedProduct.status ? 'Yes' : 'No' }}</div>
                             </v-card>
                         </v-col>
 
@@ -783,9 +784,9 @@ const headers = [
     </v-snackbar>
 
     <!-- Loading Overlay -->
-    <v-overlay :model-value="isLoading" class="align-center justify-center">
+    <!-- <v-overlay :model-value="isLoading" class="align-center justify-center">
         <v-progress-circular color="primary" indeterminate size="64"></v-progress-circular>
-    </v-overlay>
+    </v-overlay> -->
 
     <!-- Error Alert -->
     <!-- <v-alert

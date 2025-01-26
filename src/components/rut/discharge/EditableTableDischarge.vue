@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useDischargeStore } from '@/stores/rutStore/discharge/dischargeStore';
 import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
-import { truncateText ,notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite} from '@/services/utils';
+import { truncateText ,notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite,get_full_unite} from '@/services/utils';
 import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBoxUnites.vue';
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
@@ -109,7 +109,6 @@ const category_of = ref([
 onMounted(async () => {
     isLoading.value = true;
     await uniteSotre.fetchUnites();
-    console.log(uniteSotre.unites);
     await refreshTable();
     isLoading.value = false;
 });
@@ -250,6 +249,9 @@ function close() {
     handleReset();
 }
 
+function openDialog() {
+    dialog.value = true;
+}
 
 // Méthode pour modifier un élément
 const editItem = (item: any) => {
@@ -307,7 +309,6 @@ const formButton = computed(() => {
 
 
 const headers = [
-    { text: "Réf", value: "ref", sortable:true},
     { text: "Unité", value: "short_name" , sortable:true},
     { text: "Région", value: "area", sortable:true },
     { text: "Type", value: "category", sortable: true },
@@ -349,17 +350,26 @@ const unitedChanged = (value: any) => {
 };
 
 const productsHeaders = [
-    { text: 'Article', value: 'item', sortable: true ,width: 200},
-    { text: 'Taux', value: 'rate_per_days', sortable: true,width: 50 },
-    { text: 'Quantité', value: 'quantity', sortable: true ,width: 50 },
-    { text: 'Diviseur', value: 'divider', sortable: true },
-    { text: 'Unité', value: 'unite', sortable: true },
-    { text: 'Rajout', value: 'rate_per_days', sortable: true },
-    { text: 'Type', value: 'rate_per_days', sortable: true },
-    { text: 'Actions', value: 'actions' }
+    { text: "Article", value: "item" , sortable:true},
+    { text: "Taux", value: "rate_per_days", sortable:true },
+    { text: "Quantité", value: "item.quantite",sortable:true},
+    { text: "Unités", value: "unite",sortable:true},
+    { text: "Forfait", value: "forfait", sortable: true },
+    { text: "Actions", value: "actions"}
 ];
 
 
+const toggleStatus = async (item: any) => {
+    try {
+        // Call your store method to update the status
+        // await store.updateItemStatus(item.id, !item.status);
+        // Optionally refresh the table
+        await refreshTable();
+    } catch (error) {
+        console.error('Error updating status:', error);
+        showNotification('Erreur lors de la mise à jour du statut', 'error');
+    }
+};
 
 </script>
 <template>
@@ -395,7 +405,7 @@ const productsHeaders = [
             v-if="!itemsSelected.length"
             color="primary" 
             prepend-icon="mdi-account-multiple-plus"
-            @click="dialog = true"
+            @click="openDialog()"
             class="ml-auto"
         >
             Ajouter un boredereau
@@ -411,7 +421,7 @@ const productsHeaders = [
         <v-row class="align-center">
             <!-- Colonne pour le bouton -->
             <v-col cols="12" md="4" class="d-flex justify-end">
-                <v-dialog v-model="dialog"  
+                <v-dialog v-model="dialog" 
                                                         >
                     <v-card>
                         <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
@@ -590,7 +600,6 @@ const productsHeaders = [
                                                             buttons-pagination
                                                             show-index
                                                         >
-                                                            <!-- Custom template for Article column -->
                                                             <template #item-item="{ item }">
                                                                 <div class="d-flex align-center">
                                                                     <div class="hoverable">
@@ -604,23 +613,26 @@ const productsHeaders = [
                                                                     </div>
                                                                 </div>
                                                             </template>
-                                                            <template #item-created_at="{ created_at }">
+
+                                                            <template #unite="{ unite }">
                                                                 <div class="d-flex align-center">
-                                                                    <div class="ml-5">
-                                                                        <h4 class=" ">{{ formatDate(created_at) }}</h4>
-                                                                    </div>
+                                                                 
+                                                                        <h4 class="text-h6 font-weight-semibold">{{unite }}</h4>
+                                                                    
+                                                                </div>
+                                                            </template>
+                                                          
+                                                             <template #item-forfait="{ raw }">
+                                                                <div class="d-flex align-center">
+                                                                    <v-switch
+                                                                        color="primary"
+                                                                        :model-value="raw.forfait"
+                                                                        @update:model-value="toggleStatus(raw)"
+                                                                    ></v-switch>
+
                                                                 </div>
                                                             </template>
                     
-                                                            <template #item-modified_at="{ modified_at }">
-                                                                <div class="d-flex align-center">
-                                                                    <div class="ml-5">
-                                                                        <h4 class=" ">{{ formatDate(modified_at) }}</h4>
-                                                                    </div>
-                                                                </div>
-                                                            </template>
-                    
-                                                            <!-- Custom template for Actions column -->
                                                             <template #item-actions="{ raw }">
                                                                 <div class="d-flex align-center">
                                                                     <!-- <v-tooltip text="View">

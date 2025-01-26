@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 // project imports
-import { isAxiosError, currentMonth ,showNotification } from '@/services/utils';
+import { isAxiosError, currentMonth ,showNotification, filterAndOrderObjects, get_full_unite } from '@/services/utils';
 
 // import { router } from '@/router';
 
@@ -41,28 +41,37 @@ export const useDischargeStore = defineStore({
          async fetchProducts() {
             try {
                 const response = await new ApiAxios().find(`/items/`);
+                // const data = response.data.results;
 
-               this.products = await response?.data?.results.map((item: any, index: number) => ({
+                this.products = filterAndOrderObjects(response.data.results);
+
+               this.products =  this.products.map((item: any, index: number) => ({
                     ref: item.ref,
                     item: {
                         name: item.name,
                         image: item.image,
                         description: item.description,
+                        created_at : new Date(item.created_at),
+                        modified_at : new Date(item.modified_at),
+                        status: item.status,
+                        
+                        quantite: item.quantite || 0,
+                        forfait: item.forfait || false,
                     },
                     
                     price: item.price,
-                    unite: item.unite,
-                    choise: item.choise,
-                    quantity: item.quantity,
+                    unite: get_full_unite(item.unite),
                     rate_per_days: item.rate_per_days,
                     divider: item.divider,
-                    created_at : new Date(item.created_at),
-                    modified_at : new Date(item.modified_at),
+                    
+                    // New attributes added here
+                    
+                    
                     actions: item,
                     raw: item // Keep raw data for actions
-               }).choise = true);
-                console.log(response?.data?.results);
-
+               }));
+                console.log(this.products);
+                
                 return this.products;
             } catch (error) {
                 alert(error);
@@ -88,7 +97,7 @@ export const useDischargeStore = defineStore({
             try {
                 const response = await new ApiAxios().find(`/${this.url}/`);
                 this.boredereaux = response?.data?.results;
-                console.log(this.boredereaux);
+                console.log("BORDERAUX",this.boredereaux);
                 
                 // Formater les données pour EasyDataTable
                 // this.boredereaux = (response?.data?.results || []).map((bor: any) => ({
