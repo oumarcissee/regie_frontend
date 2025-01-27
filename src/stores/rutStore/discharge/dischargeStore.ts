@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 // project imports
-import { isAxiosError, currentMonth ,showNotification, filterAndOrderObjects, get_full_unite } from '@/services/utils';
+import { isAxiosError, currentMonth ,showNotification, filterAndOrderObjects, get_full_unite ,get_quantity} from '@/services/utils';
 
 // import { router } from '@/router';
 
@@ -38,15 +38,19 @@ export const useDischargeStore = defineStore({
         }
     },
     actions: {
-         async fetchProducts() {
+
+        async fetchProducts(objet: any = null) {
             try {
                 const response = await new ApiAxios().find(`/items/`);
                 // const data = response.data.results;
 
                 this.products = filterAndOrderObjects(response.data.results);
 
-               this.products =  this.products.map((item: any, index: number) => ({
+                let quantite = 0;
+                this.products =  this.products.map((item: any, index: number) => ({
                     ref: item.ref,
+                    rate_per_days: item.rate_per_days,
+
                     item: {
                         name: item.name,
                         image: item.image,
@@ -55,13 +59,12 @@ export const useDischargeStore = defineStore({
                         modified_at : new Date(item.modified_at),
                         status: item.status,
                         
-                        quantite: item.quantite || 0,
+                        quantite: objet ? get_quantity(item.rate_per_days, objet.effective, item.divider) : 0,
                         forfait: item.forfait || false,
                     },
                     
                     price: item.price,
                     unite: get_full_unite(item.unite),
-                    rate_per_days: item.rate_per_days,
                     divider: item.divider,
                     
                     // New attributes added here

@@ -325,21 +325,54 @@ const unitesFiltred = computed(() => {
 
 // Add new ref for selected unite details
 const selectedUniteDetails = ref(null);
+const effective = ref(null);
 
 // Update the unitedChanged function to handle selection
-const unitedChanged = (value: any) => {
+const unitedChanged = async (value: any) => {
     if (!value) {
         selectedUniteDetails.value = null;
         return;
     }
-    console.log(value);
     
     // Find the selected unite in the unites array
     const selectedUnite = uniteSotre.unites.find((unite: { short_name: any; }) => unite.short_name === value);
     if (selectedUnite) {
         selectedUniteDetails.value 
-        quantity.value.value
-        console.log(selectedUnite);
+       
+
+        effective.value = selectedUnite.effective 
+
+        console.log(store.products)
+
+        await store.fetchProducts(selectedUnite);
+        
+        const products = store.products.map((item: any, index: number) => ({
+            
+            ref: item.ref,
+            item: {
+                name: item.name,
+                image: item.image,
+                description: item.description,
+                created_at : new Date(item.created_at),
+                modified_at : new Date(item.modified_at),
+                status: item.status,
+                
+                quantite: parseInt(item.item.quantite) + (effective.value * parseInt(JSON.parse(item.rate_per_days))*30) / item.divider,
+                forfait: item.forfait || false,
+            },
+            
+            price: item.price,
+            unite: get_full_unite(item.unite),
+            rate_per_days: item.rate_per_days,
+            divider: item.divider,
+            
+            // New attributes added here
+            
+            actions: item,
+            raw: item // Keep raw data for actions
+        }))
+
+        // store.products = [...products]
                                                                                                                                                                                                                                                                                                                       
         // Update the form fields with the selected unite's details
         items.value.value = []; // Reset items if needed
@@ -431,104 +464,7 @@ const toggleStatus = async (item: any) => {
 
                         <v-card-text>
                             <v-form ref="form" v-model="valid" @submit.prevent="submit">
-                                <!-- <v-row>
-                                    <v-col cols="12" sm="12">
-                                        <v-text-field
-                                            placeholder="Saisissez le nom en integralité"
-                                            variant="outlined"
-                                            v-model="name.value.value"
-                                            :error-messages="name.errorMessage.value"
-                                            label="Libéllé"
-                                        >
-                                        </v-text-field>
-                                    </v-col>
-
-                                    <v-col cols="12" sm="6">
-                                        <v-text-field
-                                            placeholder="nom abrégé"
-                                            variant="outlined"
-                                            v-model="short_name.value.value"
-                                            :error-messages="short_name.errorMessage.value"
-                                            label="Libéllé abrégé"
-                                        >
-                                        </v-text-field>
-                                    </v-col>
-
-                                    <v-col cols="12" sm="6">
-                                        <v-select
-                                            label="Type"
-                                            :items="category_of"
-                                            @update:modelValue="changed"
-                                            single-line
-                                            variant="outlined"
-                                            v-model="category.value.value"
-                                            :error-messages="category.errorMessage.value"
-                                        >
-                                        </v-select>
-                                    </v-col>
-                                
-                                    <v-col cols="12" sm="6">
-                                        <v-select
-                                            label="Etat-Major"
-                                            :items="g_staffs"
-                                            @update:modelValue="changed"
-                                            single-line
-                                            variant="outlined"
-                                            v-model="g_staff.value.value"
-                                            :error-messages="g_staff.errorMessage.value"
-                                        >
-                                        </v-select>
-                                    </v-col>
-
-                                    <v-col cols="12" sm="6">
-                                        <v-select
-                                            label="Region-Militaire"
-                                            :items="areas"
-                                            @update:modelValue="changed"
-                                            single-line
-                                            variant="outlined"
-                                            v-model="area.value.value"
-                                            :error-messages="area.errorMessage.value"
-                                        >
-                                        </v-select>
-                                    </v-col>
-
-                                    <v-col cols="12" sm="6">
-                                        <v-select
-                                            label="Type de l'unité"
-                                            :items="type_of_unites"
-                                            @update:modelValue="changed"
-                                            single-line
-                                            variant="outlined"
-                                            v-model="type_of_unit.value.value"
-                                            :error-messages="type_of_unit.errorMessage.value"
-                                        >
-                                        </v-select>
-                                    </v-col>
-
-                                    <v-col cols="12" sm="6">
-                                        <v-text-field
-                                            variant="outlined"
-                                            v-model="effective.value.value"
-                                            :error-messages="effective.errorMessage.value"
-                                            label="Effectif"
-                                        ></v-text-field>
-                                    </v-col>
-
-                                    <v-col cols="12" sm="12">
-                                        <VTextarea
-                                            label="Description"
-                                            auto-grow
-                                            placeholder="Salut, avez-vous quel que chose a dire?"
-                                            rows="2"
-                                            color="primary"
-                                            row-height="25"
-                                            shaped
-                                            v-model="description.value.value"
-                                            :error-messages="description.errorMessage.value"
-                                        ></VTextarea>
-                                    </v-col>
-                                </v-row> -->
+                              
                                 <v-row>
                                     <v-col cols="12" sm="8" >
                                         
@@ -544,25 +480,11 @@ const toggleStatus = async (item: any) => {
                                         
                                         </v-col>
     
-                                        <!-- <v-col cols="12" sm="6">
-                                            <CustomComBoxProduct
-                                                ref="refProduct"
-                                                :items="useProduct.getProducts"
-                                                label="Selectionner un article"
-                                                title="name"
-                                                v-model="products.value.value"
-                                                :error-messages="products.errorMessage.value"
-                                            />
-                                        </v-col> -->
-                                        <v-col cols="12" sm="6">
+                                        
+                                        <v-col cols="12" >
                                             <v-row>
                                                 <v-col cols="12" sm="6">
-                                                    <v-text-field
-                                                        variant="outlined"
-                                                        v-model="quantity.value.value"
-                                                        :error-messages="quantity.errorMessage.value"
-                                                        label="La quantité"
-                                                    ></v-text-field>
+                                                    Effectif: <span class="text-h5 text-white">{{ effective }}</span> Hommes
                                                 </v-col>
     
                                                 <v-col cols="12" sm="6">
@@ -573,14 +495,7 @@ const toggleStatus = async (item: any) => {
                                                 </v-col>
                                             </v-row>
                                         </v-col>
-                                        <v-col cols="12">
-                                            <!-- <v-switch
-                                                color="primary"
-                                                @update:model-value="getStatus(status)"
-                                                v-model="status"
-                                                label="Statut"
-                                            ></v-switch> -->
-                                        </v-col>
+                                        
     
                                         <v-col cols="12" sm="12">
                                             <!-- Replace v-table with EasyDataTable -->
@@ -661,7 +576,7 @@ const toggleStatus = async (item: any) => {
                                                         </EasyDataTable>
     
                                                     </v-col>
-                                                    <v-col cols="12" sm="12">menu</v-col>
+                                                    <v-col cols="12" sm="12"></v-col>
                                             </v-row>
     
                                         </v-col>
@@ -669,7 +584,7 @@ const toggleStatus = async (item: any) => {
                                     </v-col>
 
                                     <v-col cols="12" sm="4">
-                                        menu
+                                        menuDE
                                     </v-col>
                                     
                                 </v-row>

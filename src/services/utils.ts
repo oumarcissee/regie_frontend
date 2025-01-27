@@ -346,7 +346,6 @@ const get_areas = (area: string, type = false) => {
  
 }
 
-
 /**
  * 
  * @param type 
@@ -405,11 +404,24 @@ const  filterAndOrderObjects =  (dataArrays: any[], choice: boolean = true) => {
 }
 
 
+/**
+ * 
+ * @param taux 
+ * @param eff 
+ * @param div 
+ * @returns 
+ */
+const get_quantity = (taux: any, eff: any, div: any): number => {
+  const month = 30;
+  const total: any = parseFloat(JSON.parse(taux)) * month * parseInt(JSON.parse(eff)) / parseInt(div);
+  return parseInt(total)
+}
+
 
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
   confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getCurrentMonth, currentMonth,
   get_full_unite, formatDate, signatorPosition, showNotification, notif, convertNumberToWords, get_staffs, get_areas, get_unite_type, get_category_of_unite,
-  filterAndOrderObjects
+  filterAndOrderObjects, get_quantity,
 }
