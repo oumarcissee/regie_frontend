@@ -414,7 +414,7 @@ const  filterAndOrderObjects =  (dataArrays: any[], choice: boolean = true) => {
 const get_quantity = (taux: any, eff: any, div: any): number => {
   const month = 30;
   const total: any = parseFloat(JSON.parse(taux)) * month * parseInt(JSON.parse(eff)) / parseInt(div);
-  return parseInt(total)
+  return  Math.round(total); // Retourne un nombre entier positif
 }
 
 

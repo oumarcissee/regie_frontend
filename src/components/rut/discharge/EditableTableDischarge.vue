@@ -342,37 +342,8 @@ const unitedChanged = async (value: any) => {
 
         effective.value = selectedUnite.effective 
 
-        console.log(store.products)
-
         await store.fetchProducts(selectedUnite);
         
-        const products = store.products.map((item: any, index: number) => ({
-            
-            ref: item.ref,
-            item: {
-                name: item.name,
-                image: item.image,
-                description: item.description,
-                created_at : new Date(item.created_at),
-                modified_at : new Date(item.modified_at),
-                status: item.status,
-                
-                quantite: parseInt(item.item.quantite) + (effective.value * parseInt(JSON.parse(item.rate_per_days))*30) / item.divider,
-                forfait: item.forfait || false,
-            },
-            
-            price: item.price,
-            unite: get_full_unite(item.unite),
-            rate_per_days: item.rate_per_days,
-            divider: item.divider,
-            
-            // New attributes added here
-            
-            actions: item,
-            raw: item // Keep raw data for actions
-        }))
-
-        // store.products = [...products]
                                                                                                                                                                                                                                                                                                                       
         // Update the form fields with the selected unite's details
         items.value.value = []; // Reset items if needed
