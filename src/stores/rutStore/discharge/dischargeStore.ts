@@ -13,11 +13,12 @@ import { ref } from 'vue';
 export const useDischargeStore = defineStore({
     id: 'useDischarge',
     state: () => ({
-        url: 'boredereaux',
+        url: 'bordereaux',
         categroy: 'unit',
         boredereaux: [] as any,
         areas: [] as any,
         products: [] as any,
+        unitedSelected: null as any,
         dialog: false,
 
         errors : ref({
@@ -46,35 +47,29 @@ export const useDischargeStore = defineStore({
 
                 this.products = filterAndOrderObjects(response.data.results);
 
-                let quantite = 0;
-                this.products =  this.products.map((item: any, index: number) => ({
+                this.products = this.products.map((item: any, index: number) => ({
+                    
                     ref: item.ref,
                     rate_per_days: item.rate_per_days,
-
+                    status: false,
+                    price: item.price,
+                    unite: get_full_unite(item.unite),
+                    divider: item.divider,
+                    forfait: false,
                     item: {
                         name: item.name,
                         image: item.image,
                         description: item.description,
                         created_at : new Date(item.created_at),
                         modified_at : new Date(item.modified_at),
-                        status: item.status,
-                        
-                        quantite: objet ? get_quantity(item.rate_per_days, objet.effective, item.divider) : 0,
-                        forfait: item.forfait || false,
+                        forfait: false,
+                        quantite: objet && objet.effective ? get_quantity(item.rate_per_days, objet.effective, item.divider) : 0,
                     },
-                    
-                    price: item.price,
-                    unite: get_full_unite(item.unite),
-                    divider: item.divider,
-                    
-                    // New attributes added here
-                    
-                    
+
                     actions: item,
                     raw: item // Keep raw data for actions
                }));
-                console.log(this.products);
-                
+                // console.log(this.products);
                 return this.products;
             } catch (error) {
                 alert(error);

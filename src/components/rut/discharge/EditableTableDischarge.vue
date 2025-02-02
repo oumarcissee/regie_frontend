@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useDischargeStore } from '@/stores/rutStore/discharge/dischargeStore';
 import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
 import { truncateText ,notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite,get_full_unite} from '@/services/utils';
@@ -9,6 +9,8 @@ const themeColor = ref('rgb(var(--v-theme-secondary))');
 const itemsSelected = ref<Item[]>([]);
 const searchField = ref(['name', 'type_of_unit']);
 const printPreviewDialog = ref(false);
+const quantityDialog = ref(false);
+const quantityItem = ref('');
 
 const searchValue = ref('');
 import { EyeIcon } from 'lucide-vue-next';
@@ -23,14 +25,12 @@ const error = ref<string | null>(null);
 
 import { useField, useForm } from 'vee-validate';
 
-import type { Items } from '@/types/rut/SignatorType';
-
 import type { Item } from 'vue3-easy-data-table';
 
 
 const { addOrUpdateUnit, errors, } = useDischargeStore();
 const store = useDischargeStore();
-const uniteSotre = useUnitStore();
+const unitStore = useUnitStore();
 
 
 const { handleSubmit, handleReset, isSubmitting } = useForm({
@@ -106,22 +106,17 @@ const category_of = ref([
 ]);
 
 
-onMounted(async () => {
-    isLoading.value = true;
-    await uniteSotre.fetchUnites();
-    await refreshTable();
-    isLoading.value = false;
-});
-
 
 // Add type filter
 const typeFilter = ref('current');
 const filteredUnits = computed(() => {
-    let units = store.boredereaux;
+    console.log(store.boredereaux);
+
+    let units = unitStore.unites
     
     // Filter by type if a type is selected
     if (typeFilter.value) {
-        units = units.filter((unit: any) => unit.type_of_unit === typeFilter.value);
+        units = units?.filter((unit: any) => unit.type_of_unit === typeFilter.value);
     }
     
     // Filter by search value if present
@@ -136,7 +131,6 @@ const filteredUnits = computed(() => {
     return units;
 });
 
-import type { AxiosError } from 'axios';
 
 const selected = ref<string | null | undefined | number>(null);
 
@@ -246,6 +240,7 @@ const editedIndex = ref(-1);
 function close() {
     dialog.value = false;
     editedIndex.value = -1;
+    effective.value = null;
     handleReset();
 }
 
@@ -278,23 +273,13 @@ const openPrintPreview = () => {
 
 
 
-// Modifier la fonction remove pour gérer le loading state
-const remove = async (index: any) => {
-    try {
-        loading.value = true;
-        const isRemove = await store.deleteItem(index, 'unites');
-        if(isRemove){
-            // Attendre que la suppression soit terminée avant de rafraîchir
-            await refreshTable();
-            showNotification('Article supprimé avec succès', 'success');
-        }
-    } catch (error) {
-        console.error('Erreur lors de la suppression :', error);
-        showNotification('Erreur lors de la suppression', 'error');
-    } finally {
-        loading.value = false;
+const remove = (item: any) => {
+    if (store.products.length > 1) {
+        store.products = [...store.products.filter((i: any) => i.ref !== item?.ref)];
     }
+   
 };
+
 
 //Computed Property
 const formTitle = computed(() => {
@@ -319,7 +304,7 @@ const headers = [
 
 
 const unitesFiltred = computed(() => {
-    return uniteSotre.unites
+    return unitStore.unites
 });
 
 
@@ -335,22 +320,15 @@ const unitedChanged = async (value: any) => {
     }
     
     // Find the selected unite in the unites array
-    const selectedUnite = uniteSotre.unites.find((unite: { short_name: any; }) => unite.short_name === value);
+    const selectedUnite = store.unitedSelected =  unitStore.unites.find((unite: { short_name: any; }) => unite.short_name === value);
     if (selectedUnite) {
         selectedUniteDetails.value 
-       
 
-        effective.value = selectedUnite.effective 
-
+        effective.value = selectedUnite.effective; 
+        //Gestion des operations dans le store.
         await store.fetchProducts(selectedUnite);
-        
-                                                                                                                                                                                                                                                                                                                      
-        // Update the form fields with the selected unite's details
-        items.value.value = []; // Reset items if needed
-        
-        // You might want to trigger other actions here
-        // console.log('Selected unite details:', selectedUniteDetails.value);
     }
+
 };
 
 const productsHeaders = [
@@ -363,17 +341,95 @@ const productsHeaders = [
 ];
 
 
-const toggleStatus = async (item: any) => {
+
+const editQuantity = (newQuantity: any) => {
+    quantityDialog.value = true;
+    // myIndex.value = newQuantity;
+    // quantityItem.value = String(newQuantity.quantity);
+};
+
+const submitQuantity = () => {
+    // if (myIndex.value) {
+    //     myIndex.value.quantity = parseInt(quantityItem.value) > 0 ? parseInt(quantityItem.value) : 1;
+    // }
+    // quantityItem.value = '';
+    // quantityDialog.value = false;
+};
+
+
+
+// Add new ref for controlling all products
+const allProductsEnabled = ref(false);
+
+
+
+// Interfaces
+interface Product {
+  ref: string;
+  forfait: boolean;
+  quantity?: number;
+}
+
+const emit = defineEmits(['update:modelValue']);
+
+// Functions
+const handleToggle = async (product: any) => {
     try {
-        // Call your store method to update the status
-        // await store.updateItemStatus(item.id, !item.status);
-        // Optionally refresh the table
-        await refreshTable();
+        console.log("AVANT", product);
+        const newValue = !product.forfait; // Changement ici pour accéder au forfait dans item
+    
+        const productIndex = store.products.findIndex((p: { ref: string; }) => p.ref === product.ref);
+        if (productIndex !== -1) {
+            // Créer une copie profonde du produit pour modifier la propriété imbriquée
+            const updatedProduct = {
+                ...store.products[productIndex],
+                item: {
+                    ...store.products[productIndex].item,
+                    forfait: newValue
+                }
+            };
+
+            // Mettre à jour le store avec le nouveau tableau
+            store.products = [
+                ...store.products.slice(0, productIndex),
+                updatedProduct,
+                ...store.products.slice(productIndex + 1)
+            ];
+            
+            emit('update:modelValue', newValue);
+            console.log("APRES", store.products[productIndex]);
+        }
     } catch (error) {
-        console.error('Error updating status:', error);
-        showNotification('Erreur lors de la mise à jour du statut', 'error');
+        console.error('Error toggling status:', error);
     }
 };
+
+// Computed
+const initialAllProductsState = computed(() => {
+  return store.products.every((product: { forfait: boolean; }) => product.forfait);
+});
+
+const toggleAllProducts = (value: boolean) => {
+  allProductsEnabled.value = value;
+  store.products = store.products.map((product: any) => ({
+    ...product,
+    forfait: value
+  }));
+};
+
+// Lifecycle hooks
+onMounted(async () => {
+  try {
+        isLoading.value = true;
+        await unitStore.fetchUnites();
+        await store.fetchDischarge();
+        allProductsEnabled.value = initialAllProductsState.value;
+  } catch (err) {
+    error.value = 'Error loading data';
+  } finally {
+    isLoading.value = false;
+  }
+});
 
 </script>
 <template>
@@ -441,7 +497,7 @@ const toggleStatus = async (item: any) => {
                                         
                                         <v-col cols="12">
                                             <CustomComBox
-                                                :items="editedIndex === -1 ? unitesFiltred : uniteSotre.unites"
+                                                :items="editedIndex === -1 ? unitesFiltred : unitStore.unites"
                                                 label="Selecionner une unité"
                                                 title="short_name"
                                                 v-model="unites.value.value"
@@ -486,6 +542,23 @@ const toggleStatus = async (item: any) => {
                                                             buttons-pagination
                                                             show-index
                                                         >
+
+                                                         <!-- Add before the existing templates -->
+                                                            
+
+                                                            <!-- Update the forfait column template -->
+                                                            <template #item-forfait="{ raw }">
+                                                                <div class="d-flex align-center justify-center">
+                                                                    <v-switch
+                                                                        color="primary"
+                                                                        :model-value="raw.forfait"
+                                                                        @change="() => handleToggle(raw)"
+                                                                        hide-details
+                                                                        dense
+                                                                        :disabled="!effective ? true : false"
+                                                                    ></v-switch>
+                                                                </div>
+                                                            </template>
                                                             <template #item-item="{ item }">
                                                                 <div class="d-flex align-center">
                                                                     <div class="hoverable">
@@ -508,16 +581,6 @@ const toggleStatus = async (item: any) => {
                                                                 </div>
                                                             </template>
                                                           
-                                                             <template #item-forfait="{ raw }">
-                                                                <div class="d-flex align-center">
-                                                                    <v-switch
-                                                                        color="primary"
-                                                                        :model-value="raw.forfait"
-                                                                        @update:model-value="toggleStatus(raw)"
-                                                                    ></v-switch>
-
-                                                                </div>
-                                                            </template>
                     
                                                             <template #item-actions="{ raw }">
                                                                 <div class="d-flex align-center">
@@ -528,14 +591,17 @@ const toggleStatus = async (item: any) => {
                                                                             </v-btn>
                                                                         </template>
                                                                     </v-tooltip> -->
-                                                                    <v-tooltip text="Edit">
+                                                                    <v-tooltip text="Modifier la quantité">
                                                                         <template v-slot:activator="{ props }">
-                                                                            <v-btn icon flat @click="editItem(raw)" v-bind="props">
+                                                                            <v-btn icon flat @click="editQuantity(raw)" v-bind="props"
+                                                                            :disabled="!effective ? true : false"
+
+                                                                            >
                                                                                 <PencilIcon stroke-width="1.5" size="20" class="text-primary" />
                                                                             </v-btn>
                                                                         </template>
                                                                     </v-tooltip>
-                                                                    <v-tooltip text="Delete">
+                                                                    <v-tooltip text="Retirer">
                                                                         <template v-slot:activator="{ props }">
                                                                             <v-btn icon flat @click="remove(raw)" v-bind="props">
                                                                                 <TrashIcon stroke-width="1.5" size="20" class="text-error" />
@@ -786,6 +852,34 @@ const toggleStatus = async (item: any) => {
     </v-card>
   </v-dialog>
 </template>
+
+    <v-dialog v-model="quantityDialog" max-width="300" persistent class="dialog-mw">
+                <v-card>
+                    <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
+                        <span class="title text-white">Nouvelle Quantité</span>
+                    </v-card-title>
+
+                    <v-card-text>
+                        <v-form ref="form" v-model="valid" lazy-validation>
+                            <v-row>
+                                <v-col cols="12">
+                                    <v-text-field
+                                        variant="outlined"
+                                        v-model="quantityItem"
+                                        label="La quantité"
+                                        type="number"
+                                        block
+                                    ></v-text-field>
+                                </v-col>
+                            </v-row>
+                        </v-form>
+                    </v-card-text>
+
+                    <v-card-actions class="pa-4">
+                        <v-btn color="secondary" variant="flat" @click="submitQuantity" block>Modifier</v-btn>
+                    </v-card-actions>
+                </v-card>
+    </v-dialog>
 
     <!-- Snackbar pour les notifications -->
     <v-snackbar
