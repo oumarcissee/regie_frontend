@@ -40,42 +40,47 @@ export const useDischargeStore = defineStore({
     },
     actions: {
 
-        async fetchProducts(objet: any = null) {
-            try {
-                const response = await new ApiAxios().find(`/items/`);
-                // const data = response.data.results;
-
-                this.products = filterAndOrderObjects(response.data.results);
-
-                this.products = this.products.map((item: any, index: number) => ({
+        async fetchProducts(effective: any = null, offset: number = 0, forfait: boolean = false) {
+        try {
+            const response = await new ApiAxios().find(`/items/`);
+            
+            this.products = filterAndOrderObjects(response.data.results);
+            
+            this.products = this.products.map((item: any, index: number) => {
+                // Calculer la quantité de base
+                const baseQuantity =  effective ? get_quantity(item.rate_per_days, effective, item.divider) : 0;
+                // Ajouter l'offset à la quantité si offset n'est pas 0
+                
                     
+                const finalQuantity = offset && forfait ? baseQuantity + offset : baseQuantity;
+
+                return {
                     ref: item.ref,
                     rate_per_days: item.rate_per_days,
                     status: false,
                     price: item.price,
                     unite: get_full_unite(item.unite),
                     divider: item.divider,
-                    forfait: false,
                     item: {
                         name: item.name,
                         image: item.image,
                         description: item.description,
-                        created_at : new Date(item.created_at),
-                        modified_at : new Date(item.modified_at),
+                        created_at: new Date(item.created_at),
+                        modified_at: new Date(item.modified_at),
                         forfait: false,
-                        quantite: objet && objet.effective ? get_quantity(item.rate_per_days, objet.effective, item.divider) : 0,
+                        quantite: finalQuantity  // Utiliser la quantité avec offset
                     },
-
                     actions: item,
-                    raw: item // Keep raw data for actions
-               }));
-                // console.log(this.products);
-                return this.products;
-            } catch (error) {
-                alert(error);
-                console.log(error);
-            }
-        },
+                    raw: item
+                };
+            });
+            
+            return this.products;
+        } catch (error) {
+            alert(error);
+            console.log(error);
+        }
+    },
 
         async fetchAllAreas() {
             try {

@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useDischargeStore } from '@/stores/rutStore/discharge/dischargeStore';
 import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
-import { truncateText ,notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite,get_full_unite} from '@/services/utils';
+import { truncateText ,notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite,get_full_unite, get_quantity} from '@/services/utils';
 import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBoxUnites.vue';
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
@@ -11,6 +11,7 @@ const searchField = ref(['name', 'type_of_unit']);
 const printPreviewDialog = ref(false);
 const quantityDialog = ref(false);
 const quantityItem = ref('');
+const myIndex = ref(null);
 
 const searchValue = ref('');
 import { EyeIcon } from 'lucide-vue-next';
@@ -155,7 +156,6 @@ const count = ref(0);
 const pError = ref();
 
 // Modifier la fonction submit
-
 const submit = handleSubmit(async (values, { setErrors }: any ) => {
     
     try {
@@ -210,7 +210,7 @@ const refreshTable = async () => {
     try {
         loading.value = true;
         await store.fetchDischarge();
-        store.fetchProducts();
+        await store.fetchProducts();
         // Forcer la réactivité en créant une nouvelle référence
         store.boredereaux = [...store.boredereaux];
     } catch (error) {
@@ -222,11 +222,6 @@ const refreshTable = async () => {
 };
 
 const uniteSelected = ref();
-
-const changed = (value: string | any) => {
-    uniteSelected.value = value;
-    return value;
-};
 
 const valid = ref(true);
 const dialog = ref(false);
@@ -241,6 +236,7 @@ function close() {
     dialog.value = false;
     editedIndex.value = -1;
     effective.value = null;
+    store.products = [];
     handleReset();
 }
 
@@ -254,13 +250,6 @@ const editItem = (item: any) => {
     // Remplir le formulaire avec les donnéeses
     unites.value.value = item.unites;
     items.value.value  = item.items;
-     
-    // short_name.value.value = item.short_name;
-    // g_staff.value.value = item.g_staff;
-    // area.value.value = item.area;
-    // effective.value.value = item.effective;
-    // type_of_unit.value.value = item.type_of_unit;
-    // description.value.value = item.description;
 
     dialog.value = true;
 };
@@ -269,9 +258,6 @@ const editItem = (item: any) => {
 const openPrintPreview = () => {
     printPreviewDialog.value = true;
 };
-
-
-
 
 const remove = (item: any) => {
     if (store.products.length > 1) {
@@ -326,7 +312,7 @@ const unitedChanged = async (value: any) => {
 
         effective.value = selectedUnite.effective; 
         //Gestion des operations dans le store.
-        await store.fetchProducts(selectedUnite);
+        await store.fetchProducts(selectedUnite.effective);
     }
 
 };
@@ -344,24 +330,76 @@ const productsHeaders = [
 
 const editQuantity = (newQuantity: any) => {
     quantityDialog.value = true;
-    // myIndex.value = newQuantity;
-    // quantityItem.value = String(newQuantity.quantity);
+    myIndex.value = newQuantity;
+
+    if (myIndex.value) {
+        myIndex.value = parseInt(quantityItem.value) > 0 ? parseInt(quantityItem.value) : 1;
+    }
+
+    myIndex.value = store.products.find((p: { ref: any; }) => p.ref === newQuantity.ref);
+  
 };
 
+// Update the submitQuantity function
 const submitQuantity = () => {
-    // if (myIndex.value) {
-    //     myIndex.value.quantity = parseInt(quantityItem.value) > 0 ? parseInt(quantityItem.value) : 1;
-    // }
-    // quantityItem.value = '';
-    // quantityDialog.value = false;
+
+    if (myIndex.value.item.forfait) {
+        const productIndex = store.products.findIndex((p: { ref: any; }) => p.ref === myIndex.value.ref);
+        if (productIndex !== -1) {
+            const newQuantity = parseInt(quantityItem.value) || 0;
+
+            if(newQuantity){
+                const updatedProduct = {
+                    ...store.products[productIndex],
+                    item: {
+                        ...store.products[productIndex].item,
+                        quantite: newQuantity
+                    }
+                };
+
+                // Update the product with new quantity
+                
+                // Update store
+                store.products = [
+                    ...store.products.slice(0, productIndex),
+                    updatedProduct,
+                    ...store.products.slice(productIndex + 1)
+                ];
+            } 
+        }
+    } else {
+        const productIndex = store.products.findIndex((p: { ref: any; }) => p.ref === myIndex.value.ref);
+        if (productIndex !== -1) {
+            const newQuantity = parseInt(quantityItem.value) || 0;
+            
+            // Update the product with new quantity
+            const updatedProduct = {
+                ...store.products[productIndex],
+                item: {
+                    ...store.products[productIndex].item,
+                    quantite: newQuantity + store.products[productIndex].item.quantite
+                }
+            };
+            
+            // Update store
+            store.products = [
+                ...store.products.slice(0, productIndex),
+                updatedProduct,
+                ...store.products.slice(productIndex + 1)
+            ];
+        }
+    }
+
+    // Reset values
+    quantityItem.value = '';
+    myIndex.value = null;
+    quantityDialog.value = false;
 };
 
 
 
 // Add new ref for controlling all products
 const allProductsEnabled = ref(false);
-
-
 
 // Interfaces
 interface Product {
@@ -375,21 +413,26 @@ const emit = defineEmits(['update:modelValue']);
 // Functions
 const handleToggle = async (product: any) => {
     try {
-        console.log("AVANT", product);
-        const newValue = !product.forfait; // Changement ici pour accéder au forfait dans item
-    
-        const productIndex = store.products.findIndex((p: { ref: string; }) => p.ref === product.ref);
+        const currentProduct = store.products.find((p: { ref: any; }) => p.ref === product.ref);
+        const newValue = !currentProduct.item.forfait;
+        
+        const productIndex = store.products.findIndex((p: { ref: any; }) => p.ref === product.ref);
         if (productIndex !== -1) {
-            // Créer une copie profonde du produit pour modifier la propriété imbriquée
+            // Calculate base quantity
+            const baseQuantity = effective.value 
+                ? get_quantity(currentProduct.rate_per_days, effective.value, currentProduct.divider) 
+                : 0;
+
             const updatedProduct = {
                 ...store.products[productIndex],
                 item: {
                     ...store.products[productIndex].item,
-                    forfait: newValue
+                    forfait: newValue,
+                    quantite: newValue ? baseQuantity : baseQuantity
                 }
             };
 
-            // Mettre à jour le store avec le nouveau tableau
+            // Update store
             store.products = [
                 ...store.products.slice(0, productIndex),
                 updatedProduct,
@@ -397,13 +440,11 @@ const handleToggle = async (product: any) => {
             ];
             
             emit('update:modelValue', newValue);
-            console.log("APRES", store.products[productIndex]);
         }
     } catch (error) {
         console.error('Error toggling status:', error);
     }
 };
-
 // Computed
 const initialAllProductsState = computed(() => {
   return store.products.every((product: { forfait: boolean; }) => product.forfait);
@@ -421,7 +462,7 @@ const toggleAllProducts = (value: boolean) => {
 onMounted(async () => {
   try {
         isLoading.value = true;
-        await unitStore.fetchUnites();
+        unitStore.fetchUnites();
         await store.fetchDischarge();
         allProductsEnabled.value = initialAllProductsState.value;
   } catch (err) {
@@ -481,7 +522,7 @@ onMounted(async () => {
         <v-row class="align-center">
             <!-- Colonne pour le bouton -->
             <v-col cols="12" md="4" class="d-flex justify-end">
-                <v-dialog v-model="dialog" 
+                <v-dialog v-model="dialog" persistent
                                                         >
                     <v-card>
                         <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
@@ -853,7 +894,7 @@ onMounted(async () => {
   </v-dialog>
 </template>
 
-    <v-dialog v-model="quantityDialog" max-width="300" persistent class="dialog-mw">
+    <v-dialog v-model="quantityDialog" max-width="300" class="dialog-mw">
                 <v-card>
                     <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
                         <span class="title text-white">Nouvelle Quantité</span>

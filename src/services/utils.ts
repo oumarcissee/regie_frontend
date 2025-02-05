@@ -6,6 +6,7 @@ import { reactive, ref } from 'vue';
 import { format } from 'date-fns';
 
 import fr from 'date-fns/locale/fr';
+import type { object } from 'yup';
 const locale = fr; // or en, or es
 
 
@@ -411,10 +412,11 @@ const  filterAndOrderObjects =  (dataArrays: any[], choice: boolean = true) => {
  * @param div 
  * @returns 
  */
-const get_quantity = (taux: any, eff: any, div: any): number => {
+const get_quantity = ( taux: any, eff: any, div: any): number => {
   const month = 30;
   const total: any = parseFloat(JSON.parse(taux)) * month * parseInt(JSON.parse(eff)) / parseInt(div);
-  return  Math.round(total); // Retourne un nombre entier positif
+ 
+  return Math.round(total);
 }
 
 
