@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import { useCustomizerStore } from '../../../stores/customizer';
 import { useEcomStore } from '@/stores/apps/eCommerce';
 import { GridDotsIcon, LanguageIcon, SearchIcon, Menu2Icon, BellRingingIcon, ShoppingCartIcon } from 'vue-tabler-icons';
@@ -10,20 +10,27 @@ import Searchbar from './Searchbar.vue';
 import RightMobileSidebar from './RightMobileSidebar.vue';
 import Navigations from './Navigations.vue';
 
-import { getCurrentMonth , currentMonth} from '@/services/utils';
-
 import { useAuthStore } from '@/stores/auth';
 import { useOrderStore } from '@/stores/rutStore/orders/orderStore';
+import { loadCurrentMoment , getcurrentMoment, currentMoment, months} from '@/services/utilsMoment';
 
-const orderStore = useOrderStore()
-
+const orderStore = useOrderStore();
 const customizer = useCustomizerStore();
 const showSearch = ref(false);
 const appsdrawer = ref(false);
 const priority = ref(customizer.setHorizontalLayout ? 0 : 0);
+
+
+
+
+onMounted(async () => {
+    await loadCurrentMoment();
+});
+
 function searchbox() {
     showSearch.value = !showSearch.value;
 }
+
 watch(priority, (newPriority) => {
     priority.value = newPriority;
 });
@@ -33,11 +40,6 @@ const store = useEcomStore();
 const getCart = computed(() => {
     return store.cart;
 });
-
-const cartCount = computed(() => {
-    return getCart.value.length;
-});
-
 
 </script>
 
@@ -85,11 +87,11 @@ const cartCount = computed(() => {
         </div> -->
         <v-spacer />
 
-        <!-- Le mois courrant -->
+        <!-- Modified v-select to show only months -->
         <v-select 
-            @update:modelValue="getCurrentMonth"
-            v-model="currentMonth" 
-            :items="orderStore.getMonths"
+            @update:modelValue="getcurrentMoment"
+            v-model="currentMoment" 
+            :items="months"
             label="Le mois en cours d'utilisation" 
             hide-details 
         ></v-select>

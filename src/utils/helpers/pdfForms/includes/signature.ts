@@ -1,5 +1,5 @@
 import type jsPDF from "jspdf";
-import { getCurrentMonth, currentMonth, convertNumberToWords } from '@/services/utils';
+import { getcurrentMoment, currentMoment, convertNumberToWords } from '@/services/utils';
 import { useSettingStore } from '@/stores/rutStore/settings/settingStore';
 
 const { getSignators, fetchSignators } = useSettingStore();

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 // project imports
-import { isAxiosError, currentMonth } from '@/services/utils';
+import { isAxiosError, currentMoment } from '@/services/utils';
 
 // import { router } from '@/router';
 
@@ -16,7 +16,7 @@ export const useOrderStore = defineStore({
     state: () => ({
         orders: [] as any,
         ordersLine: [] as any,
-        months: [] as any,
+        moments: [] as any,
         dialog: false,
         errors: {
             nameError: null as any,
@@ -28,7 +28,7 @@ export const useOrderStore = defineStore({
             return state.orders;
         },
         getMonths(state) {
-            return state.months;
+            return state.moments;
         }
     },
     actions: {
@@ -98,19 +98,25 @@ export const useOrderStore = defineStore({
             try {
                 const archives = await new ApiAxios().find('/archives/');
 
-                const uniqueMonths = new Set();
+               // Créer un Map pour stocker les mois uniques
+                const monthMap = new Map();
                 
                 archives.data.results.forEach((item: any) => {
-                    uniqueMonths.add(format(new Date(item.date), "MMMM yyyy", { locale }));
+                    const monthKey = format(new Date(item.date), "MMMM yyyy", { locale });
+                    // Si le mois n'existe pas déjà, l'ajouter
+                    if (!monthMap.has(monthKey)) {
+                        monthMap.set(monthKey, {
+                            months: monthKey,
+                            days: item.nomber_of_days
+                        });
+                    }
                 });
-               
-                Array.from(uniqueMonths).forEach( async(item: any) => {
-                    await this.months.push(item);
-                });
+        
+                // Convertir les valeurs du Map en tableau
+                this.moments = Array.from(monthMap.values());
                 
-                currentMonth.value = currentMonth.value ?? this.months[0];
-      
-                return this.months;
+        
+        return this.moments;
 
             } catch (error) {
                 alert(error+ "Erreur d'uniqueMonths date");

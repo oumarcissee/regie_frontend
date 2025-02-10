@@ -11,8 +11,6 @@ const locale = fr; // or en, or es
 
 
 
-
-
 /**
  *
  * @param {Date} date
@@ -167,11 +165,12 @@ const get_full_unite = (unite: any): string => {
 }
 
 
-const currentMonth = ref();
+const currentMoment = ref();
 
-const getCurrentMonth = (value: string | any[]) => {
-  currentMonth.value = value;
-  return currentMonth;
+const getcurrentMoment = (value: string | any[]) => {
+  currentMoment.value = value;
+  // console.log(currentMoment.value);
+  return currentMoment;
 }
 
 
@@ -423,7 +422,7 @@ const get_quantity = ( taux: any, eff: any, div: any): number => {
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
-  confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getCurrentMonth, currentMonth,
+  confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getcurrentMoment, currentMoment,
   get_full_unite, formatDate, signatorPosition, showNotification, notif, convertNumberToWords, get_staffs, get_areas, get_unite_type, get_category_of_unite,
   filterAndOrderObjects, get_quantity,
 }

@@ -1,5 +1,5 @@
 import type jsPDF from "jspdf";
-import { getCurrentMonth, currentMonth } from '@/services/utils';
+import { getcurrentMoment, currentMoment } from '@/services/utils';
 
 const headerPortrait = (doc: jsPDF, title: string) => {
     const pageWidth = doc.internal.pageSize.width;
@@ -128,7 +128,7 @@ const headerPortrait = (doc: jsPDF, title: string) => {
     // Month display with enhanced styling
     doc.setFontSize(styles.subtitle.fontSize);
     doc.setTextColor(styles.subtitle.r, styles.subtitle.g, styles.subtitle.b);
-    doc.text(currentMonth.value, pageWidth / 2, 2, { align: 'center' });
+    doc.text(currentMoment.value, pageWidth / 2, 2, { align: 'center' });
 
     // Add decorative bottom border
     doc.setDrawColor(styles.headerBox.border.r, styles.headerBox.border.g, styles.headerBox.border.b);

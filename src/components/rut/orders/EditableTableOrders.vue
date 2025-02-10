@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, provide } from 'vue';
-import { truncateText, currentMonth, get_full_unite, formatDate, showNotification } from '@/services/utils';
+import { truncateText, get_full_unite, formatDate, showNotification } from '@/services/utils';
+import {  currentMoment } from '@/services/utilsMoment';
 import { orderFormPdf } from '@/utils/helpers/pdfForms/orderFormPdf';
 import { purchaseOrderFormPdf } from '@/utils/helpers/pdfForms/purcharseOrderFormPdf';
 import { useField, useForm } from 'vee-validate';
@@ -73,17 +74,13 @@ const quantity = useField('quantity');
 
 // Computed properties
 const providersFiltred = computed(() => {
-    const orders = store.orders.filter(
-        (item: any) => formatDate(item.created_at, 'chaine').includes(currentMonth.value)
-    );
+    const orders = store.orders.filter((item: any) => formatDate(item.created_at, 'chaine').includes(currentMoment.value));
     const providersIds = orders.map((item: any) => item.provider.id);
     return userStore.getProviders.filter((item: any) => !providersIds.includes(item.id));
 });
 
 const getOrders = computed(() => {
-    return store.orders.filter(
-        (item: any) =>  formatDate(item.created_at, 'chaine').includes(currentMonth.value)
-    );
+    return store.orders.filter((item: any) => formatDate(item.created_at, 'chaine').includes(currentMoment.value));
 });
 
 const formTitle = computed(() => {
@@ -113,25 +110,27 @@ const getStatus = (value: boolean) => {
 
 const productsSubmit = handleSubmit(async (data: any, { setErrors }: any) => {
     increment.value++;
-    
+
     try {
         const product = useProduct.products.find((item: { id?: any }) => item?.id === data.products);
-        
+
         if (productSelected.value.length >= 10) {
             setErrors({ products: 'Le maximum de produits sélectionnés est atteint.' });
             return;
         }
 
-        productSelected.value = [...productSelected.value, {
-            id: increment.value,
-            item: product,
-            quantity: parseInt(data.quantity)
-        }];
+        productSelected.value = [
+            ...productSelected.value,
+            {
+                id: increment.value,
+                item: product,
+                quantity: parseInt(data.quantity)
+            }
+        ];
 
         isSelected.value = productSelected.value.length > 0;
         useProduct.products = useProduct.products.filter((item: { id: string }) => item.id !== data.products);
         products.resetField();
-        
     } catch (error) {
         console.error("Erreur lors de l'ajout du produit:", error);
     }
@@ -145,7 +144,6 @@ const submit = async () => {
             return productsSubmit();
         }
 
-
         const order = {
             provider: provider.value.value,
             status: status.value
@@ -157,12 +155,10 @@ const submit = async () => {
         };
 
         if (editedIndex.value !== -1) {
-            const ordersLine = store.ordersLine.filter(
-                (item: { order?: any }) => item?.order?.id === editedIndex.value
-            );
+            const ordersLine = store.ordersLine.filter((item: { order?: any }) => item?.order?.id === editedIndex.value);
             const itemIds = ordersLine.map((item: any) => item.item.id);
             useProduct.products = useProduct.products.filter((item: any) => !itemIds.includes(item.id));
-            
+
             await store.addOrUpdateOrder(data, editedIndex.value);
             showNotification('Commande ajoutée avec succès');
         } else {
@@ -172,12 +168,10 @@ const submit = async () => {
 
         await refreshTable();
     } catch (error) {
-         if (error instanceof Error) {
-            const axiosError = error as AxiosError<{[key: string]: string[]}>;
+        if (error instanceof Error) {
+            const axiosError = error as AxiosError<{ [key: string]: string[] }>;
             if (axiosError.response?.data) {
-                const errorMessages = Object.values(axiosError.response.data)
-                    .flat()
-                    .join(', ');
+                const errorMessages = Object.values(axiosError.response.data).flat().join(', ');
                 showNotification(errorMessages, 'error');
             } else {
                 showNotification(error.message, 'error');
@@ -189,7 +183,6 @@ const submit = async () => {
         isLoading.value = false;
         close();
         await refreshTable();
-        
     }
 };
 
@@ -278,8 +271,6 @@ const Preview = (item: any) => {
     openPrintPreview();
 };
 
-
-
 // PDF methods
 const doBillPdf = async () => {
     isSubmittingPdf.value = true;
@@ -287,7 +278,7 @@ const doBillPdf = async () => {
         const signators = await fetchSignators();
         // console.log(signators);
 
-        await orderFormPdf("FACTURE DE PAIEMENT",heading.value, itemsSelected.value, signators);
+        await orderFormPdf('FACTURE DE PAIEMENT', heading.value, itemsSelected.value, signators);
     } catch (error) {
         console.error('Error generating PDF:', error);
     } finally {
@@ -301,7 +292,7 @@ const doPurchaseOrderPdf = async () => {
     try {
         const signators = await fetchSignators();
         // console.log(signators);
-        await purchaseOrderFormPdf("BON DE COMMANDE",heading.value, itemsSelected.value, signators);
+        await purchaseOrderFormPdf('BON DE COMMANDE', heading.value, itemsSelected.value, signators);
     } catch (error) {
         console.error('Error generating PDF:', error);
     } finally {
@@ -313,40 +304,30 @@ const doPurchaseOrderPdf = async () => {
 // Initialization
 onMounted(async () => {
     try {
-        if (!store.getOrders.length) { 
+        if (!store.getOrders.length) {
             isLoading.value = true;
-    
-            await Promise.all([
-                userStore.fetchProviders(),
-                store.fetchOrders(),
-                useProduct.fetchItems()
-            ]);
-    
+
+            await Promise.all([userStore.fetchProviders(), store.fetchOrders(), useProduct.fetchItems()]);
+
             loadingProvider.value = true;
             loadingProducts.value = true;
             isLoading.value = false;
-
         }
-
     } catch (error) {
         console.error('Error initializing component:', error);
     }
 });
 
-
 const loading = ref(false);
-
 </script>
 
-
 <template>
-
-     <div class="d-flex align-center gap-4 mb-4">
+    <div class="d-flex align-center gap-4 mb-4">
         <!-- Zone de recherche -->
-        <v-text-field 
-            density="compact" 
-            v-model="searchValue" 
-            label="Rechercher une commande" 
+        <v-text-field
+            density="compact"
+            v-model="searchValue"
+            label="Rechercher une commande"
             variant="outlined"
             placeholder="Entrez un nom le libéllé"
             prepend-inner-icon="mdi-magnify"
@@ -354,7 +335,7 @@ const loading = ref(false);
             class="flex-grow-1"
             hide-details
         ></v-text-field>
-        
+
         <!-- Filtre par type -->
         <!-- <v-select
             density="compact"
@@ -368,9 +349,9 @@ const loading = ref(false);
         ></v-select> -->
 
         <!-- Bouton d'ajout -->
-        <v-btn 
+        <v-btn
             v-if="!itemsSelected.length"
-            color="primary" 
+            color="primary"
             prepend-icon="mdi-account-multiple-plus"
             @click="store.dialog = true"
             class="ml-auto"
@@ -382,17 +363,14 @@ const loading = ref(false);
             <PrinterIcon size="20" />
         </v-btn>
 
-         <!-- <v-btn icon variant="text" @click="printContent">
+        <!-- <v-btn icon variant="text" @click="printContent">
             <FilterIcon size="20" />
         </v-btn> -->
     </div>
 
-  
     <v-row class="mb-4">
-        
         <v-col cols="12" lg="8" md="6" class="text-right">
             <v-dialog v-model="store.dialog" max-width="800" persistent class="dialog-mw">
-
                 <!-- Formulaire de commande -->
                 <v-card>
                     <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
@@ -618,7 +596,11 @@ const loading = ref(false);
                 <div class="d-flex align-center">
                     <v-tooltip text="Editer">
                         <template v-slot:activator="{ props }">
-                            <v-btn icon flat @click="editItem({ user: parseInt(item?.provider?.id), id: parseInt(item.id) ,status: item.status})" v-bind="props"
+                            <v-btn
+                                icon
+                                flat
+                                @click="editItem({ user: parseInt(item?.provider?.id), id: parseInt(item.id), status: item.status })"
+                                v-bind="props"
                                 ><PencilIcon stroke-width="1.5" size="20" class="text-primary"
                             /></v-btn>
                         </template>
@@ -718,51 +700,21 @@ const loading = ref(false);
             </v-card-text>
             <v-card-actions class="d-flex justify-space-between px-4">
                 <div class="d-flex gap-4 flex-grow-1">
-                    <v-btn 
-                        color="secondary" 
-                        variant="flat" 
-                        @click="doBillPdf" 
-                        :loading="isSubmittingPdf"
-                        class="flex-grow-1"
-                    >
+                    <v-btn color="secondary" variant="flat" @click="doBillPdf" :loading="isSubmittingPdf" class="flex-grow-1">
                         Facture
                     </v-btn>
-                    <v-btn 
-                        color="secondary" 
-                        variant="flat" 
-                        @click="doPurchaseOrderPdf" 
-                        :loading="isSubmitting2Pdf"
-                        class="flex-grow-1"
-                    >
+                    <v-btn color="secondary" variant="flat" @click="doPurchaseOrderPdf" :loading="isSubmitting2Pdf" class="flex-grow-1">
                         Bon de Commande
                     </v-btn>
-                    <v-btn 
-                        color="error" 
-                        variant="flat" 
-                        @click="closePrintPreviewDialog"
-                        class="flex-grow-1"
-                    >
-                        Fermer
-                    </v-btn>
+                    <v-btn color="error" variant="flat" @click="closePrintPreviewDialog" class="flex-grow-1"> Fermer </v-btn>
                 </div>
             </v-card-actions>
         </v-card>
     </v-dialog>
 
- 
-
-
-
-        <!-- Loading Overlay -->
-    <v-overlay
-        :model-value="isLoading"
-        class="align-center justify-center"
-    >
-        <v-progress-circular
-            color="primary"
-            indeterminate
-            size="64"
-        ></v-progress-circular>
+    <!-- Loading Overlay -->
+    <v-overlay :model-value="isLoading" class="align-center justify-center">
+        <v-progress-circular color="primary" indeterminate size="64"></v-progress-circular>
     </v-overlay>
 </template>
 
