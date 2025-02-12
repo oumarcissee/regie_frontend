@@ -112,7 +112,6 @@ const category_of = ref([
 // Add type filter
 const typeFilter = ref('current');
 const filteredUnits = computed(() => {
-    console.log(store.boredereaux);
 
     let units = unitStore.unites
     
@@ -291,7 +290,7 @@ const headers = [
 
 
 const unitesFiltred = computed(() => {
-    return unitStore.unites
+    return unitStore.unites.filter((unit: any) => unit.type_of_unit === typeFilter.value)
 });
 
 
@@ -548,6 +547,21 @@ onMounted(async () => {
                                             />
                                         
                                         </v-col>
+                                          <v-col cols="12">
+                                              <!-- Filtre par type -->
+                                            <v-select
+                                                density="compact"
+                                                v-model="typeFilter"
+                                                :items="type_of_unites"
+                                                label="Filtrer par type"
+                                                variant="outlined"
+                                                hide-details
+                                                style="min-width: 200px;"
+                                            ></v-select>
+    
+                                            <!-- Bouton d'ajout -->
+
+                                         </v-col>
     
                                         
                                         <v-col cols="12" >
