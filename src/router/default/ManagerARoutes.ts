@@ -71,6 +71,11 @@ const ManagerARoutes = {
             path: '/rut/save/areas',
             component: () => import('@/views/rut/areas/SubAreaList.vue'),
         },
+        {
+            name: 'Menu-Depenses',
+            path: '/rut/save/spendings',
+            component: () => import('@/views/rut/menu/MenuView.vue'),
+        },
 
         {
             name: 'Boredereaux',

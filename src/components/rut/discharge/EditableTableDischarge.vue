@@ -5,6 +5,8 @@ import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
 import { truncateText, notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite, get_full_unite } from '@/services/utils';
 import { get_quantity } from '@/services/utilsMoment';
 import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBoxUnites.vue';
+import MenuView from './MenuView.vue';
+
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 const itemsSelected = ref<Item[]>([]);
@@ -472,6 +474,9 @@ onMounted(async () => {
   }
 });
 
+
+
+
 </script>
 <template>
 
@@ -519,11 +524,12 @@ onMounted(async () => {
 
     <template >
 
+        Enregistrement des denrées
         <v-row class="align-center">
             <!-- Colonne pour le bouton -->
             <v-col cols="12" md="4" class="d-flex justify-end">
                 <v-dialog v-model="dialog" persistent
-                                                        >
+                                fullscreen :scrim="false" transition="dialog-bottom-transition"                        >
                     <v-card>
                         <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
                             <span class="title text-white">{{ formTitle }}</span>
@@ -537,6 +543,22 @@ onMounted(async () => {
                                     <v-col cols="12" sm="8" >
                                         
                                         <v-col cols="12">
+                                              <!-- Filtre par type -->
+                                            <v-select
+                                                density="compact"
+                                                v-model="typeFilter"
+                                                :items="type_of_unites"
+                                                label="Filtrer par type de bordereau"
+                                                variant="outlined"
+                                                hide-details
+                                                style="min-width: 200px;"
+                                               :disabled="!effective ? false : true"
+                                            ></v-select>
+    
+                                            <!-- Bouton d'ajout -->
+
+                                         </v-col>
+                                        <v-col cols="12">
                                             <CustomComBox
                                                 :items="editedIndex === -1 ? unitesFiltred : unitStore.unites"
                                                 label="Selecionner une unité"
@@ -547,21 +569,6 @@ onMounted(async () => {
                                             />
                                         
                                         </v-col>
-                                          <v-col cols="12">
-                                              <!-- Filtre par type -->
-                                            <v-select
-                                                density="compact"
-                                                v-model="typeFilter"
-                                                :items="type_of_unites"
-                                                label="Filtrer par type"
-                                                variant="outlined"
-                                                hide-details
-                                                style="min-width: 200px;"
-                                            ></v-select>
-    
-                                            <!-- Bouton d'ajout -->
-
-                                         </v-col>
     
                                         
                                         <v-col cols="12" >
@@ -569,7 +576,8 @@ onMounted(async () => {
                                                 <v-col cols="12" sm="6">
                                                     Effectif: <span class="text-h5 text-white">{{ effective }}</span> Hommes
                                                 </v-col>
-    
+                                                
+                                              
                                                 <v-col cols="12" sm="6">
                                                     
                                                     <!-- <v-btn color="primary" variant="outlined" size="large" block flat @click="productsSubmit">
@@ -579,7 +587,6 @@ onMounted(async () => {
                                             </v-row>
                                         </v-col>
                                         
-    
                                         <v-col cols="12" sm="12">
                                             <!-- Replace v-table with EasyDataTable -->
                                             <v-row>
@@ -593,7 +600,7 @@ onMounted(async () => {
                                                             table-class-name="customize-table"
                                                             :search-field="searchField"
                                                             :search-value="searchValue"
-                                                            :rows-per-page="8"
+                                                            :rows-per-page="7"
                                                             v-model:items-selected="itemsSelected"
                                                             buttons-pagination
                                                             show-index
@@ -667,9 +674,13 @@ onMounted(async () => {
                                                                 </div>
                                                             </template>
                                                         </EasyDataTable>
-    
+                                                        
+                                                          
                                                     </v-col>
-                                                    <v-col cols="12" sm="12"></v-col>
+                                                    <v-col cols="12" sm="12">
+                                                      
+
+                                                    </v-col>
                                             </v-row>
     
                                         </v-col>
@@ -677,7 +688,43 @@ onMounted(async () => {
                                     </v-col>
 
                                     <v-col cols="12" sm="4">
-                                        menuDE
+
+                                        <v-col cols="12">
+                                              <!-- Filtre par type -->
+                                            <v-select
+                                                density="compact"
+                                                v-model="typeFilter"
+                                                :items="type_of_unites"
+                                                label="Filtrer par type de bordereau"
+                                                variant="outlined"
+                                                hide-details
+                                                style="min-width: 200px;"
+                                               :disabled="!effective ? false : true"
+                                            ></v-select>
+    
+                                            <!-- Bouton d'ajout -->
+
+                                         </v-col>
+                                        <v-col cols="12">
+                                            <CustomComBox
+                                                :items="editedIndex === -1 ? unitesFiltred : unitStore.unites"
+                                                label="Selecionner une unité"
+                                                title="short_name"
+                                                v-model="unites.value.value"
+                                                :error-messages="unites.errorMessage.value"
+                                                @update:modelValue="unitedChanged"
+                                            />
+                                        
+                                        </v-col>
+    
+                                        
+                                        <v-col cols="12" >
+                                            <v-row>
+                                                Enregistrement des dépenses
+                                            </v-row>
+                                        </v-col>
+
+                                       <MenuView/>
                                     </v-col>
                                     
                                 </v-row>

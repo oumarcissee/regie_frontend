@@ -45,7 +45,7 @@ class ApiAxios {
    * @param {Object} data
    * @param {Integer} id?
   */
-  updateForm(url: string, data: any, id: any){
+  updateForm(url: string, data: any, id?: any){
     return this.axiosInstance().put(url, data, {
       headers:{
         "Content-Type": "multipart/form-data",
@@ -62,7 +62,7 @@ class ApiAxios {
    * @param {Object} data
    * @param {Integer} id?
   */
-  updatePartialForm(url: string, data: any, id: any){
+  updatePartialForm(url: string, data: any, id?: any){
     return this.axiosInstance().patch(url, data, {
       headers:{
         "Content-Type": "multipart/form-data",
@@ -97,7 +97,7 @@ class ApiAxios {
    * @param {Object} data
    * @param {Integer} id?
    */
-  update(url: string, data: any, id: any){
+  update(url: string, data: any, id?: any){
     return this.axiosInstance().put(url, data, {
       params: {id}
     })
@@ -108,7 +108,7 @@ class ApiAxios {
    * @param {String} url
    * @param {Integer} id?
    */
-  delete(url: string, id: any) {
+  delete(url: string, id?: any) {
     return this.axiosInstance().delete(url, {
       params: { id }
     });

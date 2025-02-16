@@ -184,6 +184,14 @@ const sidebarItemManagerA: menu[] = [
                 chipBgColor: 'secondary',
                 to: '/rut/save/areas'
             },
+
+            {
+                title: 'Menu-Depenses',
+                icon: UserPlusIcon,
+                chipColor: 'surface',
+                chipBgColor: 'secondary',
+                to: '/rut/save/spendings'
+            },
         ]
 
     },

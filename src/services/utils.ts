@@ -387,6 +387,13 @@ const get_category_of_unite = (categroy: string, type = false) => {
 }
 
 
+/**
+ * 
+ * @param dataArrays 
+ * @param choice 
+ * @returns 
+ */
+
 const  filterAndOrderObjects =  (dataArrays: any[], choice: boolean = true) => {
   const prefixes = ['Riz', 'Hui', 'Tom', 'Oig', 'Lai', 'Suc', 'Sav', 'Sar', 'Sel', 'Caf', 'Pat', 'Eau'];
   return dataArrays.flat()
@@ -419,10 +426,26 @@ const get_quantity = ( taux: any, eff: any, div: any): number => {
 }
 
 
+/**
+ * LES FONCTIONS ET VARIABLES DES MENUS
+ */
+
+const type_of_spending = (value: any) => {
+  console.log(value);
+  switch (value) {
+    case 'food':
+      return "Menu";
+    case 'other':
+      return "Autre";
+    default: return "Autre-Depense";
+  }
+};
+
+
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
   confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getcurrentMoment, currentMoment,
   get_full_unite, formatDate, signatorPosition, showNotification, notif, convertNumberToWords, get_staffs, get_areas, get_unite_type, get_category_of_unite,
-  filterAndOrderObjects, get_quantity,
+  filterAndOrderObjects, get_quantity,type_of_spending
 }
