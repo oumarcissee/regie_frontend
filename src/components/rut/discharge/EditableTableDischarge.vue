@@ -2,10 +2,12 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useDischargeStore } from '@/stores/rutStore/discharge/dischargeStore';
 import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
-import { truncateText, notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite, get_full_unite } from '@/services/utils';
+import {
+    truncateText, notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite, get_full_unite,
+    repartirBudgetAvecTauxPrecis
+ } from '@/services/utils';
 import { get_quantity } from '@/services/utilsMoment';
 import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBoxUnites.vue';
-import MenuView from './MenuView.vue';
 
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
@@ -213,6 +215,7 @@ const refreshTable = async () => {
         loading.value = true;
         await store.fetchDischarge();
         await store.fetchProducts();
+        await store.fetchMenus();
         // Forcer la réactivité en créant une nouvelle référence
         store.boredereaux = [...store.boredereaux];
     } catch (error) {
@@ -466,6 +469,7 @@ onMounted(async () => {
         isLoading.value = true;
         unitStore.fetchUnites();
         await store.fetchDischarge();
+        await store.fetchMenus();
         allProductsEnabled.value = initialAllProductsState.value;
   } catch (err) {
     error.value = 'Error loading data';
@@ -516,6 +520,7 @@ onMounted(async () => {
         >
             Ajouter un boredereau
         </v-btn>
+ 
 
         <v-btn v-else="itemsSelected.length" icon variant="text" @click="openPrintPreview()" flat class="ml-auto">
             <PrinterIcon size="20" />
@@ -678,7 +683,7 @@ onMounted(async () => {
                                                           
                                                     </v-col>
                                                     <v-col cols="12" sm="12">
-                                                      
+                                                    
 
                                                     </v-col>
                                             </v-row>
@@ -723,8 +728,74 @@ onMounted(async () => {
                                                 Enregistrement des dépenses
                                             </v-row>
                                         </v-col>
-
-                                       <MenuView/>
+                                        <v-card v-if="effective" elevation="0" class="mt-6 border">
+                                            <v-table class="month-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="text-h6">Désignation</th>
+                                                        <th class="text-h6">Type</th>
+                                                        <th class="text-h6">Montant</th>
+                                                        <th class="text-h6"></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="item in store.menus" :key="item.name" class="month-item">
+                                                        <td>
+                                                            <div class="d-flex align-center">
+                                                                <v-avatar size="42" rounded="md">
+                                                                    <img :src="item.image" alt="avatar" height="42" />
+                                                                </v-avatar>
+                                                                <div class="ml-4">
+                                                                    <h6 class="text-subtitle-1 font-weight-bold">{{ item.name }}</h6>
+                                                                    <div class="text-subtitle-1 text-medium-emphasis mt-1">{{ item.description }}</div>
+                                                                </div>
+                                                                
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="d-flex align-center">
+                                                                <div class="d-flex">
+                                                                    <v-chip
+                                                                       
+                                                                        rounded="lg"
+                                                                        class="mr-2"
+                                                            
+                                                                        size="small"
+                                                                    >
+                                                                        {{ item.status }}
+                                                                    </v-chip>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="text-subtitle-1 text-medium-emphasis">{{  }}</div>
+                                                        </td>
+                                                        <td>
+                                                            <v-btn size="30" icon variant="flat" class="grey100">
+                                                                <v-avatar size="22">
+                                                                    <DotsIcon size="20" color="grey100" />
+                                                                </v-avatar>
+                                                                <v-menu activator="parent">
+                                                                    <v-list>
+                                                                        <v-list-item
+                                                                            value="action"
+                                                                        
+                                                                        
+                                                                            hide-details
+                                                                            min-height="38"
+                                                                        >
+                                                                            <v-list-item-title>
+                                                                                
+                                                                            </v-list-item-title>
+                                                                        </v-list-item>
+                                                                    </v-list>
+                                                                </v-menu>
+                                                            </v-btn>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </v-table>
+                                        </v-card>
                                     </v-col>
                                     
                                 </v-row>

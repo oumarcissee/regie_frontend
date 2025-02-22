@@ -63,7 +63,9 @@ const ManagerARoutes = {
         {
             name: 'Unites/Services',
             path: '/rut/save/unites',
+
             component: () => import('@/views/rut/unites/UnitesList.vue'),
+
         },
 
         {

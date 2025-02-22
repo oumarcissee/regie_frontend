@@ -15,9 +15,11 @@ export const useDischargeStore = defineStore({
     id: 'useDischarge',
     state: () => ({
         url: 'bordereaux',
+        menu_url: 'menus',
         categroy: 'unit',
         boredereaux: [] as any,
         areas: [] as any,
+        menus: [] as any,
         products: [] as any,
         unitedSelected: null as any,
         dialog: false,
@@ -40,6 +42,17 @@ export const useDischargeStore = defineStore({
         }
     },
     actions: {
+         async fetchMenus() {
+            try {
+                const response = await new ApiAxios().find(`/${this.menu_url}/`);
+                this.menus = response?.data?.results 
+                return true;
+
+            } catch (error) {
+                console.log(error);
+                return false;
+            }
+        },
 
         async fetchProducts(effective: any = null, offset: number = 0, forfait: boolean = false) {
         try {
@@ -81,7 +94,8 @@ export const useDischargeStore = defineStore({
             alert(error);
             console.log(error);
         }
-    },
+        },
+
 
         async fetchAllAreas() {
             try {
@@ -101,7 +115,7 @@ export const useDischargeStore = defineStore({
             try {
                 const response = await new ApiAxios().find(`/${this.url}/`);
                 this.boredereaux = response?.data?.results;
-                console.log("BORDERAUX",this.boredereaux);
+                // console.log("BORDERAUX",this.boredereaux);
                 
                 // Formater les données pour EasyDataTable
                 // this.boredereaux = (response?.data?.results || []).map((bor: any) => ({

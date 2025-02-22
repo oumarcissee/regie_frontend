@@ -65,6 +65,59 @@ const get_quantity = ( taux: any, eff: any, div: any): number => {
 
 
 
+
+interface Article {
+  name: string;
+  price: number;
+  type: string;
+}
+
+interface ParametresCalcul {
+  id: number;
+  name: string;
+  price: number;
+  effectif: number;
+  dureeGlobal: number;
+  articles: Article[];
+}
+
+type Item = {
+    id: number;
+    name: string;
+    price: number;
+};
+
+function calculateTotal(item: any, GlobalEffectif: number, GlobalTime:number = parseInt(currentDays.value)): number {
+    let total = 0;
+
+    let taux = item.price <= 1200 ? 1 : 0.3;
+    let duree = (item.price * GlobalEffectif) / GlobalTime;
+
+    let montant = item.price * taux * GlobalEffectif * duree;
+    total += montant;
+    
+
+    return montant;
+}
+
+// Définition des items
+const items: Item[] = [
+    { id: 1, name: "Viande rouge", price: 28000 },
+    { id: 2, name: "Menus-Depenses", price: 1000 },
+    { id: 3, name: "Poisson", price: 10000 },
+    { id: 4, name: "Pain", price: 1200 }
+];
+
+// Paramètres globaux
+const GlobalEffectif = 500;
+const GlobalTime = 196000 / 28; // 7000
+
+// Calcul du total
+const totalAmount = calculateTotal(items, GlobalEffectif, GlobalTime);
+console.log(totalAmount); // Devrait afficher 98 000 000
+
+
+
 export {
     fullMoments,
     months,
@@ -72,6 +125,7 @@ export {
     currentDays,
     loadCurrentMoment,
     getcurrentMoment,
-    get_quantity
+  get_quantity,
+    calculateTotal
 }
 
