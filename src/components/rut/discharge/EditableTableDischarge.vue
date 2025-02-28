@@ -3,10 +3,9 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useDischargeStore } from '@/stores/rutStore/discharge/dischargeStore';
 import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
 import {
-    truncateText, notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite, get_full_unite,
-    repartirBudgetAvecTauxPrecis
+    truncateText, notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite, get_full_unite
  } from '@/services/utils';
-import { get_quantity } from '@/services/utilsMoment';
+import { get_quantity , repartirBudgetAvecTauxPrecis} from '@/services/utilsMoment';
 import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBoxUnites.vue';
 
 
@@ -79,7 +78,7 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
 const unites        = useField('unites');
 const items         = useField('items');
 const quantity      = useField('quantity');
-// const menus         = useField('menus');
+// const Data         = useField('Data');
 
 
 
@@ -302,6 +301,7 @@ const unitesFiltred = computed(() => {
 // Add new ref for selected unite details
 const selectedUniteDetails = ref(null);
 const effective = ref(null);
+const menusData = ref();
 
 // Update the unitedChanged function to handle selection
 const unitedChanged = async (value: any) => {
@@ -309,16 +309,25 @@ const unitedChanged = async (value: any) => {
         selectedUniteDetails.value = null;
         return;
     }
+    loading.value = true;
+    isLoading.value = true;
+
     
     // Find the selected unite in the unites array
     const selectedUnite = store.unitedSelected =  unitStore.unites.find((unite: { short_name: any; }) => unite.short_name === value);
     if (selectedUnite) {
         selectedUniteDetails.value 
-
+        
         effective.value = selectedUnite.effective; 
         //Gestion des operations dans le store.
         await store.fetchProducts(selectedUnite.effective);
+
+        menusData.value = await repartirBudgetAvecTauxPrecis(store.menus, effective.value);
+        
     }
+
+    isLoading.value = false;
+    loading.value = false;
 
 };
 
@@ -733,13 +742,13 @@ onMounted(async () => {
                                                 <thead>
                                                     <tr>
                                                         <th class="text-h6">Désignation</th>
-                                                        <th class="text-h6">Type</th>
+                                                        <!-- <th class="text-h6">Type</th> -->
                                                         <th class="text-h6">Montant</th>
-                                                        <th class="text-h6"></th>
+                                                        <th class="text-h6">Pourcentage</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr v-for="item in store.menus" :key="item.name" class="month-item">
+                                                    <tr v-for="item in menusData?.repartition" :key="item.name" class="month-item">
                                                         <td>
                                                             <div class="d-flex align-center">
                                                                 <v-avatar size="42" rounded="md">
@@ -752,7 +761,7 @@ onMounted(async () => {
                                                                 
                                                             </div>
                                                         </td>
-                                                        <td>
+                                                        <!-- <td>
                                                             <div class="d-flex align-center">
                                                                 <div class="d-flex">
                                                                     <v-chip
@@ -766,32 +775,17 @@ onMounted(async () => {
                                                                     </v-chip>
                                                                 </div>
                                                             </div>
+                                                        </td> -->
+                                                        <td>
+                                                            <div class="text-subtitle-1 text-medium-emphasis">{{ item.montantAlloue }}</div>
                                                         </td>
                                                         <td>
-                                                            <div class="text-subtitle-1 text-medium-emphasis">{{  }}</div>
+                                                            <div class="d-flex align-center">
+                                                                <v-progress-linear color="primary" rounded="sm" :model-value="item.progress"></v-progress-linear>
+                                                                <span class="text-subtitle-1 text-medium-emphasis ml-5">{{item.progress}}%</span>
+                                                            </div>    
                                                         </td>
-                                                        <td>
-                                                            <v-btn size="30" icon variant="flat" class="grey100">
-                                                                <v-avatar size="22">
-                                                                    <DotsIcon size="20" color="grey100" />
-                                                                </v-avatar>
-                                                                <v-menu activator="parent">
-                                                                    <v-list>
-                                                                        <v-list-item
-                                                                            value="action"
-                                                                        
-                                                                        
-                                                                            hide-details
-                                                                            min-height="38"
-                                                                        >
-                                                                            <v-list-item-title>
-                                                                                
-                                                                            </v-list-item-title>
-                                                                        </v-list-item>
-                                                                    </v-list>
-                                                                </v-menu>
-                                                            </v-btn>
-                                                        </td>
+                                                       
                                                     </tr>
                                                 </tbody>
                                             </v-table>

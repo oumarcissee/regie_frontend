@@ -46,7 +46,7 @@ export const useDischargeStore = defineStore({
             try {
                 const response = await new ApiAxios().find(`/${this.menu_url}/`);
                 this.menus = response?.data?.results 
-                return true;
+                return this.menus;
 
             } catch (error) {
                 console.log(error);
