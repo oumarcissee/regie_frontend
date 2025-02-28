@@ -359,7 +359,6 @@ const get_unite_type = (type: string) => {
   
 }
 
-
 /**
  * 
  * @param type 
@@ -385,7 +384,6 @@ const get_category_of_unite = (categroy: string, type = false) => {
   }
 }
 
-
 /**
  * 
  * @param dataArrays 
@@ -409,7 +407,6 @@ const  filterAndOrderObjects =  (dataArrays: any[], choice: boolean = true) => {
     });
 }
 
-
 /**
  * 
  * @param taux 
@@ -423,7 +420,6 @@ const get_quantity = ( taux: any, eff: any, div: any): number => {
  
   return Math.round(total);
 }
-
 
 /**
  * LES FONCTIONS ET VARIABLES DES MENUS

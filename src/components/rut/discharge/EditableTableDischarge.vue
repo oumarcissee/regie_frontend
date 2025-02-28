@@ -788,7 +788,12 @@ onMounted(async () => {
                                                        
                                                     </tr>
                                                 </tbody>
+
                                             </v-table>
+                                             <div class="d-flex align-center">
+                                                Montant total: 
+                                                <span class="text-subtitle-1 text-medium-emphasis ml-5">{{ menusData?.budgetTotal}}</span>
+                                            </div>  
                                         </v-card>
                                     </v-col>
                                     
