@@ -437,6 +437,41 @@ const type_of_spending = (value: any) => {
 };
 
 
+/**
+ * Converts a number into a formatted string with spaces as
+ * thousand separators and the "FG" suffix (Guinean Franc)
+ * 
+ * @param amount - The amount to format
+ * @returns The formatted string (example: "7 205 882 FG")
+ */
+function formatGuineanFrancs(amount?: number): string {
+  // Handle undefined, null or NaN values
+  if (amount === undefined || amount === null || isNaN(amount)) {
+    return "0 FG";
+  }
+  
+  // Convert the number to string
+  const amountStr = amount.toString();
+  
+  // Add spaces as thousand separators
+  let formattedAmount = "";
+  const length = amountStr.length;
+  
+  for (let i = 0; i < length; i++) {
+    formattedAmount += amountStr[i];
+    // Add a space every 3 digits starting from the right
+    // but not after the last digit
+    if ((length - i - 1) % 3 === 0 && i !== length - 1) {
+      formattedAmount += " ";
+    }
+  }
+  
+  // Add the "FG" suffix
+  return formattedAmount + " FG";
+}
+
+// Example of usage
+// formatGuineanFrancs(7205882) returns "7 205 882 FG"
 
 
 
@@ -445,5 +480,5 @@ export {
   setItemSelected,getItemSelected, deleteItem,
   confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getcurrentMoment, currentMoment,
   get_full_unite, formatDate, signatorPosition, showNotification, notif, convertNumberToWords, get_staffs, get_areas, get_unite_type, get_category_of_unite,
-  filterAndOrderObjects, get_quantity,type_of_spending
+  filterAndOrderObjects, get_quantity,type_of_spending, formatGuineanFrancs
 }

@@ -188,7 +188,8 @@ const repartirBudgetAvecTauxPrecis = async (items: Item[], GlobalEffectif: numbe
             fraction: item.montantExact.minus(new BN(item.montantArrondi)).toNumber()
         };
     }).sort((a, b) => b.fraction - a.fraction);
-      
+
+    
     
     // Créer la répartition finale
       const repartition = repartitionInitiale.map((item, index) => {

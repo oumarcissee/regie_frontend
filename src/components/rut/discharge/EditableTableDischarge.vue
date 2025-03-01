@@ -4,7 +4,7 @@ import { useDischargeStore } from '@/stores/rutStore/discharge/dischargeStore';
 import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
 import {
     truncateText, notif, formatDate, showNotification, get_staffs, get_unite_type, get_areas, get_category_of_unite, get_full_unite
- } from '@/services/utils';
+ ,formatGuineanFrancs} from '@/services/utils';
 import { get_quantity , repartirBudgetAvecTauxPrecis} from '@/services/utilsMoment';
 import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBoxUnites.vue';
 
@@ -742,8 +742,8 @@ onMounted(async () => {
                                                 <thead>
                                                     <tr>
                                                         <th class="text-h6">Désignation</th>
-                                                        <!-- <th class="text-h6">Type</th> -->
-                                                        <th class="text-h6">Montant</th>
+                                                        <th class="text-h6">Type</th>
+                                                        <th class="text-h6" >Montant</th>
                                                         <th class="text-h6">Pourcentage</th>
                                                     </tr>
                                                 </thead>
@@ -761,7 +761,7 @@ onMounted(async () => {
                                                                 
                                                             </div>
                                                         </td>
-                                                        <!-- <td>
+                                                        <td>
                                                             <div class="d-flex align-center">
                                                                 <div class="d-flex">
                                                                     <v-chip
@@ -771,13 +771,13 @@ onMounted(async () => {
                                                             
                                                                         size="small"
                                                                     >
-                                                                        {{ item.status }}
+                                                                        {{ item.type_menu }}
                                                                     </v-chip>
                                                                 </div>
                                                             </div>
-                                                        </td> -->
+                                                        </td>
                                                         <td>
-                                                            <div class="text-subtitle-1 text-medium-emphasis">{{ item.montantAlloue }}</div>
+                                                            <div class="text-subtitle-1 text-medium-emphasis">{{ formatGuineanFrancs(item.montantAlloue) }}</div>
                                                         </td>
                                                         <td>
                                                             <div class="d-flex align-center">
@@ -792,7 +792,7 @@ onMounted(async () => {
                                             </v-table>
                                              <div class="d-flex align-center">
                                                 Montant total: 
-                                                <span class="text-subtitle-1 text-medium-emphasis ml-5">{{ menusData?.budgetTotal}}</span>
+                                                <span class="text-subtitle-4 text-medium-emphasis ml-5">{{ formatGuineanFrancs(menusData?.budgetTotal)}}</span>
                                             </div>  
                                         </v-card>
                                     </v-col>
