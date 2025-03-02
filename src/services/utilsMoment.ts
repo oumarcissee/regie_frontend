@@ -142,7 +142,7 @@ const repartirBudgetAvecTauxPrecis = async (items: Item[], GlobalEffectif: numbe
     }
     
     // Répartition initiale avec montants exacts
-      const repartitionInitiale  = items.map(item => {
+      const repartitionInitiale  = items.map((item) => {
          
          const taux = item.price <= 1200 ? 1 : 0.3;
          const bnTaux = new BN(taux);
@@ -189,8 +189,6 @@ const repartirBudgetAvecTauxPrecis = async (items: Item[], GlobalEffectif: numbe
         };
     }).sort((a, b) => b.fraction - a.fraction);
 
-    
-    
     // Créer la répartition finale
       const repartition = repartitionInitiale.map((item, index) => {
          
@@ -212,7 +210,7 @@ const repartirBudgetAvecTauxPrecis = async (items: Item[], GlobalEffectif: numbe
             type_menu: item.type_menu,
             status: item.status,
         };
-    });
+    })
     
     // Distribuer la différence
     for (let i = 0; i < difference; i++) {

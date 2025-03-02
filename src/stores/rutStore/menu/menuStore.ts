@@ -12,6 +12,7 @@ export const useMenuStore = defineStore({
         url: 'menus',
         lineUrl: 'line-sub-area',
         menus: [] as any,
+        menusData: [] as any,
         
         dialog: false,
 
@@ -32,9 +33,12 @@ export const useMenuStore = defineStore({
     },
     actions: {
     
-        async fetchMenus() {
+        async fetchMenus(type: string) {
             try {
                 const response = await new ApiAxios().find(`/${this.url}/`);
+
+
+                this.menusData = response?.data?.results.filter((item: { type_menu: string; }) => item.type_menu === type);
         
                 // Formater les données pour EasyDataTable
                 this.menus = (response?.data?.results || []).map((item: any) => ({
@@ -43,11 +47,11 @@ export const useMenuStore = defineStore({
                         name: item.name || 'N/A',
                         image: item.image || 'N/A',
                         rate: item.rate || 0,
-                        type_menu: type_of_spending(item.type_menu) || 'N/A',
                         price: item.price || 6,
                         status: item.status || true,
                         description: item.description || 'Aucune description',
                     },
+                    type_menu: item.type_menu || 'N/A',
                     
                     created_at: item.created_at || null,
                     modified_at: item.modified_at || null,

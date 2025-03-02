@@ -7,6 +7,7 @@ import {
  ,formatGuineanFrancs} from '@/services/utils';
 import { get_quantity , repartirBudgetAvecTauxPrecis} from '@/services/utilsMoment';
 import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBoxUnites.vue';
+import CustomComBoxSpend from '@/components/forms/form-elements/autocomplete/CustomComBoxSpend.vue'; //
 
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
@@ -45,6 +46,14 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             if (value) return true;
             return "Séléctionner une unité.";
         },
+        spend(value: string | any[]) {
+            if (value) return true;
+            return "Séléctionner une dépense.";
+        },
+        valueSpend(value: string | any[]) {
+             if (value) return true;
+            return "Entrer le montant.";
+        },
         items(value: string | any[]) {
             if (!value) return true;
             return "Séléctionner une unité.";
@@ -76,6 +85,8 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
 
 
 const unites        = useField('unites');
+const spend         = useField('spend');
+const valueSpend    = useField('valueSpend');
 const items         = useField('items');
 const quantity      = useField('quantity');
 // const Data         = useField('Data');
@@ -108,6 +119,12 @@ const category_of = ref([
     { title: 'UNITE', value: 'unit' },
     { title: 'SERVICE', value: 'service' },
     // { title: 'ECOLE', value: 'school' }
+]);
+
+const depenses = ref([
+    { title: 'TRANSPORT ET MANUTENTION', value: 'current' },
+    { title: 'AMILIORATION', value: 'mission' },
+    // { title: '4eme RM', value: 'single' }
 ]);
 
 
@@ -302,6 +319,22 @@ const unitesFiltred = computed(() => {
 const selectedUniteDetails = ref(null);
 const effective = ref(null);
 const menusData = ref();
+const otherDepenses = ref();
+
+
+const onSpendChange = async (value: any) => {
+    if (!value) {
+        selectedUniteDetails.value = null;
+        return;
+    }
+
+    // loading.value = true;
+    // isLoading.value = true;
+
+    console.log(value);
+
+
+}
 
 // Update the unitedChanged function to handle selection
 const unitedChanged = async (value: any) => {
@@ -322,7 +355,12 @@ const unitedChanged = async (value: any) => {
         //Gestion des operations dans le store.
         await store.fetchProducts(selectedUnite.effective);
 
-        menusData.value = await repartirBudgetAvecTauxPrecis(store.menus, effective.value);
+        //Filter uniquement des food
+        const menusArrays = store.menus.filter((item: { type_menu: string; }) => item.type_menu === 'food');
+        otherDepenses.value = await store.menus.filter((item: { type_menu: string; }) => item.type_menu === 'other');
+        // console.log(otherDepenses.value);
+
+        menusData.value = await repartirBudgetAvecTauxPrecis(menusArrays, effective.value);
         
     }
 
@@ -338,6 +376,17 @@ const productsHeaders = [
     { text: "Unités", value: "unite",sortable:true},
     { text: "Forfait", value: "forfait", sortable: true },
     { text: "Actions", value: "actions"}
+];
+
+
+
+const MenuHeaders = [
+    { text: "Designation", value: "item" , sortable:true},
+    { text: "Type", value: "type_menu", sortable:true },
+    { text: "Montant", value: "montantAlloue",sortable:true},
+    { text: "Pourcentage", value: "progress",sortable:true},
+    // { text: "Forfait", value: "forfait", sortable: true },
+    // { text: "Actions", value: "actions"}
 ];
 
 
@@ -687,8 +736,7 @@ onMounted(async () => {
                                                                     </v-tooltip>
                                                                 </div>
                                                             </template>
-                                                        </EasyDataTable>
-                                                        
+                                                        </EasyDataTable>                                                        
                                                           
                                                     </v-col>
                                                     <v-col cols="12" sm="12">
@@ -702,34 +750,38 @@ onMounted(async () => {
                                     </v-col>
 
                                     <v-col cols="12" sm="4">
-
+                                        Autres dépenses
+                                        <v-col cols="12">
+                                            <CustomComBoxSpend
+                                                :items="otherDepenses"
+                                                label="Selecionner une dépense"
+                                                title="name"
+                                                v-model="spend.value.value"
+                                                :error-messages="spend.errorMessage.value"
+                                                @update:modelValue="onSpendChange"
+                                                :disabled="effective ? false : true"
+                                            />
+                                        
+                                        </v-col>
                                         <v-col cols="12">
                                               <!-- Filtre par type -->
-                                            <v-select
-                                                density="compact"
-                                                v-model="typeFilter"
-                                                :items="type_of_unites"
-                                                label="Filtrer par type de bordereau"
+                                           <v-text-field 
+                                                density="compact" 
+                                                v-model="valueSpend.value.value" 
+                                                label="Enter le montant"
                                                 variant="outlined"
-                                                hide-details
-                                                style="min-width: 200px;"
-                                               :disabled="!effective ? false : true"
-                                            ></v-select>
+                                                placeholder="Entrez un nom..."
+                                               
+                                               
+                                            ></v-text-field>
     
                                             <!-- Bouton d'ajout -->
 
                                          </v-col>
-                                        <v-col cols="12">
-                                            <CustomComBox
-                                                :items="editedIndex === -1 ? unitesFiltred : unitStore.unites"
-                                                label="Selecionner une unité"
-                                                title="short_name"
-                                                v-model="unites.value.value"
-                                                :error-messages="unites.errorMessage.value"
-                                                @update:modelValue="unitedChanged"
-                                            />
-                                        
-                                        </v-col>
+                                         <v-btn color="primary" variant="outlined" size="large" block flat @click="">
+                                                 Ajouter 
+                                        </v-btn>
+                                         
     
                                         
                                         <v-col cols="12" >
@@ -738,6 +790,7 @@ onMounted(async () => {
                                             </v-row>
                                         </v-col>
                                         <v-card v-if="effective" elevation="0" class="mt-6 border">
+
                                             <v-table class="month-table">
                                                 <thead>
                                                     <tr>
@@ -777,7 +830,7 @@ onMounted(async () => {
                                                             </div>
                                                         </td>
                                                         <td>
-                                                            <div class="text-subtitle-1 text-medium-emphasis">{{ formatGuineanFrancs(item.montantAlloue) }}</div>
+                                                            <div class="text-subtitle-1 text-small-emphasis">{{ formatGuineanFrancs(item.montantAlloue) }}</div>
                                                         </td>
                                                         <td>
                                                             <div class="d-flex align-center">
@@ -790,7 +843,8 @@ onMounted(async () => {
                                                 </tbody>
 
                                             </v-table>
-                                             <div class="d-flex align-center">
+
+                                            <div class="d-flex align-center">
                                                 Montant total: 
                                                 <span class="text-subtitle-4 text-medium-emphasis ml-5">{{ formatGuineanFrancs(menusData?.budgetTotal)}}</span>
                                             </div>  

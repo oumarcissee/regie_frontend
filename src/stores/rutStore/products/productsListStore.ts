@@ -30,7 +30,6 @@ export const useProductsList = defineStore({
                 const response = await new ApiAxios().find(`/items/`);
                 this.products = response.data.results;
                 
-
                this.items = await response?.data?.results.map((item: any, index: number) => ({
                     ref: item.ref,
                     item: {
@@ -40,7 +39,7 @@ export const useProductsList = defineStore({
                     },
                     
                     price: item.price,
-                    choice: item.choice === 'true' ? true : false,
+                    choice: item.status === true ? "Activé" : "Désactivé",
                     rate_per_days: item.rate_per_days,
                     divider: item.divider,
                     created_at : new Date(item.created_at),

@@ -30,7 +30,6 @@ const formatDate = (date: string | Date, type: string = '') => {
  * @param {String} chaine
  * @returns String
  * **/
-
 const signatorPosition = (chaine: string): string => {
     switch (chaine) {
         case 'left': return "GAUCHE";
@@ -423,13 +422,13 @@ const get_quantity = ( taux: any, eff: any, div: any): number => {
 
 /**
  * LES FONCTIONS ET VARIABLES DES MENUS
+ * Les types de menus
  */
 
 const type_of_spending = (value: any) => {
-  console.log(value);
   switch (value) {
     case 'food':
-      return "Menu";
+      return "Menus-Depense";
     case 'other':
       return "Autre";
     default: return "Autre-Depense";
@@ -472,6 +471,7 @@ function formatGuineanFrancs(amount?: number): string {
 
 // Example of usage
 // formatGuineanFrancs(7205882) returns "7 205 882 FG"
+
 
 
 

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 
 
-const { items, label, title, isDisabled } = defineProps({
+const { items, name,label, isDisabled } = defineProps({
   items: Array as any,
   itemSelected: Array as any,
   isDisabled: Boolean,
-  label: String,
-  title: String,
+
+  label: String as any,
+  name: String,
 
 })
 
@@ -15,9 +16,9 @@ const { items, label, title, isDisabled } = defineProps({
   <v-autocomplete
       :disabled="isDisabled"
       :items="items"
-      :item-title="title"
       :label="label"
-      item-value="id"
+      :item-value="name"
+      item-title="name"
       color="blue-grey-lighten-2"
       variant="outlined"
       density="compact"
@@ -27,7 +28,7 @@ const { items, label, title, isDisabled } = defineProps({
         <v-chip
           v-bind="props"
           :prepend-avatar="(item as any).raw.image"
-          :text="(item as any).raw.short_name"
+          :text="(item as any).raw.name"
         ></v-chip>
 
       </template>
@@ -36,8 +37,8 @@ const { items, label, title, isDisabled } = defineProps({
         <v-list-item
           v-bind="props"
           :prepend-avatar="(item as any).raw.image"
-          :title="(item as any).raw.short_name + ' : Effectif ('  + (item as any).raw.effective +')'"
-          :subtitle="(item as any).raw.name"
+          :title="(item as any).raw.name"
+          :subtitle="(item as any).raw.description"
         ></v-list-item>
       </template>
   </v-autocomplete>

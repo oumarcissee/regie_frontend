@@ -24,7 +24,6 @@ import VueCropper from 'vue-cropperjs';
 
 import { useField, useForm } from 'vee-validate';
 
-import type { Items } from '@/types/rut/SignatorType';
 
 import contact from '@/_mockApis/apps/contact';
 import type { Item } from 'vue3-easy-data-table';
@@ -112,6 +111,13 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
         },
 
         divider(value: string | any[]) {
+            if (!/^[0-9]*[1-9][0-9]*$/.test(value as any)) {
+                // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
+                return 'Entrer le diviseur.';
+            }
+            return true;
+        },
+        weight(value: string | any[]) {
             if (!/^[0-9]*[1-9][0-9]*$/.test(value as any)) {
                 // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
                 return 'Entrer le diviseur.';
@@ -233,6 +239,7 @@ const price = useField('price');
 const unite = useField('unite');
 const rate_per_days = useField('rate_per_days');
 const divider = useField('divider');
+const weight = useField('weight');
 const description = useField('description');
 
 const imag = ref<File[] | null>(null);
@@ -251,8 +258,9 @@ const submit = handleSubmit(async (values) => {
     submitFormData.append('unite', values.unite);
     submitFormData.append('rate_per_days', values.rate_per_days);
     submitFormData.append('divider', values.divider);
+    submitFormData.append('weight', values.weight);
     submitFormData.append('description', values.description);
-    
+
     submitFormData.append('status', values.status.toString());
 
     if (croppedImage.value) {
@@ -351,6 +359,7 @@ const editItem = (index: any) => {
     unite.value.value = index.unite;
     rate_per_days.value.value = index.rate_per_days;
     divider.value.value = index.divider;
+    weight.value.value = index.weight;
     description.value.value = index.description;
 };
 
@@ -384,7 +393,8 @@ const formButton = computed(() => {
 
 const headers = [
     { text: 'Réf', value: 'ref', sortable: true },
-    { text: 'Article', value: 'item', width: 300, sortable: true },
+    { text: 'Article', value: 'item', width: 200, sortable: true },
+    { text: 'Choix', value: 'choice', sortable: true },
     { text: 'Prix', value: 'price', sortable: true },
     { text: 'Modifié le', value: 'modified_at', sortable: true },
     { text: 'Actions', value: 'actions' }
@@ -504,13 +514,16 @@ const headers = [
                                     >
                                     </v-select>
                                 </v-col>
-                                <v-col cols="12" sm="12">
-                                     <v-switch
-                                        color="primary"
+                                <v-col cols="12" sm="6">
+                                    <v-switch color="primary" variant="outlined" v-model="status.value.value" label="Statut"></v-switch>
+                                </v-col>
+                                <v-col cols="12" sm="6">
+                                    <v-text-field
                                         variant="outlined"
-                                        v-model="status.value.value"
-                                        label="Choice"
-                                    ></v-switch>
+                                        v-model="weight.value.value"
+                                        :error-messages="weight.errorMessage.value"
+                                        label="Le poids"
+                                    ></v-text-field>
                                 </v-col>
 
                                 <v-col cols="12" sm="12">
@@ -575,6 +588,7 @@ const headers = [
             </div>
         </template>
 
+        <!-- Custom template for Modified_at column -->
         <template #item-modified_at="{ modified_at }">
             <div class="d-flex align-center">
                 <div class="ml-5">
@@ -613,9 +627,7 @@ const headers = [
 
     <!-- Add the View Dialog -->
     <!-- Remplacez le dialogue de visualisation existant par celui-ci -->
-    <v-dialog v-model="viewDialog" fullscreen   
-      :scrim="false"
-      transition="dialog-bottom-transition">
+    <v-dialog v-model="viewDialog" fullscreen :scrim="false" transition="dialog-bottom-transition">
         <v-card>
             <v-card-title class="pa-4 bg-success d-flex align-center justify-space-between">
                 <span class="title text-white">Détails de l'article</span>
@@ -674,6 +686,16 @@ const headers = [
                                     <div class="font-weight-bold">Prix</div>
                                 </div>
                                 <div class="text-body-1 ml-8">{{ selectedProduct.price }} GNF</div>
+                            </v-card>
+                        </v-col>
+
+                        <v-col cols="12" md="6" class="pa-2">
+                            <v-card class="pa-4" elevation="2">
+                                <div class="d-flex align-center mb-2">
+                                    <v-icon color="success" class="mr-2">mdi-poids</v-icon>
+                                    <div class="font-weight-bold">Pods</div>
+                                </div>
+                                <div class="text-body-1 ml-8">{{ selectedProduct.weight }} Kgs </div>
                             </v-card>
                         </v-col>
 
