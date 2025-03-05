@@ -258,6 +258,8 @@ function close() {
     editedIndex.value = -1;
     effective.value = null;
     store.products = [];
+    menusData.value = null;
+    addedSpends.value = [];
     handleReset();
 }
 
@@ -903,10 +905,7 @@ const removeSpend = (index: number) => {
 
                                                         </v-table>
 
-                                                        <!-- <div class="d-flex align-center">
-                                                            Montant total: 
-                                                            <span class="text-subtitle-4 text-medium-emphasis ml-5">{{ formatGuineanFrancs(menusData?.budgetTotal)}}</span>
-                                                        </div>   -->
+                                                     
                                                     </v-card>
 
                                                 </v-expansion-panel-text>
@@ -944,7 +943,7 @@ const removeSpend = (index: number) => {
                                                         </v-col>
 
                                                         <!-- Bouton pour ajouter la dépense -->
-                                                        <v-btn color="primary" variant="outlined" size="large" block flat @click="addSpend">
+                                                        <v-btn color="primary" variant="outlined" block flat @click="addSpend">
                                                             Ajouter
                                                         </v-btn>
                                                     </v-card>
