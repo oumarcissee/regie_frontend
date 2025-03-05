@@ -539,6 +539,42 @@ onMounted(async () => {
 
 
 
+// Ajoutez ces nouvelles refs pour gérer les dépenses
+const selectedSpend = ref(null);
+const spendAmount = ref(null);
+const addedSpends = ref([]);
+
+// Méthode pour ajouter une dépense au tableau
+const addSpend = () => {
+    if (selectedSpend.value && spendAmount.value) {
+        addedSpends.value.push({
+            name: selectedSpend.value,
+            amount: parseFloat(spendAmount.value)
+        });
+
+        // Reset both selectedSpend and spendAmount
+        selectedSpend.value = null;
+        spendAmount.value = null;
+    } else {
+        showNotification('Veuillez sélectionner une dépense et entrer un montant', 'error');
+    }
+};
+
+// Add this computed property in the script setup section
+const availableSpends = computed(() => {
+    return otherDepenses.value?.filter((spend: { name: any; }) => 
+        !addedSpends.value.some(addedSpend => addedSpend.name === spend.name)
+    ) || [];
+});
+
+// Méthode pour supprimer une dépense du tableau
+const removeSpend = (index: number) => {
+    addedSpends.value.splice(index, 1);
+};
+
+
+
+
 </script>
 <template>
 
@@ -750,105 +786,207 @@ onMounted(async () => {
                                     </v-col>
 
                                     <v-col cols="12" sm="4">
-                                        Autres dépenses
-                                        <v-col cols="12">
-                                            <CustomComBoxSpend
-                                                :items="otherDepenses"
-                                                label="Selecionner une dépense"
-                                                title="name"
-                                                v-model="spend.value.value"
-                                                :error-messages="spend.errorMessage.value"
-                                                @update:modelValue="onSpendChange"
-                                                :disabled="effective ? false : true"
-                                            />
-                                        
-                                        </v-col>
-                                        <v-col cols="12">
-                                              <!-- Filtre par type -->
-                                           <v-text-field 
-                                                density="compact" 
-                                                v-model="valueSpend.value.value" 
-                                                label="Enter le montant"
-                                                variant="outlined"
-                                                placeholder="Entrez un nom..."
-                                               
-                                               
-                                            ></v-text-field>
-    
-                                            <!-- Bouton d'ajout -->
-
-                                         </v-col>
-                                         <v-btn color="primary" variant="outlined" size="large" block flat @click="">
-                                                 Ajouter 
-                                        </v-btn>
-                                         
-    
-                                        
-                                        <v-col cols="12" >
-                                            <v-row>
-                                                Enregistrement des dépenses
-                                            </v-row>
-                                        </v-col>
-                                        <v-card v-if="effective" elevation="0" class="mt-6 border">
-
-                                            <v-table class="month-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th class="text-h6">Désignation</th>
-                                                        <th class="text-h6">Type</th>
-                                                        <th class="text-h6" >Montant</th>
-                                                        <th class="text-h6">Pourcentage</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr v-for="item in menusData?.repartition" :key="item.name" class="month-item">
-                                                        <td>
-                                                            <div class="d-flex align-center">
-                                                                <v-avatar size="42" rounded="md">
-                                                                    <img :src="item.image" alt="avatar" height="42" />
-                                                                </v-avatar>
-                                                                <div class="ml-4">
-                                                                    <h6 class="text-subtitle-1 font-weight-bold">{{ item.name }}</h6>
-                                                                    <div class="text-subtitle-1 text-medium-emphasis mt-1">{{ item.description }}</div>
-                                                                </div>
-                                                                
-                                                            </div>
-                                                        </td>
-                                                        <td>
-                                                            <div class="d-flex align-center">
-                                                                <div class="d-flex">
-                                                                    <v-chip
-                                                                       
-                                                                        rounded="lg"
-                                                                        class="mr-2"
-                                                            
-                                                                        size="small"
-                                                                    >
-                                                                        {{ item.type_menu }}
-                                                                    </v-chip>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td>
-                                                            <div class="text-subtitle-1 text-small-emphasis">{{ formatGuineanFrancs(item.montantAlloue) }}</div>
-                                                        </td>
-                                                        <td>
-                                                            <div class="d-flex align-center">
-                                                                <v-progress-linear color="primary" rounded="sm" :model-value="item.progress"></v-progress-linear>
-                                                                <span class="text-subtitle-1 text-medium-emphasis ml-5">{{item.progress}}%</span>
-                                                            </div>    
-                                                        </td>
-                                                       
-                                                    </tr>
-                                                </tbody>
-
-                                            </v-table>
-
-                                            <div class="d-flex align-center">
-                                                Montant total: 
-                                                <span class="text-subtitle-4 text-medium-emphasis ml-5">{{ formatGuineanFrancs(menusData?.budgetTotal)}}</span>
-                                            </div>  
+                                        <v-card class="mt-4" elevation="2">
+                                            <v-card-text>
+                                                <div class="d-flex justify-space-between align-center">
+                                                    <div class="d-flex align-center">
+                                                        <v-icon color="primary" class="mr-3">mdi-cash-multiple</v-icon>
+                                                        <span class="text-h6 font-weight-bold">Montant Global</span>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <div class="d-flex align-center justify-end">
+                                                            <v-chip 
+                                                                color="primary" 
+                                                                variant="outlined" 
+                                                                class="mr-2"
+                                                            >
+                                                                <v-icon start>mdi-food</v-icon>
+                                                                Menus
+                                                            </v-chip>
+                                                            <span class="text-h6 font-weight-medium">
+                                                                {{ formatGuineanFrancs(menusData?.budgetTotal || 0) }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="d-flex align-center justify-end mt-2">
+                                                            <v-chip 
+                                                                color="secondary" 
+                                                                variant="outlined" 
+                                                                class="mr-2"
+                                                            >
+                                                                <v-icon start>mdi-plus-circle</v-icon>
+                                                                Autres Dépenses
+                                                            </v-chip>
+                                                            <span class="text-h6 font-weight-medium">
+                                                                {{ formatGuineanFrancs(addedSpends.reduce((total, spend) => total + spend.amount, 0)) }}
+                                                            </span>
+                                                        </div>
+                                                        <v-divider class="my-2"></v-divider>
+                                                        <div class="d-flex align-center justify-end">
+                                                            <v-chip 
+                                                                color="success" 
+                                                                class="mr-2"
+                                                            >
+                                                                <v-icon start>mdi-sigma</v-icon>
+                                                                Total
+                                                            </v-chip>
+                                                            <span class="text-h5 font-weight-bold text-success">
+                                                                {{ formatGuineanFrancs((menusData?.budgetTotal || 0) + addedSpends.reduce((total, spend) => total + spend.amount, 0)) }}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </v-card-text>
                                         </v-card>
+
+                                        <v-expansion-panels>
+                                            <v-expansion-panel elevation="10">
+                                                <v-expansion-panel-title class="text-h6"> Enregistrement des dépenses</v-expansion-panel-title>
+                                                <v-expansion-panel-text v-if="effective"> 
+                                                     <v-card  elevation="0" class="mt-6 border">
+
+                                                        <v-table class="month-table">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th class="text-h6">Désignation</th>
+                                                                    <th class="text-h6">Type</th>
+                                                                    <th class="text-h6" >Montant</th>
+                                                                    <th class="text-h6">Pourcentage</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr v-for="item in menusData?.repartition" :key="item.name" class="month-item">
+                                                                    <td>
+                                                                        <div class="d-flex align-center">
+                                                                            <v-avatar size="42" rounded="md">
+                                                                                <img :src="item.image" alt="avatar" height="42" />
+                                                                            </v-avatar>
+                                                                            <div class="ml-4">
+                                                                                <h6 class="text-subtitle-1 font-weight-bold">{{ item.name }}</h6>
+                                                                                <div class="text-subtitle-1 text-medium-emphasis mt-1">{{ item.description }}</div>
+                                                                            </div>
+                                                                            
+                                                                        </div>
+                                                                    </td>
+                                                                    <td>
+                                                                        <div class="d-flex align-center">
+                                                                            <div class="d-flex">
+                                                                                <v-chip
+                                                                                
+                                                                                    rounded="lg"
+                                                                                    class="mr-2"
+                                                                        
+                                                                                    size="small"
+                                                                                >
+                                                                                    {{ item.type_menu }}
+                                                                                </v-chip>
+                                                                            </div>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td>
+                                                                        <div class="text-subtitle-1 text-small-emphasis">{{ formatGuineanFrancs(item.montantAlloue) }}</div>
+                                                                    </td>
+                                                                    <td>
+                                                                        <div class="d-flex align-center">
+                                                                            <v-progress-linear color="primary" rounded="sm" :model-value="item.progress"></v-progress-linear>
+                                                                            <span class="text-subtitle-1 text-medium-emphasis ml-5">{{item.progress}}%</span>
+                                                                        </div>    
+                                                                    </td>
+                                                                
+                                                                </tr>
+                                                                 <tr class="font-weight-bold">
+                                                                    <td colspan="2">Total Menus</td>
+                                                                    <td colspan="2">
+                                                                        {{ formatGuineanFrancs(menusData?.budgetTotal)}}
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+
+                                                        </v-table>
+
+                                                        <!-- <div class="d-flex align-center">
+                                                            Montant total: 
+                                                            <span class="text-subtitle-4 text-medium-emphasis ml-5">{{ formatGuineanFrancs(menusData?.budgetTotal)}}</span>
+                                                        </div>   -->
+                                                    </v-card>
+
+                                                </v-expansion-panel-text>
+                                            </v-expansion-panel>
+                                            <v-divider></v-divider>       
+                                            <v-expansion-panel elevation="10">
+                                                <v-expansion-panel-title class="text-h6">Autres dépenses</v-expansion-panel-title>
+                                                <v-expansion-panel-text v-if="effective">
+                                                    <v-card elevation="2" class="pa-4">
+                                                        <v-card-title class="text-h6">Autres dépenses</v-card-title>
+                                                        
+                                                        <!-- Champ de sélection pour les dépenses -->
+                                                        <v-col cols="12">
+                                                           <CustomComBoxSpend
+                                                                :items="availableSpends"
+                                                                label="Sélectionner une dépense"
+                                                                title="name"
+                                                                v-model="selectedSpend"
+                                                                :error-messages="spend.errorMessage.value"
+                                                                @update:modelValue="onSpendChange"
+                                                                :disabled="!effective"
+                                                            />
+                                                        </v-col>
+
+                                                        <!-- Champ pour le montant -->
+                                                        <v-col cols="12">
+                                                            <v-text-field 
+                                                                density="compact" 
+                                                                v-model="spendAmount" 
+                                                                label="Entrer le montant"
+                                                                variant="outlined"
+                                                                placeholder="Entrez le montant..."
+                                                                type="number"
+                                                            ></v-text-field>
+                                                        </v-col>
+
+                                                        <!-- Bouton pour ajouter la dépense -->
+                                                        <v-btn color="primary" variant="outlined" size="large" block flat @click="addSpend">
+                                                            Ajouter
+                                                        </v-btn>
+                                                    </v-card>
+
+                                                    <!-- Tableau pour afficher les dépenses ajoutées -->
+                                                    <v-card elevation="2" class="mt-4 pa-4">
+                                                        <v-card-title class="text-h6">Dépenses enregistrées</v-card-title>
+                                                        
+                                                       <v-table>
+                                                            <thead>
+                                                                <tr>
+                                                                    <th class="text-h6">Désignation</th>
+                                                                    <th class="text-h6">Montant</th>
+                                                                    <th class="text-h6">Actions</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr v-for="(spend, index) in addedSpends" :key="index">
+                                                                    <td>{{ spend.name }}</td>
+                                                                    <td>{{ formatGuineanFrancs(spend.amount) }}</td>
+                                                                    <td>
+                                                                        <v-btn icon flat @click="removeSpend(index)">
+                                                                            <TrashIcon stroke-width="1.5" size="20" class="text-error" />
+                                                                        </v-btn>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr class="font-weight-bold">
+                                                                    <td>Total</td>
+                                                                    <td colspan="2">
+                                                                        {{ formatGuineanFrancs(addedSpends.reduce((total, spend) => total + spend.amount, 0)) }}
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </v-table>
+                                                    </v-card>
+                                                 </v-expansion-panel-text>
+                                            </v-expansion-panel>
+                                            <v-divider></v-divider>
+                                            
+                                        </v-expansion-panels>
+
+                                    
                                     </v-col>
                                     
                                 </v-row>
