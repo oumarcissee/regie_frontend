@@ -8,6 +8,7 @@ import {
 import { get_quantity , repartirBudgetAvecTauxPrecis} from '@/services/utilsMoment';
 import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBoxUnites.vue';
 import CustomComBoxSpend from '@/components/forms/form-elements/autocomplete/CustomComBoxSpend.vue'; //
+import 'v-calendar/dist/style.css';
 
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
@@ -541,6 +542,7 @@ onMounted(async () => {
 
 
 
+
 // Ajoutez ces nouvelles refs pour gérer les dépenses
 const selectedSpend = ref(null);
 const spendAmount = ref(null);
@@ -575,6 +577,38 @@ const removeSpend = (index: number) => {
 };
 
 
+const date = ref(new Date());
+const timezone = ref('');
+
+const range = ref({
+    start: new Date(),
+    end: null,
+});
+
+
+// Le changement de la plage
+// watch(range, (newRange) => {
+//     const formatDate = (date: string | number | Date) => {
+//         if (!date) return null;
+//         return new Date(date).toLocaleDateString('fr-FR', {
+//             day: '2-digit',
+//             month: '2-digit',
+//             year: 'numeric'
+//         });
+//     };
+    
+//     console.log("Date range changed:", {
+//         start: formatDate(newRange.start),
+//         end: formatDate(newRange.end)
+//     });
+// }, { deep: true });
+
+watch(range, (newRange) => {
+    console.log("Date range changed:", {
+        start: newRange.start ? new Date(newRange.start).toISOString() : null,
+        end: newRange.end ? new Date(newRange.end).toISOString() : null
+    });
+}, { deep: true });
 
 
 </script>
@@ -839,10 +873,24 @@ const removeSpend = (index: number) => {
                                                 </div>
                                             </v-card-text>
                                         </v-card>
-
+                                          
                                         <v-expansion-panels>
                                             <v-expansion-panel elevation="10">
-                                                <v-expansion-panel-title class="text-h6"> Enregistrement des dépenses</v-expansion-panel-title>
+                                                <v-expansion-panel-title class="text-h6"> La durée de la mission</v-expansion-panel-title>
+                                                <v-expansion-panel-text v-if="effective"> 
+                                                    <v-card  elevation="0" class="mt-6 border d-flex align-center">
+                                                        <v-col cols="12" lg="6" sm="12">
+                                                            <v-date-picker  
+                                                                v-model="range" is-range  transition="picker-transition" />
+                                                        </v-col>
+                                                    </v-card>
+                                                     
+                                                </v-expansion-panel-text>
+                                            </v-expansion-panel>
+                                            <v-divider></v-divider>
+
+                                            <v-expansion-panel elevation="10">
+                                                <v-expansion-panel-title class="text-h6"> Menus-dépenses</v-expansion-panel-title>
                                                 <v-expansion-panel-text v-if="effective"> 
                                                      <v-card  elevation="0" class="mt-6 border">
 
@@ -912,7 +960,7 @@ const removeSpend = (index: number) => {
                                             </v-expansion-panel>
                                             <v-divider></v-divider>       
                                             <v-expansion-panel elevation="10">
-                                                <v-expansion-panel-title class="text-h6">Autres dépenses</v-expansion-panel-title>
+                                                <v-expansion-panel-title class="text-h6">Autres-dépenses</v-expansion-panel-title>
                                                 <v-expansion-panel-text v-if="effective">
                                                     <v-card elevation="2" class="pa-4">
                                                         <v-card-title class="text-h6">Autres dépenses</v-card-title>
