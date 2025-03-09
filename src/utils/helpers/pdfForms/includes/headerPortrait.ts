@@ -1,7 +1,13 @@
 import type jsPDF from "jspdf";
-import { getcurrentMoment, currentMoment } from '@/services/utils';
 
-const headerPortrait = (doc: jsPDF, title: string) => {
+/**
+ * Add a decorative header to the PDF document in portrait mode.
+ * 
+ * @param {jsPDF} doc The jsPDF document instance
+ * @param {string} title The title of the document
+ * @param {string} currentDate The current date to display
+ */
+const headerPortrait = (doc: jsPDF, title: string, currentDate: string) => {
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
     
@@ -128,7 +134,7 @@ const headerPortrait = (doc: jsPDF, title: string) => {
     // Month display with enhanced styling
     doc.setFontSize(styles.subtitle.fontSize);
     doc.setTextColor(styles.subtitle.r, styles.subtitle.g, styles.subtitle.b);
-    doc.text(currentMoment.value, pageWidth / 2, 2, { align: 'center' });
+    doc.text(currentDate, pageWidth / 2, 2, { align: 'center' });
 
     // Add decorative bottom border
     doc.setDrawColor(styles.headerBox.border.r, styles.headerBox.border.g, styles.headerBox.border.b);

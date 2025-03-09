@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, provide } from 'vue';
 import { truncateText, get_full_unite, formatDate, showNotification } from '@/services/utils';
-import {  currentMoment } from '@/services/utilsMoment';
+import {  currentMoment, loadCurrentMoment } from '@/services/utilsMoment';
 import { orderFormPdf } from '@/utils/helpers/pdfForms/orderFormPdf';
 import { purchaseOrderFormPdf } from '@/utils/helpers/pdfForms/purcharseOrderFormPdf';
 import { useField, useForm } from 'vee-validate';
@@ -279,7 +279,7 @@ const doBillPdf = async () => {
         // console.log("HEADER" + heading.value, "DATA" + itemsSelected.value, "SIGNAT" + signators);
         // return;
 
-        await orderFormPdf('FACTURE DE PAIEMENT', heading.value, itemsSelected.value, signators);
+        await orderFormPdf('FACTURE DE PAIEMENT', heading.value, itemsSelected.value, signators, currentMoment.value);
     } catch (error) {
         console.error('Error generating PDF:', error);
     } finally {
@@ -292,8 +292,8 @@ const doPurchaseOrderPdf = async () => {
     isSubmitting2Pdf.value = true;
     try {
         const signators = await fetchSignators();
-        console.log(signators);
-        await purchaseOrderFormPdf('BON DE COMMANDE', heading.value, itemsSelected.value, signators);
+        // console.log(signators);
+        await purchaseOrderFormPdf('BON DE COMMANDE', heading.value, itemsSelected.value, signators, currentMoment.value);
     } catch (error) {
         console.error('Error generating PDF:', error);
     } finally {
@@ -307,6 +307,7 @@ onMounted(async () => {
     try {
         if (!store.getOrders.length) {
             isLoading.value = true;
+            // console.log(currentMoment.value);
 
             await Promise.all([userStore.fetchProviders(), store.fetchOrders(), useProduct.fetchItems()]);
 

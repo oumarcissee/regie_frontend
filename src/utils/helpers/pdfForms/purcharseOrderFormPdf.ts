@@ -73,7 +73,16 @@ const ICONS = {
 
 const toColor = (color: readonly [number, number, number]): Color => color as Color;
 
-const purchaseOrderFormPdf = async(title: string,heading: string, data: any[], signators: any[]) => {
+
+/**
+ * Génère un PDF pour un formulaire de bon de commande.
+ * @param title - Titre du document
+    * @param heading - En-tête du document
+    * @param data - Données de la commande
+    * @param signators - Signataires de la commande
+    * @param currentDate - Date actuelle
+ */
+const purchaseOrderFormPdf = async(title: string,heading: string, data: any[], signators: any[], currentDate: string) => {
     const doc = new jsPDF({
         unit: 'in',
         format: 'a4'
@@ -84,7 +93,7 @@ const purchaseOrderFormPdf = async(title: string,heading: string, data: any[], s
             doc.addPage();
         }
 
-        headerPortrait(doc, title);
+        headerPortrait(doc, title, currentDate);
         let yCoord = 2.5;
         drawClientInfoBox(doc, item, yCoord);
         yCoord += 1.5;

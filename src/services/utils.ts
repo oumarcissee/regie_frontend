@@ -167,7 +167,7 @@ const currentMoment = ref();
 
 const getcurrentMoment = (value: string | any[]) => {
   currentMoment.value = value;
-  // console.log(currentMoment.value);
+  console.log(currentMoment.value);
   return currentMoment;
 }
 

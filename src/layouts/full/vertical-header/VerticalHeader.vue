@@ -25,6 +25,7 @@ const priority = ref(customizer.setHorizontalLayout ? 0 : 0);
 
 onMounted(async () => {
     await loadCurrentMoment();
+    // console.log(currentMoment);
 });
 
 function searchbox() {
