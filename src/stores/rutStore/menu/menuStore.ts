@@ -9,7 +9,7 @@ import { ref } from 'vue';
 export const useMenuStore = defineStore({
     id: 'menuStore',
     state: () => ({
-        url: 'menus',
+        url: 'spends',
         lineUrl: 'line-sub-area',
         menus: [] as any,
         menusData: [] as any,

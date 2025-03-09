@@ -15,12 +15,13 @@ export const useDischargeStore = defineStore({
     id: 'useDischarge',
     state: () => ({
         url: 'bordereaux',
-        menu_url: 'menus',
+        menu_url: 'spends',
         categroy: 'unit',
         boredereaux: [] as any,
         areas: [] as any,
         menus: [] as any,
         products: [] as any,
+        weight: 0 ,
         unitedSelected: null as any,
         dialog: false,
 
@@ -39,6 +40,9 @@ export const useDischargeStore = defineStore({
         },
         getProducts(state) {
             return state.products;
+        },
+        getTotalWeight(state) {
+            return (state.weight/1000).toFixed(2) + " tonnes";
         }
     },
     actions: {
@@ -54,46 +58,54 @@ export const useDischargeStore = defineStore({
             }
         },
 
-        async fetchProducts(effective: any = null, offset: number = 0, forfait: boolean = false) {
-        try {
-            const response = await new ApiAxios().find(`/items/`);
-            
-            this.products = filterAndOrderObjects(response.data.results);
-            
-            this.products = this.products.map((item: any, index: number) => {
-                // Calculer la quantité de base
-                const baseQuantity =  effective ? get_quantity(item.rate_per_days, effective, item.divider) : 0;
-                // Ajouter l'offset à la quantité si offset n'est pas 0
+       async fetchProducts(effective: any = null, offset: number = 0, forfait: boolean = false) {
+            try {
+                const response = await new ApiAxios().find(`/items/`);
                 
+                this.products = filterAndOrderObjects(response.data.results);
+                
+                // Reset the total weight before calculating
+                this.weight = 0;
+                
+                this.products = this.products.map((item: any, index: number) => {
+                    // Calculer la quantité de base
+                    const baseQuantity = effective ? get_quantity(item.rate_per_days, effective, item.divider) : 0;
                     
-                const finalQuantity = offset && forfait ? baseQuantity + offset : baseQuantity;
+                    // Ajouter l'offset à la quantité si offset n'est pas 0
+                    const finalQuantity = offset && forfait ? baseQuantity + offset : baseQuantity;
+                    
+                    // Calculate item weight and add to total weight
+                    const itemWeight = finalQuantity * item.weight;
+                    this.weight += itemWeight;  // Accumulate the weight instead of overwriting
 
-                return {
-                    ref: item.ref,
-                    rate_per_days: item.rate_per_days,
-                    status: false,
-                    price: item.price,
-                    unite: get_full_unite(item.unite),
-                    divider: item.divider,
-                    item: {
-                        name: item.name,
-                        image: item.image,
-                        description: item.description,
-                        created_at: new Date(item.created_at),
-                        modified_at: new Date(item.modified_at),
-                        forfait: false,
-                        quantite: finalQuantity  // Utiliser la quantité avec offset
-                    },
-                    actions: item,
-                    raw: item
-                };
-            });
-            
-            return this.products;
-        } catch (error) {
-            alert(error);
-            console.log(error);
-        }
+                    return {
+                        ref: item.ref,
+                        rate_per_days: item.rate_per_days,
+                        status: false,
+                        price: item.price,
+                        unite: get_full_unite(item.unite),
+                        divider: item.divider,
+                        weight: itemWeight, // Store individual item weight
+                        item: {
+                            name: item.name,
+                            image: item.image,
+                            description: item.description,
+                            created_at: new Date(item.created_at),
+                            modified_at: new Date(item.modified_at),
+                            forfait: false,
+                            quantite: finalQuantity
+                        },
+                        actions: item,
+                        raw: item
+                    };
+                });
+                
+                console.log("Total tonnage (T):",this.getTotalWeight);
+                return this.products;
+            } catch (error) {
+                alert(error);
+                console.log(error);
+            }
         },
 
 
