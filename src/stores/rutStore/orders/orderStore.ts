@@ -189,6 +189,7 @@ export const useOrderStore = defineStore({
                     // return;
                     //Ajout de la commande
                     const OrderResponse = await new ApiAxios().add('/orders/', data.order);
+                    console.log(OrderResponse.data);
                   
                     //Ajout des articles dans la commande
                     data.orderLine.forEach(async (item: any) => {

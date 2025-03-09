@@ -276,7 +276,8 @@ const doBillPdf = async () => {
     isSubmittingPdf.value = true;
     try {
         const signators = await fetchSignators();
-        // console.log(signators);
+        // console.log("HEADER" + heading.value, "DATA" + itemsSelected.value, "SIGNAT" + signators);
+        // return;
 
         await orderFormPdf('FACTURE DE PAIEMENT', heading.value, itemsSelected.value, signators);
     } catch (error) {
@@ -291,7 +292,7 @@ const doPurchaseOrderPdf = async () => {
     isSubmitting2Pdf.value = true;
     try {
         const signators = await fetchSignators();
-        // console.log(signators);
+        console.log(signators);
         await purchaseOrderFormPdf('BON DE COMMANDE', heading.value, itemsSelected.value, signators);
     } catch (error) {
         console.error('Error generating PDF:', error);

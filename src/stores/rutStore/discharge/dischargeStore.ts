@@ -14,9 +14,12 @@ import { ref } from 'vue';
 export const useDischargeStore = defineStore({
     id: 'useDischarge',
     state: () => ({
-        url: 'bordereaux',
-        menu_url: 'spends',
-        categroy: 'unit',
+        url: {
+            line_discharge: 'line-discharges',
+            discharge: 'discharges',
+            product: 'products',
+            spend: 'spends',
+        },
         boredereaux: [] as any,
         areas: [] as any,
         menus: [] as any,
@@ -48,7 +51,7 @@ export const useDischargeStore = defineStore({
     actions: {
          async fetchMenus() {
             try {
-                const response = await new ApiAxios().find(`/${this.menu_url}/`);
+                const response = await new ApiAxios().find(`/${this.url.spend}/`);
                 this.menus = response?.data?.results 
                 return this.menus;
 
@@ -108,7 +111,6 @@ export const useDischargeStore = defineStore({
             }
         },
 
-
         async fetchAllAreas() {
             try {
                 const response = await new ApiAxios().find(`/${this.url}/`);
@@ -156,43 +158,32 @@ export const useDischargeStore = defineStore({
         },
 
         //Ajout d'un élement
-        async addOrUpdateUnit(data: FormData, param?: any) {
+        async addOrUpdateDischarge(data: any,spends?:any, param?: any) {
             try {
                 if (param) {
                     const response = await new ApiAxios().updatePartialForm(`/${this.url}/${param}/`, data, param);
                 } else {
-                    const response = await new ApiAxios().addForm(`/${this.url}/`, data);
+                    // Ajout d'un bordereau
+                    const resDischarge = await new ApiAxios().add(`/${this.url.discharge}/`, {category: data.slip.category});
+                    console.log(resDischarge.data.id);
+                    // const responsed = await new ApiAxios().find(`/orders-line/?order=${param}`);
+
+                    // console.log(data);
+                    return;
+
+                     //Suppression des anciennes commande
+                    
+                    // responsed.data.results.forEach(async (item: any) => {
+                    //     await new ApiAxios().delete(`/orders-line/${item.id}/`, item.id);
+                    // });
+                    
+
                     this.$reset();
                 }
                 return true;
             } catch (error: any) {
                 // Vérification du type d'erreur
                 console.log(error)
-                if (error.response) {
-                    // Si c'est une erreur de doublon (généralement code 400 ou 409)
-                    if (error.response.status === 400 || error.response.status === 409) {
-                        // Si le message d'erreur contient une indication de doublon
-                        if (error.response.data) {
-
-                            const responseData = error.response.data as { name: string[], short_name: string[] };
-                            
-                            this.errors.nameError = responseData.name ? responseData.name[0] : null;
-                            this.errors.nameText = data.get('name')
-
-                            this.errors.shortNameError = responseData.short_name ? responseData.short_name[0] : null;
-                            this.errors.shortNameText = data.get('short_name');
-
-                            
-                            // Retourner un objet d'erreur personnalisé
-                            return Promise.reject({
-                                type: 'DUPLICATE_ERROR',
-                                message: 'Cette unité existe déjà dans la base de données',
-                                originalError: error.response.data
-                            });
-                        }
-                    }
-                 
-                }
              
                 showNotification("Y'a une erreur serveur.", 'error');
             

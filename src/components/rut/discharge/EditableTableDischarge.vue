@@ -42,58 +42,27 @@ import { useField, useForm } from 'vee-validate';
 
 import type { Item } from 'vue3-easy-data-table';
 
-const { addOrUpdateUnit, errors, getTotalWeight } = useDischargeStore();
+const { addOrUpdateDischarge, errors, getTotalWeight } = useDischargeStore();
 const store = useDischargeStore();
 const unitStore = useUnitStore();
 
 const { handleSubmit, handleReset, isSubmitting } = useForm({
     validationSchema: {
-        unites(value: string | any[]) {
+        unite(value: string | any[]) {
             if (value) return true;
             return 'Séléctionner une unité.';
         },
-        spend(value: string | any[]) {
+        curent_type_of_slip(value: string | any[]) {
             if (value) return true;
-            return 'Séléctionner une dépense.';
+            return 'Selectionnez une catégorie.';
         },
-        valueSpend(value: string | any[]) {
-            if (value) return true;
-            return 'Entrer le montant.';
-        },
-        items(value: string | any[]) {
-            if (!value) return true;
-            return 'Séléctionner une unité.';
-        }
-        //     g_staff(value: string | any[]) {
-        //         if (value) return true;
-        //         return "Choisissez un Etat-Major.";
-        //     },
-
-        //     area(value: string | any[]) {
-        //         if (value) return true;
-        //         return "Choisissez une Region-Militaire.";
-        //     },
-
-        //     effective(value: string | any[]) {
-        //         if (!/^[0-9]*[1-9][0-9]*$/.test(value as any)) {
-        //             // La chaîne ne contient que des chiffres et a une longueur de 9 caractères
-        //             return "Entrer l'effectif de l'unité";
-        //         }
-        //         return true;
-        //     },
-
-        //     description(value: string | any[]) {
-        //         if (value) return true;
-        //         return true;
-        //     }
+      
+       
     }
 });
 
-const unites = useField('unites');
-const spend = useField('spend');
-const valueSpend = useField('valueSpend');
-const items = useField('items');
-const quantity = useField('quantity');
+const unite = useField('unite');
+const curent_type_of_slip = useField('curent_type_of_slip');
 
 const type_of_unites = ref([
     { title: 'COURANT', value: 'current' },
@@ -101,7 +70,6 @@ const type_of_unites = ref([
     // { title: '4eme RM', value: 'single' }
 ]);
 
-const curent_type_of_slip = ref(null);
 
 // Les types des bordereaux
 const type_of_slip = ref([
@@ -153,29 +121,40 @@ const pError = ref();
 // Modifier la fonction submit
 const submit = handleSubmit(async (values, { setErrors }: any) => {
     try {
-        const submitFormData = new FormData();
+        // const submitFormData = new FormData();
+        
+        const submitData = {
+            slip: { // Les bordereaux
+                category: values.curent_type_of_slip,
+                start:  typeFilter.value === 'mission' ? range.value.start : null,
+                end:    typeFilter.value === 'mission' ? range.value.end : null,
+            },
+            lineSlip: {// Les lignes des bordereaux
+                unite: values.unite,
+                products: store.products,
+            },
+            otherDepenses: addedSpends.value,
+        }
+        
+        // console.log(submitData);
+        // return;
 
-        pError.value = null;
+   
+
+        pError.value = null;    
         errors.nameError = null;
         errors.shortNameError = null;
 
-        submitFormData.append('name', values.name);
-        submitFormData.append('short_name', values.short_name);
-        submitFormData.append('g_staff', values.g_staff);
-        submitFormData.append('area', values.area);
-        submitFormData.append('type_of_unit', values.type_of_unit);
-        submitFormData.append('effective', values.effective);
-        submitFormData.append('category', values.category); // Categorie de l'unité
-        submitFormData.append('description', values.description);
 
         isLoading.value = true;
         error.value = null;
 
         if (editedIndex.value !== -1) {
-            await addOrUpdateUnit(submitFormData, editedIndex.value);
+            await addOrUpdateDischarge(submitData, editedIndex.value);
         } else {
-            await addOrUpdateUnit(submitFormData);
+            await addOrUpdateDischarge(submitData);
         }
+
         handleReset();
 
         await refreshTable();
@@ -228,7 +207,7 @@ function close() {
     store.products = [];
     menusData.value = null;
     addedSpends.value = [];
-    curent_type_of_slip.value = null;
+    // curent_type_of_slip.value = null;
     handleReset();
 }
 
@@ -240,8 +219,7 @@ function openDialog() {
 const editItem = (item: any) => {
     editedIndex.value = item.id;
     // Remplir le formulaire avec les donnéeses
-    unites.value.value = item.unites;
-    items.value.value = item.items;
+    unite.value.value = item.unite;
 
     dialog.value = true;
 };
@@ -480,7 +458,7 @@ const addSpend = () => {
     if (selectedSpend.value && spendAmount.value) {
         addedSpends.value.push({
             name: selectedSpend.value,
-            amount: parseFloat(spendAmount.value)
+            amount: parseFloat(spendAmount.value) 
         });
 
         // Reset both selectedSpend and spendAmount
@@ -613,7 +591,8 @@ watch(range, (newRange) => {
                                                         <v-select
                                                             label="Selectionnez une catégorie"
                                                             density="compact"
-                                                            v-model="curent_type_of_slip"
+                                                            v-model="curent_type_of_slip.value.value"
+                                                            :error-messages="curent_type_of_slip.errorMessage.value"
                                                             :items="type_of_slip"
                                                             hide-details
                                                             variant="outlined"
@@ -631,8 +610,8 @@ watch(range, (newRange) => {
                                                 :items="editedIndex === -1 ? unitesFiltred : unitStore.unites"
                                                 label="Seletionnez une unité"
                                                 title="short_name"
-                                                v-model="unites.value.value"
-                                                :error-messages="unites.errorMessage.value"
+                                                v-model="unite.value.value"
+                                                :error-messages="unite.errorMessage.value"
                                                 @update:modelValue="unitedChanged"
                                             />
                                         </v-col>
@@ -733,7 +712,10 @@ watch(range, (newRange) => {
                                                         </template>
                                                     </EasyDataTable>
                                                 </v-col>
-                                                <v-col cols="12" sm="12" class="text-h1" v-else> veuillez selectionner une unité </v-col>
+
+                                                <v-col cols="12" sm="12" class="text-h1" v-else> 
+                                                    veuillez selectionner une unité
+                                                </v-col>
                                             </v-row>
                                         </v-col>
                                     </v-col>
@@ -884,12 +866,15 @@ watch(range, (newRange) => {
                                                 </v-expansion-panel-text>
                                             </v-expansion-panel>
                                             <v-divider></v-divider>
-                                            <v-expansion-panel elevation="10">
-                                                <v-expansion-panel-title class="text-h6">Autres-dépenses</v-expansion-panel-title>
-                                                <v-expansion-panel-text v-if="effective">
-                                                    <v-card elevation="2" class="pa-4">
-                                                        <v-card-title class="text-h6">Autres dépenses</v-card-title>
-
+                                            </v-expansion-panels>
+                                            
+                                             <!-- Tableau pour afficher les dépenses ajoutées -->
+                                             
+                                             <v-row v-if="effective">
+                                                <v-col cols="12">
+                                                    <v-card elevation="2" class="pa-4" >
+                                                        <v-card-title class="text-h6">Ajoutez d'autre dépenses</v-card-title>
+        
                                                         <!-- Champ de sélection pour les dépenses -->
                                                         <v-col cols="12">
                                                             <CustomComBoxSpend
@@ -897,12 +882,11 @@ watch(range, (newRange) => {
                                                                 label="Sélectionnez une dépense"
                                                                 title="name"
                                                                 v-model="selectedSpend"
-                                                                :error-messages="spend.errorMessage.value"
                                                                 @update:modelValue="onSpendChange"
                                                                 :disabled="!effective"
                                                             />
                                                         </v-col>
-
+        
                                                         <!-- Champ pour le montant -->
                                                         <v-col cols="12">
                                                             <v-text-field
@@ -914,17 +898,20 @@ watch(range, (newRange) => {
                                                                 type="number"
                                                             ></v-text-field>
                                                         </v-col>
-
+        
                                                         <!-- Bouton pour ajouter la dépense -->
                                                         <v-btn color="primary" variant="outlined" block flat @click="addSpend">
                                                             Ajouter
                                                         </v-btn>
                                                     </v-card>
 
+                                                </v-col>
+
+                                                <v-col cols="12">
                                                     <!-- Tableau pour afficher les dépenses ajoutées -->
                                                     <v-card elevation="2" class="mt-4 pa-4">
-                                                        <v-card-title class="text-h6">Dépenses enregistrées</v-card-title>
-
+                                                        <v-card-title class="text-h6">Dépenses ajoutées</v-card-title>
+        
                                                         <v-table>
                                                             <thead>
                                                                 <tr>
@@ -959,10 +946,15 @@ watch(range, (newRange) => {
                                                             </tbody>
                                                         </v-table>
                                                     </v-card>
-                                                </v-expansion-panel-text>
-                                            </v-expansion-panel>
-                                            <v-divider></v-divider>
-                                        </v-expansion-panels>
+
+                                                </v-col>
+
+                                            </v-row>
+                                            
+
+
+                                            
+                                       
                                     </v-col>
                                 </v-row>
                             </v-form>
