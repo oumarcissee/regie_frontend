@@ -122,6 +122,7 @@ const pError = ref();
 const submit = handleSubmit(async (values, { setErrors }: any) => {
     try {
         // const submitFormData = new FormData();
+
         
         const submitData = {
             slip: { // Les bordereaux
@@ -130,9 +131,10 @@ const submit = handleSubmit(async (values, { setErrors }: any) => {
                 end:    typeFilter.value === 'mission' ? range.value.end : null,
             },
             lineSlip: {// Les lignes des bordereaux
-                unite: values.unite,
-                products: store.products,
+                unite: unitedId.value,
+                offset: quantityItem.value,
             },
+            products: store.products,
             otherDepenses: addedSpends.value,
         }
         
@@ -207,6 +209,7 @@ function close() {
     store.products = [];
     menusData.value = null;
     addedSpends.value = [];
+    quantityItem.value = '';
     // curent_type_of_slip.value = null;
     handleReset();
 }
@@ -261,6 +264,7 @@ const unitesFiltred = computed(() => {
 // Add new ref for selected unite details
 const selectedUniteDetails = ref(null);
 const effective = ref(null);
+const unitedId = ref(null);
 const menusData = ref();
 const otherDepenses = ref();
 
@@ -269,8 +273,6 @@ const onSpendChange = async (value: any) => {
         selectedUniteDetails.value = null;
         return;
     }
-
-    console.log(value);
 };
 
 // Update the unitedChanged function to handle selection
@@ -286,7 +288,9 @@ const unitedChanged = async (value: any) => {
     const selectedUnite = (store.unitedSelected = unitStore.unites.find((unite: { short_name: any }) => unite.short_name === value));
     if (selectedUnite) {
         selectedUniteDetails.value;
+        console.log(selectedUnite.raw.id);
 
+        unitedId.value = selectedUnite.raw.id
         effective.value = selectedUnite.effective;
         //Gestion des operations dans le store.
         await store.fetchProducts(selectedUnite.effective);

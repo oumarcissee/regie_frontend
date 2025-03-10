@@ -164,8 +164,23 @@ export const useDischargeStore = defineStore({
                     const response = await new ApiAxios().updatePartialForm(`/${this.url}/${param}/`, data, param);
                 } else {
                     // Ajout d'un bordereau
-                    const resDischarge = await new ApiAxios().add(`/${this.url.discharge}/`, {category: data.slip.category});
-                    console.log(resDischarge.data.id);
+                    const resDischarge = await new ApiAxios().add(`/${this.url.discharge}/`, { category: data.slip.category });
+                    
+
+                    console.log(data);
+
+                    data.products.forEach(async (item: any) => {
+                        // console.log(item.raw);
+                        const res = await new ApiAxios().add(`/${this.url.line_discharge}/`, {
+                            discharges: resDischarge.data.id,
+                            units: data.lineSlip.unite,
+                            offset: data.lineSlip.quantityItem,
+                            forfait: item.raw.forfait,
+                            items: item.raw.id,
+                        });
+                        console.log(res.data);
+                    });
+
                     // const responsed = await new ApiAxios().find(`/orders-line/?order=${param}`);
 
                     // console.log(data);
@@ -173,9 +188,6 @@ export const useDischargeStore = defineStore({
 
                      //Suppression des anciennes commande
                     
-                    // responsed.data.results.forEach(async (item: any) => {
-                    //     await new ApiAxios().delete(`/orders-line/${item.id}/`, item.id);
-                    // });
                     
 
                     this.$reset();

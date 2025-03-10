@@ -197,9 +197,12 @@ export const useOrderStore = defineStore({
                     });
                     //Enregistrement de la date
                     const archiveResponse = await new ApiAxios().add('/archives/', {order: OrderResponse.data.id});
-                   this.getUniqueMonth()
+                    this.getUniqueMonth();
                     
-
+                    this.fetchOrders();
+                    
+                    
+                    //Réinitialisation du formulaire
                     this.$reset()
                     
                     Swal.fire({
