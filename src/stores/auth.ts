@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia';
 import { isAxiosError } from '@/services/utils';
 import { router } from '@/router';
-import { fetchWrapper } from '@/utils/helpers/fetch-wrapper';
 import { useOrderStore } from '@/stores/rutStore/orders/orderStore';
+
+import fr from 'date-fns/locale/fr';
+import { format } from 'date-fns';
+const locale = fr; // or en, o
 
 import ApiAxios from '@/services/ApiAxios';
 
@@ -20,10 +23,38 @@ export const useAuthStore = defineStore({
         accessToken: "",
         refreshToken: "",
         
+        moments: [] as any,
         dates: [] as any,
         
     }),
     actions: {
+         async getUniqueMonth() {
+            try {
+                const archives = await new ApiAxios().find('/archives/');
+
+                // Créer un Map pour stocker les mois uniques
+                const monthMap = new Map();
+                
+                archives.data.results.forEach((item: any) => {
+                    const monthKey = format(new Date(item.date), "MMMM yyyy", { locale });
+                    // Si le mois n'existe pas déjà, l'ajouter
+                    if (!monthMap.has(monthKey)) {
+                        monthMap.set(monthKey, {
+                            months: monthKey,
+                            days: item.nomber_of_days
+                        });
+                    }
+                });
+                // Convertir les valeurs du Map en tableau
+                this.moments = Array.from(monthMap.values());
+                
+            return this.moments;
+
+            } catch (error) {
+                alert(error+ "Erreur d'uniqueMonths date");
+            }
+        },
+
         async login(username: string, password: string) {
             // console.log(username, password);
             try {
@@ -43,7 +74,7 @@ export const useAuthStore = defineStore({
                 this.user = userConnected.data;
 
                 //Chargement des dates
-                this.dates = await useOrderStore().getUniqueMonth();
+                this.dates = this.getUniqueMonth();
                 
                 if (this.user?.role === 'admin') {
                     this.dashboard = 'ModernDashboard';

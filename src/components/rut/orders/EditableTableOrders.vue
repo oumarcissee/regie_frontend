@@ -166,7 +166,6 @@ const submit = async () => {
             showNotification('Commande modifiée avec succès');
         }
 
-        await refreshTable();
     } catch (error) {
         if (error instanceof Error) {
             const axiosError = error as AxiosError<{ [key: string]: string[] }>;
@@ -187,6 +186,8 @@ const submit = async () => {
 };
 
 const refreshTable = async () => {
+    await loadCurrentMoment();
+
     await store.fetchOrders();
     await store.fetchOrdersLine();
     close();

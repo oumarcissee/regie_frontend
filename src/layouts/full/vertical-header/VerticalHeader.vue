@@ -6,11 +6,8 @@ import { GridDotsIcon, LanguageIcon, SearchIcon, Menu2Icon, BellRingingIcon, Sho
 import LanguageDD from './LanguageDD.vue';
 import NotificationDD from './NotificationDD.vue';
 import ProfileDD from './ProfileDD.vue';
-import Searchbar from './Searchbar.vue';
 import RightMobileSidebar from './RightMobileSidebar.vue';
-import Navigations from './Navigations.vue';
 
-import { useAuthStore } from '@/stores/auth';
 import { useOrderStore } from '@/stores/rutStore/orders/orderStore';
 import { loadCurrentMoment , getcurrentMoment, currentMoment, months} from '@/services/utilsMoment';
 

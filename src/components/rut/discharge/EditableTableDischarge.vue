@@ -42,7 +42,7 @@ import { useField, useForm } from 'vee-validate';
 
 import type { Item } from 'vue3-easy-data-table';
 
-const { addOrUpdateDischarge, errors, getTotalWeight } = useDischargeStore();
+const { addOrUpdateDischarge, errors, getTotalWeight , fetchAllDischLines} = useDischargeStore();
 const store = useDischargeStore();
 const unitStore = useUnitStore();
 
@@ -79,24 +79,23 @@ const type_of_slip = ref([
 
 // Add type filter
 const typeFilter = ref('current'); //
-const filteredUnits = computed(() => {
-    let units = unitStore.unites;
+const filteredSlip = computed(() => {
+    let slips = store.boredereaux;
 
     // Filter by type if a type is selected
     if (typeFilter.value) {
-        units = units?.filter((unit: any) => unit.type_of_unit === typeFilter.value);
+        slips = slips?.filter((unit: any) => unit.type_of_unit === typeFilter.value);
     }
 
     // Filter by search value if present
     if (searchValue.value) {
         const searchTerm = searchValue.value.toLowerCase();
-        units = units.filter(
-            (unit: any) =>
-                unit.name.toLowerCase().includes(searchTerm) || get_unite_type(unit.type_of_unit).toLowerCase().includes(searchTerm)
+        slips = slips.filter(
+            (unit: any) => unit.name.toLowerCase().includes(searchTerm) || get_unite_type(unit.type_of_unit).toLowerCase().includes(searchTerm)
         );
     }
 
-    return units;
+    return slips;
 });
 
 const selected = ref<string | null | undefined | number>(null);
@@ -123,7 +122,6 @@ const submit = handleSubmit(async (values, { setErrors }: any) => {
     try {
         // const submitFormData = new FormData();
 
-        
         const submitData = {
             slip: { // Les bordereaux
                 category: values.curent_type_of_slip,
@@ -132,16 +130,10 @@ const submit = handleSubmit(async (values, { setErrors }: any) => {
             },
             lineSlip: {// Les lignes des bordereaux
                 unite: unitedId.value,
-                offset: quantityItem.value,
             },
             products: store.products,
             otherDepenses: addedSpends.value,
         }
-        
-        // console.log(submitData);
-        // return;
-
-   
 
         pError.value = null;    
         errors.nameError = null;
@@ -157,11 +149,12 @@ const submit = handleSubmit(async (values, { setErrors }: any) => {
             await addOrUpdateDischarge(submitData);
         }
 
+        //
         handleReset();
 
         await refreshTable();
         dialog.value = false;
-        showNotification(editedIndex.value === -1 ? 'Unite/service ajouté avec succès' : 'Unite/service modifié avec succès', 'success');
+        showNotification(editedIndex.value === -1 ? 'Bordereau ajouté avec succès' : 'Bordereau modifié avec succès', 'success');
     } catch (err) {
         pError.value = error;
         count.value++;
@@ -179,9 +172,11 @@ const submit = handleSubmit(async (values, { setErrors }: any) => {
 const refreshTable = async () => {
     try {
         loading.value = true;
+        await unitStore.fetchUnites();
+        store.fetchMenus();
+        await fetchAllDischLines(); // Les lignes des bordéreaux
+        //On passe les unites dans la fonction
         await store.fetchDischarge();
-        await store.fetchProducts();
-        await store.fetchMenus();
         // Forcer la réactivité en créant une nouvelle référence
         store.boredereaux = [...store.boredereaux];
     } catch (error) {
@@ -251,7 +246,7 @@ const formButton = computed(() => {
 const headers = [
     { text: 'Unité', value: 'short_name', sortable: true },
     { text: 'Région', value: 'area', sortable: true },
-    { text: 'Type', value: 'category', sortable: true },
+    { text: 'Categorie', value: 'category', sortable: true },
     { text: 'Crée le', value: 'created_at', sortable: true },
     { text: 'Effectif', value: 'effective', sortable: true },
     { text: 'Actions', value: 'actions' }
@@ -288,7 +283,6 @@ const unitedChanged = async (value: any) => {
     const selectedUnite = (store.unitedSelected = unitStore.unites.find((unite: { short_name: any }) => unite.short_name === value));
     if (selectedUnite) {
         selectedUniteDetails.value;
-        console.log(selectedUnite.raw.id);
 
         unitedId.value = selectedUnite.raw.id
         effective.value = selectedUnite.effective;
@@ -328,65 +322,28 @@ const MenuHeaders = [
 const editQuantity = (newQuantity: any) => {
     quantityDialog.value = true;
     myIndex.value = newQuantity;
-
     if (myIndex.value) {
         myIndex.value = parseInt(quantityItem.value) > 0 ? parseInt(quantityItem.value) : 1;
     }
-
     myIndex.value = store.products.find((p: { ref: any }) => p.ref === newQuantity.ref);
 };
 
 // Update the submitQuantity function
 const submitQuantity = () => {
-    if (myIndex.value.item.forfait) {
-        const productIndex = store.products.findIndex((p: { ref: any }) => p.ref === myIndex.value.ref);
-        if (productIndex !== -1) {
-            const newQuantity = parseInt(quantityItem.value) || 0;
-
-            if (newQuantity) {
-                const updatedProduct = {
-                    ...store.products[productIndex],
-                    item: {
-                        ...store.products[productIndex].item,
-                        quantite: newQuantity
-                    }
-                };
-
-                // Update the product with new quantity
-
-                // Update store
-                store.products = [...store.products.slice(0, productIndex), updatedProduct, ...store.products.slice(productIndex + 1)];
-            }
-        }
-    } else {
-        const productIndex = store.products.findIndex((p: { ref: any }) => p.ref === myIndex.value.ref);
-        if (productIndex !== -1) {
-            const newQuantity = parseInt(quantityItem.value) || 0;
-
-            // Update the product with new quantity
-            const updatedProduct = {
-                ...store.products[productIndex],
-                item: {
-                    ...store.products[productIndex].item,
-                    quantite: newQuantity + store.products[productIndex].item.quantite
-                }
-            };
-
-            // Update store
-            store.products = [...store.products.slice(0, productIndex), updatedProduct, ...store.products.slice(productIndex + 1)];
+    if (myIndex.value) {
+        const newQuantity = parseInt(quantityItem.value) || 0;
+        if (newQuantity) {
+            store.updateProductQuantity(myIndex.value.ref, newQuantity);
         }
     }
-
-    // Reset values
     quantityItem.value = '';
     myIndex.value = null;
     quantityDialog.value = false;
 };
-
 // Add new ref for controlling all products
 const allProductsEnabled = ref(false);
 
-// Interfaces
+//Interfaces
 interface Product {
     ref: string;
     forfait: boolean;
@@ -441,9 +398,7 @@ const toggleAllProducts = (value: boolean) => {
 onMounted(async () => {
     try {
         isLoading.value = true;
-        unitStore.fetchUnites();
-        await store.fetchDischarge();
-        await store.fetchMenus();
+        await refreshTable();
         allProductsEnabled.value = initialAllProductsState.value;
     } catch (err) {
         error.value = 'Error loading data';
@@ -540,7 +495,7 @@ watch(range, (newRange) => {
             density="compact"
             v-model="typeFilter"
             :items="type_of_unites"
-            label="Filtrer par type"
+            label="Filtrer par catégorie"
             variant="outlined"
             clearable
             hide-details
@@ -558,7 +513,6 @@ watch(range, (newRange) => {
     </div>
 
     <template>
-        Enregistrement des denrées
         <v-row class="align-center">
             <!-- Colonne pour le bouton -->
             <v-col cols="12" md="4" class="d-flex justify-end">
@@ -977,7 +931,7 @@ watch(range, (newRange) => {
     <!-- Replace v-table with EasyDataTable -->
     <EasyDataTable
         :headers="headers"
-        :items="filteredUnits"
+        :items="filteredSlip"
         :loading="loading"
         :theme-color="themeColor"
         table-class-name="customize-table"
@@ -1206,7 +1160,7 @@ watch(range, (newRange) => {
                 <v-form ref="form" v-model="valid" lazy-validation>
                     <v-row>
                         <v-col cols="12">
-                            <v-text-field variant="outlined" v-model="quantityItem" label="La quantité" type="number" block></v-text-field>
+                            <v-text-field variant="outlined" placeholder ="Entrez la nouvlle quantité" v-model="quantityItem" label="La quantité" type="number" block></v-text-field>
                         </v-col>
                     </v-row>
                 </v-form>

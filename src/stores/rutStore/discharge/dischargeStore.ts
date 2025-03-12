@@ -1,15 +1,18 @@
 import { defineStore } from 'pinia';
+import { useAuthStore } from '@/stores/auth';
 // project imports
 import { isAxiosError, currentMoment, showNotification, filterAndOrderObjects, get_full_unite } from '@/services/utils';
 import { get_quantity } from '@/services/utilsMoment';
 
-// import { router } from '@/router';
-
 import ApiAxios from '@/services/ApiAxios';
 import Swal from 'sweetalert2'
 
-
 import { ref } from 'vue';
+
+const { getUniqueMonth } = useAuthStore();
+
+// import { router } from '@/router';
+
 
 export const useDischargeStore = defineStore({
     id: 'useDischarge',
@@ -21,6 +24,7 @@ export const useDischargeStore = defineStore({
             spend: 'spends',
         },
         boredereaux: [] as any,
+        bordereauxLines: [] as any,
         areas: [] as any,
         menus: [] as any,
         products: [] as any,
@@ -49,7 +53,7 @@ export const useDischargeStore = defineStore({
         }
     },
     actions: {
-         async fetchMenus() {
+        async fetchMenus() {
             try {
                 const response = await new ApiAxios().find(`/${this.url.spend}/`);
                 this.menus = response?.data?.results 
@@ -61,25 +65,14 @@ export const useDischargeStore = defineStore({
             }
         },
 
-       async fetchProducts(effective: any = null, offset: number = 0, forfait: boolean = false) {
+        async fetchProducts(effective: any = null, offset: number = 0, forfait: boolean = false) {
             try {
                 const response = await new ApiAxios().find(`/items/`);
-                
-                this.products = filterAndOrderObjects(response.data.results);
-                
-                // Reset the total weight before calculating
-                this.weight = 0;
-                
-                this.products = this.products.map((item: any, index: number) => {
-                    // Calculer la quantité de base
+                const products = filterAndOrderObjects(response.data.results);
+
+                this.products = products.map((item: any) => {
                     const baseQuantity = effective ? get_quantity(item.rate_per_days, effective, item.divider) : 0;
-                    
-                    // Ajouter l'offset à la quantité si offset n'est pas 0
                     const finalQuantity = offset && forfait ? baseQuantity + offset : baseQuantity;
-                    
-                    // Calculate item weight and add to total weight
-                    const itemWeight = finalQuantity * item.weight;
-                    this.weight += itemWeight;  // Accumulate the weight instead of overwriting
 
                     return {
                         ref: item.ref,
@@ -88,7 +81,6 @@ export const useDischargeStore = defineStore({
                         price: item.price,
                         unite: get_full_unite(item.unite),
                         divider: item.divider,
-                        weight: itemWeight, // Store individual item weight
                         item: {
                             name: item.name,
                             image: item.image,
@@ -96,18 +88,23 @@ export const useDischargeStore = defineStore({
                             created_at: new Date(item.created_at),
                             modified_at: new Date(item.modified_at),
                             forfait: false,
-                            quantite: finalQuantity
+                            quantite: finalQuantity,
+                            offset: offset,
                         },
                         actions: item,
                         raw: item
                     };
                 });
-                
-                console.log("Total tonnage (T):",this.getTotalWeight);
-                return this.products;
             } catch (error) {
-                alert(error);
-                console.log(error);
+                console.error("Error fetching products:", error);
+            }
+        },
+        //Modification de la quantité d'un produit
+        updateProductQuantity(ref: string, newQuantity: number) {
+            const productIndex = this.products.findIndex((p: { ref: string }) => p.ref === ref);
+            if (productIndex !== -1) {
+                this.products[productIndex].item.quantite = this.products[productIndex].item.forfait && newQuantity ? newQuantity : this.products[productIndex].item.quantite + newQuantity;
+                this.products[productIndex].item.offset = newQuantity;
             }
         },
 
@@ -124,31 +121,48 @@ export const useDischargeStore = defineStore({
                 return false;
             }
         },
+        /**
+         * 
+         * @returns Les lignes de de bordereau
+        */
+        async fetchAllDischLines() {
+            try {
+                const response = await new ApiAxios().find(`/${this.url.line_discharge}/`);
+                // Formater les données pour EasyDataTable
+                this.bordereauxLines = response?.data?.results;
+                return true;
+
+            } catch (error) {
+                console.log(error);
+                return false;
+            }
+        },
     
         async fetchDischarge() {
             try {
-                const response = await new ApiAxios().find(`/${this.url}/`);
-                this.boredereaux = response?.data?.results;
-                // console.log("BORDERAUX",this.boredereaux);
+
+                const response = await new ApiAxios().find(`/${this.url.discharge}/`);
+                // this.boredereaux = response?.data?.results;
                 
                 // Formater les données pour EasyDataTable
-                // this.boredereaux = (response?.data?.results || []).map((bor: any) => ({
-                //     ref: bor.ref || 'N/A',
-                //     name: bor.name || 'N/A',
-                //     area: bor.area || 'N/A',
-                //     image: bor.image ,
-                //     type_of_unit: bor.type_of_unit || 'N/A',
-                //     category: bor.category || 'N/A',
-                //     effective: bor.effective || 0,
-                //     status: bor.status || 0,
-                //     g_staff: bor.g_staff || 'N/A',
-                //     description: bor.description || 'Aucune description',
-                //     created_at: bor.created_at || null,
-                //     modified_at: bor.modified_at || null,
+                this.boredereaux = (response?.data?.results || []).map((slip: any) => ({
+                    ref: slip.ref || 'N/A',
+                    items: this.bordereauxLines.filter((line: { discharge: any }) => line.discharge?.id === slip.id),
+                    area: slip.area || 'N/A',
+                    image: slip.image ,
+                    type_of_unit: slip.type_of_unit || 'N/A',
+                    category: slip.category || 'N/A',
+                    status: slip.status || 0,
+                    g_staff: slip.g_staff || 'N/A',
+                    description: slip.description || 'Aucune description',
+                    created_at: slip.created_at || null,
+                    modified_at: slip.modified_at || null,
                    
-                //     actions: bor,
-                //     raw: bor // Keep raw data for actions
-                // }));
+                    actions: slip,
+                    raw: slip // Keep raw data for actions
+                }));
+
+                console.log(this.boredereaux);
                 return true;
 
             } catch (error) {
@@ -163,32 +177,23 @@ export const useDischargeStore = defineStore({
                 if (param) {
                     const response = await new ApiAxios().updatePartialForm(`/${this.url}/${param}/`, data, param);
                 } else {
-                    // Ajout d'un bordereau
+                
                     const resDischarge = await new ApiAxios().add(`/${this.url.discharge}/`, { category: data.slip.category });
-                    
-
-                    console.log(data);
-
+                    //Ajoute des lignes des bordereaux
                     data.products.forEach(async (item: any) => {
-                        // console.log(item.raw);
                         const res = await new ApiAxios().add(`/${this.url.line_discharge}/`, {
-                            discharges: resDischarge.data.id,
-                            units: data.lineSlip.unite,
-                            offset: data.lineSlip.quantityItem,
+                            discharge: resDischarge.data.id,
+                            unit: data.lineSlip.unite,
+                            offset: item.raw.offset,
                             forfait: item.raw.forfait,
-                            items: item.raw.id,
+                            item: item.raw.id,
                         });
-                        console.log(res.data);
+                        // console.log(res);
                     });
 
-                    // const responsed = await new ApiAxios().find(`/orders-line/?order=${param}`);
-
-                    // console.log(data);
-                    return;
-
-                     //Suppression des anciennes commande
-                    
-                    
+                   //Enregistrement de la date
+                    const archiveResponse = await new ApiAxios().add('/archives/', {discharge: resDischarge.data.id});
+                    getUniqueMonth(); //                     
 
                     this.$reset();
                 }

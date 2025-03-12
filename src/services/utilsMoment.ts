@@ -2,9 +2,7 @@ import { ref } from 'vue';
 import BigNumber from 'decimal.js';
 
 import { useOrderStore } from '@/stores/rutStore/orders/orderStore';
-import { useDischargeStore } from '@/stores/rutStore/discharge/dischargeStore';
-const { fetchProducts } = useDischargeStore();
-const { moments , } = useOrderStore();
+const { moments  } = useOrderStore();
 
 // Store full moment data including days
 const fullMoments = ref<Array<{ months: string, days: number }>>([]);

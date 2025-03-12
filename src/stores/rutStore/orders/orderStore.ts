@@ -1,15 +1,11 @@
 import { defineStore } from 'pinia';
+import { useAuthStore } from '@/stores/auth';
 // project imports
-import { isAxiosError, currentMoment } from '@/services/utils';
-
-// import { router } from '@/router';
 
 import ApiAxios from '@/services/ApiAxios';
 import Swal from 'sweetalert2'
 
-import fr from 'date-fns/locale/fr';
-import { format } from 'date-fns';
-const locale = fr; // or en, or es
+const { getUniqueMonth } = useAuthStore();
 
 export const useOrderStore = defineStore({
     id: 'orderStore',
@@ -84,9 +80,6 @@ export const useOrderStore = defineStore({
                 const response = await new ApiAxios().find(`/orders-line/`);
                 // console.log(response, "Commande line: ");
                 this.ordersLine = response.data.results;
-
-              
-               
             } catch (error) {
                 alert(error);
                 console.log(error);
@@ -94,34 +87,32 @@ export const useOrderStore = defineStore({
         },
         
         //
-        async getUniqueMonth() {
-            try {
-                const archives = await new ApiAxios().find('/archives/');
+        // async getUniqueMonth() {
+        //     try {
+        //         const archives = await new ApiAxios().find('/archives/');
 
-               // Créer un Map pour stocker les mois uniques
-                const monthMap = new Map();
+        //        // Créer un Map pour stocker les mois uniques
+        //         const monthMap = new Map();
                 
-                archives.data.results.forEach((item: any) => {
-                    const monthKey = format(new Date(item.date), "MMMM yyyy", { locale });
-                    // Si le mois n'existe pas déjà, l'ajouter
-                    if (!monthMap.has(monthKey)) {
-                        monthMap.set(monthKey, {
-                            months: monthKey,
-                            days: item.nomber_of_days
-                        });
-                    }
-                });
-        
-                // Convertir les valeurs du Map en tableau
-                this.moments = Array.from(monthMap.values());
+        //         archives.data.results.forEach((item: any) => {
+        //             const monthKey = format(new Date(item.date), "MMMM yyyy", { locale });
+        //             // Si le mois n'existe pas déjà, l'ajouter
+        //             if (!monthMap.has(monthKey)) {
+        //                 monthMap.set(monthKey, {
+        //                     months: monthKey,
+        //                     days: item.nomber_of_days
+        //                 });
+        //             }
+        //         });
+        //         // Convertir les valeurs du Map en tableau
+        //         this.moments = Array.from(monthMap.values());
                 
-        
-        return this.moments;
+        //     return this.moments;
 
-            } catch (error) {
-                alert(error+ "Erreur d'uniqueMonths date");
-            }
-        },
+        //     } catch (error) {
+        //         alert(error+ "Erreur d'uniqueMonths date");
+        //     }
+        // },
 
         //Ajout d'un élement
         async addOrUpdateOrder(data: any, param?: any) {
@@ -160,7 +151,7 @@ export const useOrderStore = defineStore({
                             
                     //     }
                     // });
-                //    this.getUniqueMonth()
+                getUniqueMonth();
 
                     Swal.fire({
                         position: "center",
@@ -189,7 +180,7 @@ export const useOrderStore = defineStore({
                     // return;
                     //Ajout de la commande
                     const OrderResponse = await new ApiAxios().add('/orders/', data.order);
-                    console.log(OrderResponse.data);
+                    // console.log(OrderResponse.data);
                   
                     //Ajout des articles dans la commande
                     data.orderLine.forEach(async (item: any) => {
@@ -197,8 +188,9 @@ export const useOrderStore = defineStore({
                     });
                     //Enregistrement de la date
                     const archiveResponse = await new ApiAxios().add('/archives/', {order: OrderResponse.data.id});
-                    this.getUniqueMonth();
+                    getUniqueMonth();
                     
+                    //Récuperation des commandes
                     this.fetchOrders();
                     
                     
