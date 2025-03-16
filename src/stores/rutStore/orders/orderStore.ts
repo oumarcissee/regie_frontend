@@ -5,7 +5,6 @@ import { useAuthStore } from '@/stores/auth';
 import ApiAxios from '@/services/ApiAxios';
 import Swal from 'sweetalert2'
 
-const { getUniqueMonth } = useAuthStore();
 
 export const useOrderStore = defineStore({
     id: 'orderStore',
@@ -151,7 +150,7 @@ export const useOrderStore = defineStore({
                             
                     //     }
                     // });
-                getUniqueMonth();
+                useAuthStore().getUniqueMonth();
 
                     Swal.fire({
                         position: "center",
@@ -188,7 +187,7 @@ export const useOrderStore = defineStore({
                     });
                     //Enregistrement de la date
                     const archiveResponse = await new ApiAxios().add('/archives/', {order: OrderResponse.data.id});
-                    getUniqueMonth();
+                    useAuthStore().getUniqueMonth();
                     
                     //Récuperation des commandes
                     this.fetchOrders();

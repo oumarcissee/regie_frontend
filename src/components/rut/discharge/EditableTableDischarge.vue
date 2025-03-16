@@ -12,7 +12,8 @@ import {
     get_areas,
     get_category_of_unite,
     get_full_unite,
-    formatGuineanFrancs
+    formatGuineanFrancs,
+    slipCategory
 } from '@/services/utils';
 import { get_quantity, repartirBudgetAvecTauxPrecis } from '@/services/utilsMoment';
 import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBoxUnites.vue';
@@ -56,7 +57,6 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
             if (value) return true;
             return 'Selectionnez une catégorie.';
         },
-      
        
     }
 });
@@ -126,11 +126,11 @@ const submit = handleSubmit(async (values, { setErrors }: any) => {
             slip: { // Les bordereaux
                 category: values.curent_type_of_slip,
                 start:  typeFilter.value === 'mission' ? range.value.start : null,
-                end:    typeFilter.value === 'mission' ? range.value.end : null,
+                end: typeFilter.value === 'mission' ? range.value.end : null,
+                effective: effective.value
             },
-            lineSlip: {// Les lignes des bordereaux
-                unite: unitedId.value,
-            },
+         
+            unit: unitedId.value,
             products: store.products,
             otherDepenses: addedSpends.value,
         }
@@ -174,7 +174,6 @@ const refreshTable = async () => {
         loading.value = true;
         await unitStore.fetchUnites();
         store.fetchMenus();
-        await fetchAllDischLines(); // Les lignes des bordéreaux
         //On passe les unites dans la fonction
         await store.fetchDischarge();
         // Forcer la réactivité en créant une nouvelle référence
@@ -205,7 +204,6 @@ function close() {
     menusData.value = null;
     addedSpends.value = [];
     quantityItem.value = '';
-    // curent_type_of_slip.value = null;
     handleReset();
 }
 
@@ -244,7 +242,8 @@ const formButton = computed(() => {
 });
 
 const headers = [
-    { text: 'Unité', value: 'short_name', sortable: true },
+    { text: "Réf", value: "ref", sortable:true},
+    { text: 'Unité', value: 'unit', sortable: true },
     { text: 'Région', value: 'area', sortable: true },
     { text: 'Categorie', value: 'category', sortable: true },
     { text: 'Crée le', value: 'created_at', sortable: true },
@@ -252,8 +251,9 @@ const headers = [
     { text: 'Actions', value: 'actions' }
 ];
 
+// Add this new computed property
 const unitesFiltred = computed(() => {
-    return unitStore.unites.filter((unit: any) => unit.type_of_unit === typeFilter.value);
+    return  unitStore.unites.filter((unit: any) => !unit.raw.is_created);
 });
 
 // Add new ref for selected unite details
@@ -280,7 +280,7 @@ const unitedChanged = async (value: any) => {
     isLoading.value = true;
 
     // Find the selected unite in the unites array
-    const selectedUnite = (store.unitedSelected = unitStore.unites.find((unite: { short_name: any }) => unite.short_name === value));
+    const selectedUnite  = (store.unitedSelected = unitStore.unites.find((unite: { short_name: any }) => unite.short_name === value));
     if (selectedUnite) {
         selectedUniteDetails.value;
 
@@ -291,6 +291,7 @@ const unitedChanged = async (value: any) => {
 
         //Filter uniquement des food
         const menusArrays = store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
+        
         otherDepenses.value = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'other');
         // console.log(otherDepenses.value);
 
@@ -399,6 +400,8 @@ onMounted(async () => {
     try {
         isLoading.value = true;
         await refreshTable();
+        console.log(store.boredereaux);
+      
         allProductsEnabled.value = initialAllProductsState.value;
     } catch (err) {
         error.value = 'Error loading data';
@@ -565,8 +568,8 @@ watch(range, (newRange) => {
                                         </v-col>
                                         <v-col cols="12">
                                             <CustomComBox
-                                                :items="editedIndex === -1 ? unitesFiltred : unitStore.unites"
-                                                label="Seletionnez une unité"
+                                                :items="editedIndex === -1 ? unitesFiltred : unitesFiltred"
+                                                label="Séletionnez une unité"
                                                 title="short_name"
                                                 v-model="unite.value.value"
                                                 :error-messages="unite.errorMessage.value"
@@ -824,95 +827,89 @@ watch(range, (newRange) => {
                                                 </v-expansion-panel-text>
                                             </v-expansion-panel>
                                             <v-divider></v-divider>
-                                            </v-expansion-panels>
+                                        </v-expansion-panels>
                                             
-                                             <!-- Tableau pour afficher les dépenses ajoutées -->
-                                             
-                                             <v-row v-if="effective">
-                                                <v-col cols="12">
-                                                    <v-card elevation="2" class="pa-4" >
-                                                        <v-card-title class="text-h6">Ajoutez d'autre dépenses</v-card-title>
-        
-                                                        <!-- Champ de sélection pour les dépenses -->
-                                                        <v-col cols="12">
-                                                            <CustomComBoxSpend
-                                                                :items="availableSpends"
-                                                                label="Sélectionnez une dépense"
-                                                                title="name"
-                                                                v-model="selectedSpend"
-                                                                @update:modelValue="onSpendChange"
-                                                                :disabled="!effective"
-                                                            />
-                                                        </v-col>
-        
-                                                        <!-- Champ pour le montant -->
-                                                        <v-col cols="12">
-                                                            <v-text-field
-                                                                density="compact"
-                                                                v-model="spendAmount"
-                                                                label="Entrez le montant"
-                                                                variant="outlined"
-                                                                placeholder="Entrez le montant..."
-                                                                type="number"
-                                                            ></v-text-field>
-                                                        </v-col>
-        
-                                                        <!-- Bouton pour ajouter la dépense -->
-                                                        <v-btn color="primary" variant="outlined" block flat @click="addSpend">
-                                                            Ajouter
-                                                        </v-btn>
-                                                    </v-card>
+                                        <!-- Tableau pour afficher les dépenses ajoutées -->
+                                        <v-row v-if="effective">
+                                            <v-col cols="12">
+                                                <v-card elevation="2" class="pa-4" >
+                                                    <v-card-title class="text-h6">Ajoutez d'autre dépenses</v-card-title>
+    
+                                                    <!-- Champ de sélection pour les dépenses -->
+                                                    <v-col cols="12">
+                                                        <CustomComBoxSpend
+                                                            :items="availableSpends"
+                                                            label="Sélectionnez une dépense"
+                                                            title="name"
+                                                            v-model="selectedSpend"
+                                                            @update:modelValue="onSpendChange"
+                                                            :disabled="!effective"
+                                                        />
+                                                    </v-col>
+    
+                                                    <!-- Champ pour le montant -->
+                                                    <v-col cols="12">
+                                                        <v-text-field
+                                                            density="compact"
+                                                            v-model="spendAmount"
+                                                            label="Entrez le montant"
+                                                            variant="outlined"
+                                                            placeholder="Entrez le montant..."
+                                                            type="number"
+                                                        ></v-text-field>
+                                                    </v-col>
+    
+                                                    <!-- Bouton pour ajouter la dépense -->
+                                                    <v-btn color="primary" variant="outlined" block flat @click="addSpend">
+                                                        Ajouter
+                                                    </v-btn>
+                                                </v-card>
 
-                                                </v-col>
+                                            </v-col>
 
-                                                <v-col cols="12">
-                                                    <!-- Tableau pour afficher les dépenses ajoutées -->
-                                                    <v-card elevation="2" class="mt-4 pa-4">
-                                                        <v-card-title class="text-h6">Dépenses ajoutées</v-card-title>
-        
-                                                        <v-table>
-                                                            <thead>
-                                                                <tr>
-                                                                    <th class="text-h6">Désignation</th>
-                                                                    <th class="text-h6">Montant</th>
-                                                                    <th class="text-h6">Actions</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <tr v-for="(spend, index) in addedSpends" :key="index">
-                                                                    <td>{{ spend.name }}</td>
-                                                                    <td>{{ formatGuineanFrancs(spend.amount) }}</td>
-                                                                    <td>
-                                                                        <v-btn icon flat @click="removeSpend(index)">
-                                                                            <TrashIcon stroke-width="1.5" size="20" class="text-error" />
-                                                                        </v-btn>
-                                                                    </td>
-                                                                </tr>
-                                                                <tr class="font-weight-bold">
-                                                                    <td>Total</td>
-                                                                    <td colspan="2">
-                                                                        {{
-                                                                            formatGuineanFrancs(
-                                                                                addedSpends.reduce(
-                                                                                    (total, spend) => total + spend.amount,
-                                                                                    0
-                                                                                )
+                                            <v-col cols="12">
+                                                <!-- Tableau pour afficher les dépenses ajoutées -->
+                                                <v-card elevation="2" class="mt-4 pa-4">
+                                                    <v-card-title class="text-h6">Dépenses ajoutées</v-card-title>
+    
+                                                    <v-table>
+                                                        <thead>
+                                                            <tr>
+                                                                <th class="text-h6">Désignation</th>
+                                                                <th class="text-h6">Montant</th>
+                                                                <th class="text-h6">Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr v-for="(spend, index) in addedSpends" :key="index">
+                                                                <td>{{ spend.name }}</td>
+                                                                <td>{{ formatGuineanFrancs(spend.amount) }}</td>
+                                                                <td>
+                                                                    <v-btn icon flat @click="removeSpend(index)">
+                                                                        <TrashIcon stroke-width="1.5" size="20" class="text-error" />
+                                                                    </v-btn>
+                                                                </td>
+                                                            </tr>
+                                                            <tr class="font-weight-bold">
+                                                                <td>Total</td>
+                                                                <td colspan="2">
+                                                                    {{
+                                                                        formatGuineanFrancs(
+                                                                            addedSpends.reduce(
+                                                                                (total, spend) => total + spend.amount,
+                                                                                0
                                                                             )
-                                                                        }}
-                                                                    </td>
-                                                                </tr>
-                                                            </tbody>
-                                                        </v-table>
-                                                    </v-card>
+                                                                        )
+                                                                    }}
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </v-table>
+                                                </v-card>
 
-                                                </v-col>
+                                            </v-col>
 
-                                            </v-row>
-                                            
-
-
-                                            
-                                       
+                                        </v-row>
                                     </v-col>
                                 </v-row>
                             </v-form>
@@ -931,7 +928,7 @@ watch(range, (newRange) => {
     <!-- Replace v-table with EasyDataTable -->
     <EasyDataTable
         :headers="headers"
-        :items="filteredSlip"
+        :items="store.boredereaux"
         :loading="loading"
         :theme-color="themeColor"
         table-class-name="customize-table"
@@ -954,7 +951,7 @@ watch(range, (newRange) => {
         <template #item-category="{ category }">
             <div class="d-flex align-center">
                 <div class="ml-5">
-                    <h4 class="text-h6 font-weight-semibold">{{ get_category_of_unite(category) }}</h4>
+                    <h4 class="text-h6 font-weight-semibold">{{ slipCategory(category) }}</h4>
                 </div>
             </div>
         </template>

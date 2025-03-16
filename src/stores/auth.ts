@@ -28,7 +28,7 @@ export const useAuthStore = defineStore({
         
     }),
     actions: {
-         async getUniqueMonth() {
+        async getUniqueMonth() {
             try {
                 const archives = await new ApiAxios().find('/archives/');
 

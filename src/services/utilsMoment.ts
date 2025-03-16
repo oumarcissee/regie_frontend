@@ -1,8 +1,8 @@
 import { ref } from 'vue';
 import BigNumber from 'decimal.js';
 
-import { useOrderStore } from '@/stores/rutStore/orders/orderStore';
-const { moments  } = useOrderStore();
+import { useAuthStore } from '@/stores/auth';
+const { moments  } = useAuthStore();
 
 // Store full moment data including days
 const fullMoments = ref<Array<{ months: string, days: number }>>([]);

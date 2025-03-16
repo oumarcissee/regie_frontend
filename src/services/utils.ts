@@ -201,7 +201,6 @@ const showNotification = (message: string, color: string = 'success') => {
     notif.snackbar.value = true;
 };
 
-
 function convertNumberToWords(number: number) {
     // Constantes
     const units = ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"];
@@ -345,7 +344,7 @@ const get_areas = (area: string, type = false) => {
 }
 
 /**
- * 
+ * Type de bordereaux
  * @param type 
  * @returns 
  */
@@ -473,12 +472,18 @@ function formatGuineanFrancs(amount?: number): string {
 // formatGuineanFrancs(7205882) returns "7 205 882 FG"
 
 
-
-
+const slipCategory = (value: string) => {
+  switch (value) {
+    case 'full': return "COMPLET";
+    case 'espece': return "ESPECE";
+    default: return "ERREUR DE TYPEGE";
+     
+  }
+}
 export {
   truncateText, formatSlug, isAxiosError,
   setItemSelected,getItemSelected, deleteItem,
   confirmButton, getCurrentUser, currentUser, getCurrentProduct, currentProduct, get_full_role, getcurrentMoment, currentMoment,
   get_full_unite, formatDate, signatorPosition, showNotification, notif, convertNumberToWords, get_staffs, get_areas, get_unite_type, get_category_of_unite,
-  filterAndOrderObjects, get_quantity,type_of_spending, formatGuineanFrancs
+  filterAndOrderObjects, get_quantity,type_of_spending, formatGuineanFrancs, slipCategory
 }

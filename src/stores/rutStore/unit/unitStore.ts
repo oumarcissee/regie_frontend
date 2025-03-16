@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 // project imports
-import { isAxiosError, currentMoment ,showNotification } from '@/services/utils';
+import { isAxiosError, currentMoment ,showNotification, get_staffs } from '@/services/utils';
 
 // import { router } from '@/router';
 
@@ -71,7 +71,7 @@ export const useUnitStore = defineStore({
                     category: unite.category || 'N/A',
                     effective: unite.effective || 0,
                     status: unite.status || 0,
-                    g_staff: unite.g_staff || 'N/A',
+                    g_staff: get_staffs(unite.g_staff) || 'N/A',
                     description: unite.description || 'Aucune description',
                     created_at: unite.created_at || null,
                     modified_at: unite.modified_at || null,

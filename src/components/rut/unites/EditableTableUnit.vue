@@ -229,7 +229,7 @@ const submit = handleSubmit(async (values, { setErrors }: any ) => {
         errors.nameError = null
         errors.shortNameError = null
 
-        
+
         submitFormData.append('name', values.name);
         submitFormData.append('short_name', values.short_name);
         submitFormData.append('g_staff', values.g_staff);
@@ -430,6 +430,7 @@ const headers = [
                                             placeholder="Saisissez le nom en integralité"
                                             variant="outlined"
                                             v-model="name.value.value"
+                                            @input="name.value.value = $event.target.value.toUpperCase()"   
                                             :error-messages="name.errorMessage.value"
                                             label="Libéllé"
                                         >
@@ -453,6 +454,7 @@ const headers = [
                                             placeholder="nom abrégé"
                                             variant="outlined"
                                             v-model="short_name.value.value"
+                                            @input="short_name.value.value = $event.target.value.toUpperCase()"   
                                             :error-messages="short_name.errorMessage.value"
                                             label="Libéllé abrégé"
                                         >

@@ -21,7 +21,8 @@ export const useDischargeStore = defineStore({
             line_discharge: 'line-discharges',
             discharge: 'discharges',
             product: 'products',
-            spend: 'spends',
+            spend: 'other-spends',
+            unit: 'unites'
         },
         boredereaux: [] as any,
         bordereauxLines: [] as any,
@@ -55,7 +56,7 @@ export const useDischargeStore = defineStore({
     actions: {
         async fetchMenus() {
             try {
-                const response = await new ApiAxios().find(`/${this.url.spend}/`);
+                const response = await new ApiAxios().find(`/spends/`);
                 this.menus = response?.data?.results 
                 return this.menus;
 
@@ -140,7 +141,7 @@ export const useDischargeStore = defineStore({
     
         async fetchDischarge() {
             try {
-
+                await this.fetchAllDischLines();
                 const response = await new ApiAxios().find(`/${this.url.discharge}/`);
                 // this.boredereaux = response?.data?.results;
                 
@@ -148,13 +149,10 @@ export const useDischargeStore = defineStore({
                 this.boredereaux = (response?.data?.results || []).map((slip: any) => ({
                     ref: slip.ref || 'N/A',
                     items: this.bordereauxLines.filter((line: { discharge: any }) => line.discharge?.id === slip.id),
-                    area: slip.area || 'N/A',
-                    image: slip.image ,
-                    type_of_unit: slip.type_of_unit || 'N/A',
                     category: slip.category || 'N/A',
+                    unit: slip.unit.short_name || 'N/A',
+                    area: slip.unit.area || 'N/A',
                     status: slip.status || 0,
-                    g_staff: slip.g_staff || 'N/A',
-                    description: slip.description || 'Aucune description',
                     created_at: slip.created_at || null,
                     modified_at: slip.modified_at || null,
                    
@@ -162,7 +160,6 @@ export const useDischargeStore = defineStore({
                     raw: slip // Keep raw data for actions
                 }));
 
-                console.log(this.boredereaux);
                 return true;
 
             } catch (error) {
@@ -177,24 +174,41 @@ export const useDischargeStore = defineStore({
                 if (param) {
                     const response = await new ApiAxios().updatePartialForm(`/${this.url}/${param}/`, data, param);
                 } else {
-                
-                    const resDischarge = await new ApiAxios().add(`/${this.url.discharge}/`, { category: data.slip.category });
+                   
+                          //Ajout d'un bordereau
+                    const resDischarge = await new ApiAxios().add(`/${this.url.discharge}/`,{
+                        unit: data.unit,
+                        category: data.slip.category
+                    });
+                    //Changement de l'état de l'unité
+                    new ApiAxios().updatePartialForm(`/${this.url.unit}/${data.unit}/`,{ is_created:  true});
                     //Ajoute des lignes des bordereaux
                     data.products.forEach(async (item: any) => {
                         const res = await new ApiAxios().add(`/${this.url.line_discharge}/`, {
                             discharge: resDischarge.data.id,
-                            unit: data.lineSlip.unite,
-                            offset: item.raw.offset,
-                            forfait: item.raw.forfait,
+                            offset: item.item.offset,
+                            forfait: item.item.forfait,
                             item: item.raw.id,
                         });
                         // console.log(res);
                     });
 
-                   //Enregistrement de la date
-                    const archiveResponse = await new ApiAxios().add('/archives/', {discharge: resDischarge.data.id});
-                    getUniqueMonth(); //                     
+                    //Ajout des dépenses
+                    data.otherDepenses.forEach(async (item: any) => {
+                        const res = await new ApiAxios().add(`/${this.url.spend}/`, {
+                            discharge: resDischarge.data.id,
+                            name: item.name,
+                            amount: item.amount,
+                        });
+                        console.log(res);
+                    });
 
+                   //Enregistrement de la date pour l'archive
+                    const archiveResponse = await new ApiAxios().add('/archives/', { discharge: resDischarge.data.id, effective: data.slip.effective  });
+                    
+                    getUniqueMonth(); //   
+                    //Recharge de la date pour l'archive
+                    this.fetchDischarge();
                     this.$reset();
                 }
                 return true;
