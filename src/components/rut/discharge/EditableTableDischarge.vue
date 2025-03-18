@@ -64,6 +64,7 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
 const unite = useField('unite');
 const curent_type_of_slip = useField('curent_type_of_slip');
 
+const current_category = ref(null);
 const type_of_unites = ref([
     { title: 'COURANT', value: 'current' },
     { title: 'MISSION', value: 'mission' }
@@ -212,12 +213,20 @@ function openDialog() {
 }
 
 // Méthode pour modifier un élément
-const editItem = (item: any) => {
+const editItem = async (item: any) => {
     editedIndex.value = item.id;
-    // Remplir le formulaire avec les donnéeses
-    unite.value.value = item.unite;
 
-    dialog.value = true;
+    console.log(item)
+    // Remplir le formulaire avec les donnéeses
+    unite.value.value = item.unite?.short_name;
+    effective.value = item.effective;
+    current_category.value = item.category;
+    store.products = [...item.items];
+    menusData.value =  await repartirBudgetAvecTauxPrecis(item.menus, effective.value);
+    addedSpends.value = [...item.spends];
+    quantityItem.value = '';
+
+    openDialog();
 };
 
 // PDF related methods
@@ -243,7 +252,6 @@ const formButton = computed(() => {
 
 const headers = [
     { text: "Réf", value: "ref", sortable:true},
-    { text: 'Unité', value: 'unit', sortable: true },
     { text: 'Région', value: 'area', sortable: true },
     { text: 'Categorie', value: 'category', sortable: true },
     { text: 'Crée le', value: 'created_at', sortable: true },
@@ -253,7 +261,7 @@ const headers = [
 
 // Add this new computed property
 const unitesFiltred = computed(() => {
-    return  unitStore.unites.filter((unit: any) => !unit.raw.is_created);
+    return  unitStore.unites.filter((unit: any) => unit.type_of_unit === typeFilter.value && !unit.raw.is_created);
 });
 
 // Add new ref for selected unite details
@@ -400,8 +408,7 @@ onMounted(async () => {
     try {
         isLoading.value = true;
         await refreshTable();
-        console.log(store.boredereaux);
-      
+        console.log(unitStore.unites);
         allProductsEnabled.value = initialAllProductsState.value;
     } catch (err) {
         error.value = 'Error loading data';
@@ -552,7 +559,7 @@ watch(range, (newRange) => {
                                                         <v-select
                                                             label="Selectionnez une catégorie"
                                                             density="compact"
-                                                            v-model="curent_type_of_slip.value.value"
+                                                            v-model="current_category"
                                                             :error-messages="curent_type_of_slip.errorMessage.value"
                                                             :items="type_of_slip"
                                                             hide-details
@@ -939,14 +946,7 @@ watch(range, (newRange) => {
         buttons-pagination
         show-index
     >
-        <!-- Custom template for Article column -->
-        <template #item-name="{ name }">
-            <div class="d-flex align-center">
-                <div class="ml-5">
-                    <h4 class="text-h6 font-weight-semibold">{{ name }}</h4>
-                </div>
-            </div>
-        </template>
+       
         <!-- Custom template for Article column -->
         <template #item-category="{ category }">
             <div class="d-flex align-center">

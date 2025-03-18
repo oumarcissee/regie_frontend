@@ -9,8 +9,7 @@ import Swal from 'sweetalert2'
 
 import { ref } from 'vue';
 
-const { getUniqueMonth } = useAuthStore();
-
+const authStore = useAuthStore();
 // import { router } from '@/router';
 
 
@@ -142,23 +141,49 @@ export const useDischargeStore = defineStore({
         async fetchDischarge() {
             try {
                 await this.fetchAllDischLines();
+                
                 const response = await new ApiAxios().find(`/${this.url.discharge}/`);
+
+                // Recuperation des dépenses
+                const spends = await new ApiAxios().find(`/${this.url.spend}/`);
+                // console.log(spends.data?.results.);
                 // this.boredereaux = response?.data?.results;
                 
                 // Formater les données pour EasyDataTable
-                this.boredereaux = (response?.data?.results || []).map((slip: any) => ({
-                    ref: slip.ref || 'N/A',
-                    items: this.bordereauxLines.filter((line: { discharge: any }) => line.discharge?.id === slip.id),
-                    category: slip.category || 'N/A',
-                    unit: slip.unit.short_name || 'N/A',
-                    area: slip.unit.area || 'N/A',
-                    status: slip.status || 0,
-                    created_at: slip.created_at || null,
-                    modified_at: slip.modified_at || null,
-                   
-                    actions: slip,
-                    raw: slip // Keep raw data for actions
-                }));
+                this.boredereaux = (response?.data?.results || []).map((slip: any) => {
+                    // Assigner des valeurs par défaut si nécessaire
+                    slip.ref = slip.ref || 'N/A';
+                    slip.category = slip.category || 'N/A';
+                    slip.unit = slip.unit || 'N/A';
+                    slip.area = slip.unit?.area || 'N/A'; // Utilisez l'opérateur optionnel pour éviter les erreurs si `unit` est null/undefined
+
+                    // Trouver l'effectif correspondant dans les archives
+                    slip.effective = authStore.archives.data.results.find(
+                        (archive: { discharge: any }) => archive?.discharge?.id === slip?.id
+                    )?.effective || 0;
+
+                    // Filtrer les lignes de bordereau et les dépenses
+                    slip.items = this.bordereauxLines.filter(
+                        (line: { discharge: any }) => line.discharge?.id === slip.id
+                    );
+                    slip.spends = spends.data?.results.filter(
+                        (spend: { discharge: any }) => spend.discharge?.id === slip.id
+                    ) || [];
+
+                    slip.menus = this.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');;
+
+                    // Assigner des valeurs par défaut pour les dates et le statut
+                    slip.status = slip.status || 0;
+                    slip.created_at = slip.created_at || null;
+                    slip.modified_at = slip.modified_at || null;
+
+                    // Ajouter des propriétés supplémentaires pour les actions
+                    slip.actions = slip;
+                    slip.raw = slip; // Conserver les données brutes pour les actions
+
+                    // Retourner l'objet modifié
+                    return slip;
+                });
 
                 return true;
 
@@ -174,8 +199,9 @@ export const useDischargeStore = defineStore({
                 if (param) {
                     const response = await new ApiAxios().updatePartialForm(`/${this.url}/${param}/`, data, param);
                 } else {
+
                    
-                          //Ajout d'un bordereau
+                    //Ajout d'un bordereau
                     const resDischarge = await new ApiAxios().add(`/${this.url.discharge}/`,{
                         unit: data.unit,
                         category: data.slip.category
@@ -186,13 +212,12 @@ export const useDischargeStore = defineStore({
                     data.products.forEach(async (item: any) => {
                         const res = await new ApiAxios().add(`/${this.url.line_discharge}/`, {
                             discharge: resDischarge.data.id,
-                            offset: item.item.offset,
-                            forfait: item.item.forfait,
+                            offset: item?.item?.offset,
+                            forfait: item?.item?.forfait,
                             item: item.raw.id,
                         });
                         // console.log(res);
                     });
-
                     //Ajout des dépenses
                     data.otherDepenses.forEach(async (item: any) => {
                         const res = await new ApiAxios().add(`/${this.url.spend}/`, {
@@ -200,16 +225,18 @@ export const useDischargeStore = defineStore({
                             name: item.name,
                             amount: item.amount,
                         });
-                        console.log(res);
                     });
 
-                   //Enregistrement de la date pour l'archive
-                    const archiveResponse = await new ApiAxios().add('/archives/', { discharge: resDischarge.data.id, effective: data.slip.effective  });
-                    
-                    getUniqueMonth(); //   
-                    //Recharge de la date pour l'archive
-                    this.fetchDischarge();
+                   // Après l'ajout d'archive
+                    const archiveResponse = await new ApiAxios().add('/archives/', { discharge: resDischarge.data.id, effective: data.slip.effective });
+
+                    // Rechargez complètement les archives du authStore
+                    const authStore = useAuthStore();
+                    await authStore.getUniqueMonth();
+
+                    // Puis continuez
                     this.$reset();
+                    await this.fetchDischarge();
                 }
                 return true;
             } catch (error: any) {
@@ -237,10 +264,13 @@ export const useDischargeStore = defineStore({
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     try {
+             
                         const response = await new ApiAxios().delete(`/${url}/${item.id}/`, item.id);
+                         //Changement de l'état de l'unité
+                        new ApiAxios().updatePartialForm(`/${this.url.unit}/${item.unit.id}/`,{ is_created:  false});
                         Swal.fire({
                             title: "Supprimé!",
-                            text: "Votre objet a bien été supprimé.",
+                            text: "Votre bordéreau a bien été supprimé.",
                             icon: "success"
                         });
                         //
@@ -250,7 +280,7 @@ export const useDischargeStore = defineStore({
                         console.log(error);
                         Swal.fire({
                             title: "Erreur!",
-                            text: "Votre objet ne peut pas être supprimé.",
+                            text: "Votre bordéreau ne peut pas être supprimé.",
                             icon: "warning"
                         });
                         return false;

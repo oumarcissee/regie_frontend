@@ -22,6 +22,7 @@ export const useAuthStore = defineStore({
         isAuthenticated: false,
         accessToken: "",
         refreshToken: "",
+        archives: [] as any,
         
         moments: [] as any,
         dates: [] as any,
@@ -30,12 +31,12 @@ export const useAuthStore = defineStore({
     actions: {
         async getUniqueMonth() {
             try {
-                const archives = await new ApiAxios().find('/archives/');
+                this.archives = await new ApiAxios().find('/archives/');
 
                 // Créer un Map pour stocker les mois uniques
                 const monthMap = new Map();
                 
-                archives.data.results.forEach((item: any) => {
+                this.archives.data.results.forEach((item: any) => {
                     const monthKey = format(new Date(item.date), "MMMM yyyy", { locale });
                     // Si le mois n'existe pas déjà, l'ajouter
                     if (!monthMap.has(monthKey)) {
