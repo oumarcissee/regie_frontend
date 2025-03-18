@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, watchEffect } from 'vue';
 import { useDischargeStore } from '@/stores/rutStore/discharge/dischargeStore';
 import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
 import {
@@ -61,17 +61,17 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
     }
 });
 
-const unite = useField('unite');
 const curent_type_of_slip = useField('curent_type_of_slip');
+const unite = useField('unite');
 
-const current_category = ref(null);
 const current_unit = ref(null);
+const current_category = ref(null);
+
 const type_of_unites = ref([
     { title: 'COURANT', value: 'current' },
     { title: 'MISSION', value: 'mission' }
     // { title: '4eme RM', value: 'single' }
 ]);
-
 
 // Les types des bordereaux
 const type_of_slip = ref([
@@ -96,7 +96,6 @@ const filteredSlip = computed(() => {
             (unit: any) => unit.name.toLowerCase().includes(searchTerm) || get_unite_type(unit.type_of_unit).toLowerCase().includes(searchTerm)
         );
     }
-
     return slips;
 });
 
@@ -123,6 +122,7 @@ const pError = ref();
 const submit = handleSubmit(async (values, { setErrors }: any) => {
     try {
         // const submitFormData = new FormData();
+    
 
         const submitData = {
             slip: { // Les bordereaux
@@ -206,13 +206,20 @@ function close() {
     menusData.value = null;
     addedSpends.value = [];
     unitedId.value = null;
-    range.value = null;
+    typeFilter.value = 'current';
+    range.value.start = null;
+    range.value.end = null;
+
     current_unit.value = null;
     current_category.value = null;
     quantityItem.value = '';
+
+    // Réinitialiser les champs de formulaire
+    unite.value.value = null;
+    curent_type_of_slip.value.value = null;
+
     handleReset();
 }
-
 function openDialog() {
     dialog.value = true;
 }
@@ -220,6 +227,7 @@ function openDialog() {
 // Méthode pour modifier un élément
 const editItem = async (item: any) => {
     try {
+        console.log(item);
         // On récupère les données de l'unité pour remplir le formulaire
         current_unit.value = item.unite?.short_name;
         effective.value = item.effective;
@@ -227,16 +235,19 @@ const editItem = async (item: any) => {
         menusData.value = await repartirBudgetAvecTauxPrecis(item.menus, effective.value);
         // store.products = [...item?.items];
         addedSpends.value = [...item.spends];
+        typeFilter.value = item.unit?.type_of_unit;
         // quantityItem.value = '';
+
+        // Mettre à jour les valeurs de l'unité et de la catégorie
+        unite.value.value = item.unit?.short_name;
+        curent_type_of_slip.value.value = item.category;
 
         openDialog();
     } catch (error) {
         console.error('Erreur lors de l\'édition :', error);
         showNotification('Erreur lors de l\'édition', 'error');
     }
-    
 };
-
 //Computed Property
 const storeProducts = computed(() => {
     return editedIndex.value === -1 ? store.products : 'Editer un Bordereau';
@@ -250,6 +261,15 @@ const openPrintPreview = () => {
 const remove = (item: any) => {
     if (store.products.length > 1) {
         store.products = [...store.products.filter((i: any) => i.ref !== item?.ref)];
+    }
+};
+
+const deletion = async (index: any) => {
+    try {
+        await store.deleteItem(index, 'discharges');
+        await refreshTable();
+    } catch (error) {
+        console.error('Erreur lors de la suppression :', error);
     }
 };
 
@@ -277,6 +297,12 @@ const unitesFiltred = computed(() => {
     return  unitStore.unites.filter((unit: any) => unit.type_of_unit === typeFilter.value && !unit.raw.is_created);
 });
 
+// editedIndex === -1 ? unite.value.value : current_category.value
+
+// const unitedSelected = computed(() => {
+//     return  editedIndex.value === -1 ? unite.value.value : current_category.value
+// });
+
 // Add new ref for selected unite details
 const selectedUniteDetails = ref(null);
 const effective = ref(null);
@@ -297,20 +323,25 @@ const unitedChanged = async (value: any) => {
         selectedUniteDetails.value = null;
         return;
     }
+
     loading.value = true;
     isLoading.value = true;
 
     // Find the selected unite in the unites array
-    const selectedUnite  = (store.unitedSelected = unitStore.unites.find((unite: { short_name: any }) => unite.short_name === value));
+    const selectedUnite = unitStore.unites.find((unite: { short_name: any }) => unite.short_name === value);
     if (selectedUnite) {
-        selectedUniteDetails.value;
-
-        unitedId.value = selectedUnite.raw.id
+        selectedUniteDetails.value = selectedUnite;
+        
+        unitedId.value = selectedUnite.raw.id;
         effective.value = selectedUnite.effective;
-        //Gestion des operations dans le store.
+
+        // Mettre à jour la valeur de l'unité
+        unite.value.value = selectedUnite.short_name;
+
+        // Gestion des opérations dans le store.
         await store.fetchProducts(selectedUnite.effective);
 
-        //Filter uniquement des food
+        // Filter uniquement des food
         const menusArrays = store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
         
         otherDepenses.value = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'other');
@@ -322,7 +353,6 @@ const unitedChanged = async (value: any) => {
     isLoading.value = false;
     loading.value = false;
 };
-
 const productsHeaders = [
     { text: 'Article', value: 'item', sortable: true },
     { text: 'Taux', value: 'rate_per_days', sortable: true },
@@ -365,13 +395,7 @@ const submitQuantity = () => {
 // Add new ref for controlling all products
 const allProductsEnabled = ref(false);
 
-//Interfaces
-interface Product {
-    ref: string;
-    forfait: boolean;
-    quantity?: number;
-}
-
+// Add this new computed property
 const emit = defineEmits(['update:modelValue']);
 
 // Functions
@@ -468,7 +492,7 @@ const timezone = ref('');
 
 const range = ref({
     start: new Date(),
-    end: null
+    end: new Date()
 });
 
 // Le changement de la plage
@@ -488,13 +512,12 @@ const range = ref({
 //     });
 // }, { deep: true });
 
-watch(range, (newRange) => {
-    console.log('Date range changed:', {
-        // start: newRange.start ? new Date(newRange.start).toISOString() : "",
-        // end: newRange.end ? new Date(newRange.end).toISOString() : ""
-    });
-}, { deep: true });
-
+watchEffect(() => {
+  console.log("Range", {
+    start: range.value.start ? new Date(range.value.start).toISOString() : date,
+    end: range.value.end ? new Date(range.value.end).toISOString() : date,
+  });
+});
 
 
 </script>
@@ -569,10 +592,10 @@ watch(range, (newRange) => {
                                                 </v-col>
                                                 <v-col cols="12" md="6">
                                                     <UiChildCard title="Categorie">
-                                                        <v-select
+                                                       <v-select
                                                             label="Sélectionnez une catégorie"
                                                             density="compact"
-                                                            v-model="current_category"
+                                                            v-model="curent_type_of_slip.value.value"
                                                             :error-messages="curent_type_of_slip.errorMessage.value"
                                                             :items="type_of_slip"
                                                             hide-details
@@ -591,10 +614,10 @@ watch(range, (newRange) => {
                                                 :items="editedIndex === -1 ? unitesFiltred : unitesFiltred"
                                                 label="Séletionnez une unité"
                                                 title="short_name"
-                                                v-model="current_unit"
+                                                v-model="unite.value.value"
                                                 :error-messages="unite.errorMessage.value"
                                                 @update:modelValue="unitedChanged"
-                                                :disabled="!current_category ? true : false"
+                                                :disabled="!curent_type_of_slip.value.value ? true : false"
                                             />
                                         </v-col>
 
@@ -1013,7 +1036,7 @@ watch(range, (newRange) => {
                 </v-tooltip>
                 <v-tooltip text="Supprimer">
                     <template v-slot:activator="{ props }">
-                        <v-btn icon flat @click="remove(raw)" v-bind="props">
+                        <v-btn icon flat @click="deletion(raw)" v-bind="props">
                             <TrashIcon stroke-width="1.5" size="20" class="text-error" />
                         </v-btn>
                     </template>
