@@ -65,6 +65,7 @@ const unite = useField('unite');
 const curent_type_of_slip = useField('curent_type_of_slip');
 
 const current_category = ref(null);
+const current_unit = ref(null);
 const type_of_unites = ref([
     { title: 'COURANT', value: 'current' },
     { title: 'MISSION', value: 'mission' }
@@ -204,6 +205,10 @@ function close() {
     store.products = [];
     menusData.value = null;
     addedSpends.value = [];
+    unitedId.value = null;
+    range.value = null;
+    current_unit.value = null;
+    current_category.value = null;
     quantityItem.value = '';
     handleReset();
 }
@@ -214,20 +219,28 @@ function openDialog() {
 
 // Méthode pour modifier un élément
 const editItem = async (item: any) => {
-    editedIndex.value = item.id;
+    try {
+        // On récupère les données de l'unité pour remplir le formulaire
+        current_unit.value = item.unite?.short_name;
+        effective.value = item.effective;
+        current_category.value = item.category;
+        menusData.value = await repartirBudgetAvecTauxPrecis(item.menus, effective.value);
+        // store.products = [...item?.items];
+        addedSpends.value = [...item.spends];
+        // quantityItem.value = '';
 
-    console.log(item)
-    // Remplir le formulaire avec les donnéeses
-    unite.value.value = item.unite?.short_name;
-    effective.value = item.effective;
-    current_category.value = item.category;
-    store.products = [...item.items];
-    menusData.value =  await repartirBudgetAvecTauxPrecis(item.menus, effective.value);
-    addedSpends.value = [...item.spends];
-    quantityItem.value = '';
-
-    openDialog();
+        openDialog();
+    } catch (error) {
+        console.error('Erreur lors de l\'édition :', error);
+        showNotification('Erreur lors de l\'édition', 'error');
+    }
+    
 };
+
+//Computed Property
+const storeProducts = computed(() => {
+    return editedIndex.value === -1 ? store.products : 'Editer un Bordereau';
+});
 
 // PDF related methods
 const openPrintPreview = () => {
@@ -477,8 +490,8 @@ const range = ref({
 
 watch(range, (newRange) => {
     console.log('Date range changed:', {
-        start: newRange.start ? new Date(newRange.start).toISOString() : date,
-        end: newRange.end ? new Date(newRange.end).toISOString() : date
+        // start: newRange.start ? new Date(newRange.start).toISOString() : "",
+        // end: newRange.end ? new Date(newRange.end).toISOString() : ""
     });
 }, { deep: true });
 
@@ -557,7 +570,7 @@ watch(range, (newRange) => {
                                                 <v-col cols="12" md="6">
                                                     <UiChildCard title="Categorie">
                                                         <v-select
-                                                            label="Selectionnez une catégorie"
+                                                            label="Sélectionnez une catégorie"
                                                             density="compact"
                                                             v-model="current_category"
                                                             :error-messages="curent_type_of_slip.errorMessage.value"
@@ -565,7 +578,7 @@ watch(range, (newRange) => {
                                                             hide-details
                                                             variant="outlined"
                                                             style="min-width: 200px"
-                                                            :disabled="effective ? false : true"
+                                                            :disabled="!effective ? false : true"
                                                         ></v-select>
                                                     </UiChildCard>
                                                 </v-col>
@@ -578,9 +591,10 @@ watch(range, (newRange) => {
                                                 :items="editedIndex === -1 ? unitesFiltred : unitesFiltred"
                                                 label="Séletionnez une unité"
                                                 title="short_name"
-                                                v-model="unite.value.value"
+                                                v-model="current_unit"
                                                 :error-messages="unite.errorMessage.value"
                                                 @update:modelValue="unitedChanged"
+                                                :disabled="!current_category ? true : false"
                                             />
                                         </v-col>
 
@@ -604,7 +618,7 @@ watch(range, (newRange) => {
                                                 <v-col cols="12" sm="12" v-if="effective">
                                                     <EasyDataTable
                                                         :headers="productsHeaders"
-                                                        :items="store.products"
+                                                        :items="storeProducts"
                                                         :loading="loading"
                                                         :theme-color="themeColor"
                                                         table-class-name="customize-table"
