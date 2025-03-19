@@ -23,7 +23,7 @@ import UiChildCard from '@/components/shared/UiChildCard.vue';
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 const itemsSelected = ref<Item[]>([]);
-const searchField = ref(['name', 'type_of_unit']);
+const searchField = ref(['unit.short_name', 'category']);
 const printPreviewDialog = ref(false);
 const quantityDialog = ref(false);
 const quantityItem = ref('');
@@ -81,7 +81,7 @@ const type_of_slip = ref([
 
 // Add type filter
 const typeFilter = ref('current'); //
-const filteredSlip = computed(() => {
+const filteredSlips = computed(() => {
     let slips = store.boredereaux;
 
     // Filter by type if a type is selected
@@ -189,6 +189,7 @@ const refreshTable = async () => {
 };
 
 const uniteSelected = ref();
+const productSelected = ref([]);
 
 const valid = ref(true);
 const dialog = ref(false);
@@ -227,13 +228,13 @@ function openDialog() {
 // Méthode pour modifier un élément
 const editItem = async (item: any) => {
     try {
-        console.log(item);
+
         // On récupère les données de l'unité pour remplir le formulaire
         current_unit.value = item.unite?.short_name;
         effective.value = item.effective;
         current_category.value = item.category;
         menusData.value = await repartirBudgetAvecTauxPrecis(item.menus, effective.value);
-        // store.products = [...item?.items];
+        await store.fetchProducts(item.effective, item.items) // Le store 
         addedSpends.value = [...item.spends];
         typeFilter.value = item.unit?.type_of_unit;
         // quantityItem.value = '';
@@ -249,9 +250,6 @@ const editItem = async (item: any) => {
     }
 };
 //Computed Property
-const storeProducts = computed(() => {
-    return editedIndex.value === -1 ? store.products : 'Editer un Bordereau';
-});
 
 // PDF related methods
 const openPrintPreview = () => {
@@ -283,11 +281,31 @@ const formButton = computed(() => {
     return editedIndex.value === -1 ? 'Enregistrer' : 'Modifier';
 });
 
+
+const storeSlip = computed(() => {
+    return store.boredereaux;
+});
+
+const filteredSlip = computed(() => {
+    if (!searchValue.value) {
+        return store.boredereaux; // Si aucune recherche n'est effectuée, retournez tous les bordereaux
+    }
+
+    const searchTerm = searchValue.value.toLowerCase();
+    return store.boredereaux.filter((slip: any) => {
+        return (
+            slip.unit.short_name.toLowerCase().includes(searchTerm) || // Recherche par nom
+            slip.category.toLowerCase().includes(searchTerm) || // Recherche par catégorie
+            slip.ref.toLowerCase().includes(searchTerm) // Recherche par référence
+        );
+    });
+});
+
 const headers = [
-    { text: "Réf", value: "ref", sortable:true},
-    { text: 'Région', value: 'area', sortable: true },
-    { text: 'Categorie', value: 'category', sortable: true },
-    { text: 'Crée le', value: 'created_at', sortable: true },
+    { text: "Réf", value: "ref", sortable: true },
+    { text: 'Unité', value: 'unit.short_name', sortable: true },
+    { text: 'Catégorie', value: 'category', sortable: true },
+    { text: 'Créé le', value: 'created_at', sortable: true },
     { text: 'Effectif', value: 'effective', sortable: true },
     { text: 'Actions', value: 'actions' }
 ];
@@ -353,8 +371,25 @@ const unitedChanged = async (value: any) => {
     isLoading.value = false;
     loading.value = false;
 };
+
+
+const storeProducts = computed(() => {
+    return store.products;
+});
+
+
+const prefixes = ['Riz', 'Hui', 'Tom', 'Oig', 'Lai', 'Suc', 'Sav', 'Sar', 'Sel', 'Caf', 'Pat', 'Eau'];
+
+const filteredProducts = computed(() => {
+    return storeProducts.value.filter((product: any) => {
+        const matchesPrefix = prefixes.some(prefix => product.item.name.startsWith(prefix));
+        const matchesSearch = searchValue.value ? product.item.name.toLowerCase().includes(searchValue.value.toLowerCase()) : true;
+        return matchesPrefix && matchesSearch;
+    });
+});
+
 const productsHeaders = [
-    { text: 'Article', value: 'item', sortable: true },
+    { text: 'Article', value: 'item.name', sortable: true },
     { text: 'Taux', value: 'rate_per_days', sortable: true },
     { text: 'Quantité', value: 'item.quantite', sortable: true },
     { text: 'Unités', value: 'unite', sortable: true },
@@ -577,12 +612,12 @@ watchEffect(() => {
                                             <!-- Filtre par type -->
                                             <v-row>
                                                 <v-col cols="12" md="6">
-                                                    <UiChildCard title="Type d'unité">
+                                                    <UiChildCard title="Filtrer par type d'unité">
                                                         <v-select
                                                             density="compact"
                                                             v-model="typeFilter"
                                                             :items="type_of_unites"
-                                                            label="Selectionnez le type d'unité"
+                                                            label="Type d'unité"
                                                             variant="outlined"
                                                             hide-details
                                                             style="min-width: 200px"
@@ -591,7 +626,7 @@ watchEffect(() => {
                                                     </UiChildCard>
                                                 </v-col>
                                                 <v-col cols="12" md="6">
-                                                    <UiChildCard title="Categorie">
+                                                    <UiChildCard title="Categorie de bordereau">
                                                        <v-select
                                                             label="Sélectionnez une catégorie"
                                                             density="compact"
@@ -640,14 +675,14 @@ watchEffect(() => {
                                             <v-row>
                                                 <v-col cols="12" sm="12" v-if="effective">
                                                     <EasyDataTable
-                                                        :headers="productsHeaders"
-                                                        :items="storeProducts"
+                                                        :headers="headers"
+                                                        :items="filteredSlip"
                                                         :loading="loading"
                                                         :theme-color="themeColor"
                                                         table-class-name="customize-table"
                                                         :search-field="searchField"
                                                         :search-value="searchValue"
-                                                        :rows-per-page="7"
+                                                        :rows-per-page="8"
                                                         buttons-pagination
                                                         show-index
                                                     >

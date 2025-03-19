@@ -31,6 +31,7 @@ export const useDischargeStore = defineStore({
         weight: 0 ,
         unitedSelected: null as any,
         dialog: false,
+        finalQuantity: 0,
 
         errors : ref({
             nameError: null,
@@ -65,39 +66,87 @@ export const useDischargeStore = defineStore({
             }
         },
 
-        async fetchProducts(effective: any = null, offset: number = 0, forfait: boolean = false) {
+
+        async fetchProducts(effective: any = null, data?: [], offset: number = 0, forfait: boolean = false) {
             try {
-                const response = await new ApiAxios().find(`/items/`);
-                const products = filterAndOrderObjects(response.data.results);
+                this.products = [];
 
-                this.products = products.map((item: any) => {
-                    const baseQuantity = effective ? get_quantity(item.rate_per_days, effective, item.divider) : 0;
-                    const finalQuantity = offset && forfait ? baseQuantity + offset : baseQuantity;
+                if (data) {
+                    // console.log(data);
+                    // return;
+                    // await filterAndOrderObjects(data);
 
-                    return {
-                        ref: item.ref,
-                        rate_per_days: item.rate_per_days,
-                        status: false,
-                        price: item.price,
-                        unite: get_full_unite(item.unite),
-                        divider: item.divider,
-                        item: {
-                            name: item.name,
-                            image: item.image,
-                            description: item.description,
-                            created_at: new Date(item.created_at),
-                            modified_at: new Date(item.modified_at),
-                            forfait: false,
-                            quantite: finalQuantity,
-                            offset: offset,
-                        },
-                        actions: item,
-                        raw: item
-                    };
-                });
+                    this.products = data.map((item: any, index: number) => {
+                        // console.log(item, index);
+                        // return;
+                        const baseQuantity = effective ? get_quantity(item.item.rate_per_days, effective, item.item.divider) : 0;
+
+
+                        if (item.offset) {
+                            if (item.forfait) {
+                                this.finalQuantity =  item.offset;
+                            }
+                            this.finalQuantity =  baseQuantity  + item.offset;
+                        }
+
+
+                        return {
+                            ref: item.item.ref,
+                            rate_per_days: item.item.rate_per_days,
+                            status: false,
+                            price: item.item.price,
+                            unite: get_full_unite(item.item.unite),
+                            divider: item.item.divider,
+                            item: {
+                                name: item.item.name,
+                                image: item.item.image,
+                                description: item.item.description,
+                                created_at: new Date(item.item.created_at),
+                                modified_at: new Date(item.item.modified_at),
+                                forfait: item.forfait,
+                                quantite: this.finalQuantity ,
+                                offset: item.offset,
+                            },
+                            actions: item.item,
+                            raw: item.item
+                        };
+                    });
+
+                } else {
+                    
+                    const response = await new ApiAxios().find(`/items/`);
+                    // const products = await filterAndOrderObjects(response.data.results);
+    
+                    this.products = response.data.results.map((item: any) => {
+                        const baseQuantity = effective ? get_quantity(item.rate_per_days, effective, item.divider) : 0;
+                        const finalQuantity = offset && forfait ? baseQuantity + offset : baseQuantity;
+    
+                        return {
+                            ref: item.ref,
+                            rate_per_days: item.rate_per_days,
+                            status: false,
+                            price: item.price,
+                            unite: get_full_unite(item.unite),
+                            divider: item.divider,
+                            item: {
+                                name: item.name,
+                                image: item.image,
+                                description: item.description,
+                                created_at: new Date(item.created_at),
+                                modified_at: new Date(item.modified_at),
+                                forfait: false,
+                                quantite: finalQuantity,
+                                offset: offset,
+                            },
+                            actions: item,
+                            raw: item
+                        };
+                    });
+                }
             } catch (error) {
                 console.error("Error fetching products:", error);
             }
+
         },
         //Modification de la quantité d'un produit
         updateProductQuantity(ref: string, newQuantity: number) {

@@ -389,9 +389,13 @@ const get_category_of_unite = (categroy: string, type = false) => {
  * @returns 
  */
 
-const  filterAndOrderObjects =  (dataArrays: any[], choice: boolean = true) => {
+const filterAndOrderObjects = async (dataArrays: any[] | any, choice: boolean = true) => {
   const prefixes = ['Riz', 'Hui', 'Tom', 'Oig', 'Lai', 'Suc', 'Sav', 'Sar', 'Sel', 'Caf', 'Pat', 'Eau'];
-  return dataArrays.flat()
+
+  // Vérifie si dataArrays est un tableau, sinon le transforme en tableau
+  const dataArray = Array.isArray(dataArrays) ? dataArrays : [dataArrays];
+
+  return dataArray.flat()
     .filter((obj: { status: boolean; }) => obj.status === choice)
     .sort((a: { name: string; }, b: { name: string; }) => {
       const aPrefix = prefixes.find(prefix => a.name.startsWith(prefix));
