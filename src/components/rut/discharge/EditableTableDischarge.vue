@@ -228,7 +228,8 @@ function openDialog() {
 // Méthode pour modifier un élément
 const editItem = async (item: any) => {
     try {
-
+        // console.log(item);
+        editedIndex.value = item.id;
         // On récupère les données de l'unité pour remplir le formulaire
         current_unit.value = item.unite?.short_name;
         effective.value = item.effective;
@@ -675,8 +676,8 @@ watchEffect(() => {
                                             <v-row>
                                                 <v-col cols="12" sm="12" v-if="effective">
                                                     <EasyDataTable
-                                                        :headers="headers"
-                                                        :items="filteredSlip"
+                                                        :headers="productsHeaders"
+                                                        :items="filteredProducts"
                                                         :loading="loading"
                                                         :theme-color="themeColor"
                                                         table-class-name="customize-table"

@@ -81,12 +81,14 @@ export const useDischargeStore = defineStore({
                         // return;
                         const baseQuantity = effective ? get_quantity(item.item.rate_per_days, effective, item.item.divider) : 0;
 
+                        this.finalQuantity = item.offset && item.forfait ? baseQuantity + item.offset : baseQuantity;
 
-                        if (item.offset) {
-                            if (item.forfait) {
-                                this.finalQuantity =  item.offset;
-                            }
-                            this.finalQuantity =  baseQuantity  + item.offset;
+                        if (item.offset && item.forfait) {
+                            this.finalQuantity   = item.offset;
+                           
+                        } else if (item.offset && !item.forfait) {
+                            
+                            this.finalQuantity = baseQuantity + item.offset;
                         }
 
 
