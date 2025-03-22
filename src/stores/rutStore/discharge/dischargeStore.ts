@@ -28,7 +28,7 @@ export const useDischargeStore = defineStore({
         areas: [] as any,
         menus: [] as any,
         products: [] as any,
-        weight: 0 ,
+        totalWeightKg: 0 ,
         unitedSelected: null as any,
         dialog: false,
         finalQuantity: 0,
@@ -50,7 +50,7 @@ export const useDischargeStore = defineStore({
             return state.products;
         },
         getTotalWeight(state) {
-            return (state.weight/1000).toFixed(2) + " tonnes";
+            return state.totalWeightKg / 1000;
         }
     },
     actions: {
@@ -83,6 +83,8 @@ export const useDischargeStore = defineStore({
                             this.finalQuantity = baseQuantity + item.offset;
                         }
 
+                        const weight = item.item.weight * this.finalQuantity || 0;
+
                         // Créer rawItem avec les propriétés supplémentaires
                         const rawItem = {
                             name: item.item.name,
@@ -93,6 +95,7 @@ export const useDischargeStore = defineStore({
                             forfait: item.forfait,
                             quantite: this.finalQuantity,
                             offset: item.offset,
+                            weight: weight, // Ajouter le poids du produit
                         };
 
                         // Fusionner item.item et rawItem dans raw
@@ -109,7 +112,7 @@ export const useDischargeStore = defineStore({
                             unite: get_full_unite(item.item.unite),
                             divider: item.item.divider,
                             item: rawItem,
-                            actions: item.item,
+                            actions: raw,
                             raw: raw, // raw contient à la fois item.item et rawItem
                         };
                     });
@@ -121,6 +124,8 @@ export const useDischargeStore = defineStore({
                         const baseQuantity = effective ? get_quantity(item.rate_per_days, effective, item.divider) : 0;
                         const finalQuantity = offset && forfait ? baseQuantity + offset : baseQuantity;
 
+                        const weight = item.item.weight * this.finalQuantity || 0;
+
                         // Créer rawItem avec les propriétés supplémentaires
                         const rawItem = {
                             name: item.name,
@@ -131,6 +136,7 @@ export const useDischargeStore = defineStore({
                             forfait: false,
                             quantite: finalQuantity,
                             offset: offset,
+                            weight: weight, // Ajouter le poids du produit
                         };
 
                         // Fusionner item et rawItem dans raw
@@ -152,7 +158,12 @@ export const useDischargeStore = defineStore({
                         };
                     });
                 }
-                console.log(this.products);
+
+                // Calculer le tonnage total
+                this.totalWeightKg = this.products.reduce((sum: any, product: { item: { weight: any; }; }) => sum + (product.item.weight || 0), 0);
+
+                console.log("LE TONNAGE", this.getTotalWeight);
+                
             } catch (error) {
                 console.error("Error fetching products:", error);
             }
@@ -234,8 +245,9 @@ export const useDischargeStore = defineStore({
                     slip.modified_at = slip.modified_at || null;
 
                     // Ajouter des propriétés supplémentaires pour les actions
-                    slip.actions = slip;
+                    
                     slip.raw = slip; // Conserver les données brutes pour les actions
+                    console.log(slip);
 
                     // Retourner l'objet modifié
                     return slip;

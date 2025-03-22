@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, watchEffect } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, watchEffect, toRaw } from 'vue';
 import { useDischargeStore } from '@/stores/rutStore/discharge/dischargeStore';
 import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
 import {
@@ -23,7 +23,7 @@ import UiChildCard from '@/components/shared/UiChildCard.vue';
 
 const themeColor = ref('rgb(var(--v-theme-secondary))');
 const itemsSelected = ref<Item[]>([]);
-const searchField = ref(['unit.short_name', 'category']);
+const searchField = ref(['unit.short_name', 'category', 'ref']);
 const printPreviewDialog = ref(false);
 const quantityDialog = ref(false);
 const quantityItem = ref('');
@@ -43,7 +43,7 @@ import { useField, useForm } from 'vee-validate';
 
 import type { Item } from 'vue3-easy-data-table';
 
-const { addOrUpdateDischarge, errors, getTotalWeight , fetchAllDischLines} = useDischargeStore();
+const { addOrUpdateDischarge, errors, getTotalWeight, fetchAllDischLines } = useDischargeStore();
 const store = useDischargeStore();
 const unitStore = useUnitStore();
 
@@ -56,8 +56,7 @@ const { handleSubmit, handleReset, isSubmitting } = useForm({
         curent_type_of_slip(value: string | any[]) {
             if (value) return true;
             return 'Selectionnez une catégorie.';
-        },
-       
+        }
     }
 });
 
@@ -81,23 +80,87 @@ const type_of_slip = ref([
 
 // Add type filter
 const typeFilter = ref('current'); //
+
 const filteredSlips = computed(() => {
     let slips = store.boredereaux;
 
-    // Filter by type if a type is selected
+    // Vérifier si slips est défini
+    if (!slips) return [];
+
+    // Filtrer par type si un type est sélectionné
     if (typeFilter.value) {
-        slips = slips?.filter((unit: any) => unit.type_of_unit === typeFilter.value);
+        slips = slips.filter((slip: any) => slip.unit.type_of_unit === typeFilter.value);
     }
 
-    // Filter by search value if present
+    // Filtrer par terme de recherche si présent
     if (searchValue.value) {
         const searchTerm = searchValue.value.toLowerCase();
-        slips = slips.filter(
-            (unit: any) => unit.name.toLowerCase().includes(searchTerm) || get_unite_type(unit.type_of_unit).toLowerCase().includes(searchTerm)
-        );
+
+        slips = slips.filter((slip: any) => {
+            // Recherche dans type_of_slip pour des correspondances partielles
+            const matchedType = type_of_slip.value.find(
+                (type) =>
+                    type.title.toLowerCase().startsWith(searchTerm) || // Recherche par titre (partiel)
+                    type.value.toLowerCase().startsWith(searchTerm) // Recherche par valeur (partielle)
+            );
+
+            // Si une correspondance est trouvée, utiliser la valeur pour filtrer
+            const categoryValue = matchedType ? matchedType.value : searchTerm;
+
+            return (
+                slip.unit.short_name.toLowerCase().includes(searchTerm) || // Recherche par nom (partiel)
+                slip.category.toLowerCase().includes(categoryValue) || // Recherche par catégorie (partielle)
+                slip.ref.toLowerCase().includes(searchTerm) // Recherche par référence (partielle)
+            );
+        });
     }
+
     return slips;
 });
+
+const cleanData = (data: any[]) => {
+    return data.map((item: any) => {
+        const cleanedItem = { ...item };
+        delete cleanedItem.actions; // Supprime la propriété circulaire
+
+        // Nettoyer les objets imbriqués si nécessaire
+        if (cleanedItem.items) {
+            cleanedItem.items = cleanedItem.items.map((nestedItem: any) => {
+                const cleanedNestedItem = { ...nestedItem };
+                delete cleanedNestedItem.actions; // Supprime la circularité dans les objets imbriqués
+                return cleanedNestedItem;
+            });
+        }
+
+        if (cleanedItem.menus) {
+            cleanedItem.menus = cleanedItem.menus.map((nestedItem: any) => {
+                const cleanedNestedItem = { ...nestedItem };
+                delete cleanedNestedItem.actions; // Supprime la circularité dans les objets imbriqués
+                return cleanedNestedItem;
+            });
+        }
+
+        if (cleanedItem.spends) {
+            cleanedItem.spends = cleanedItem.spends.map((nestedItem: any) => {
+                const cleanedNestedItem = { ...nestedItem };
+                delete cleanedNestedItem.actions; // Supprime la circularité dans les objets imbriqués
+                return cleanedNestedItem;
+            });
+        }
+
+        return cleanedItem;
+    });
+};
+
+const rawData = toRaw(filteredSlips);
+
+// const cleanData = (data: any[]) => {
+//     return data.map((item: any) => {
+//         const cleanedItem = { ...item };
+//         delete cleanedItem.actions; // Supprimez la propriété circulaire
+//         return cleanedItem;
+//     });
+// };
 
 const selected = ref<string | null | undefined | number>(null);
 
@@ -122,25 +185,24 @@ const pError = ref();
 const submit = handleSubmit(async (values, { setErrors }: any) => {
     try {
         // const submitFormData = new FormData();
-    
 
         const submitData = {
-            slip: { // Les bordereaux
+            slip: {
+                // Les bordereaux
                 category: values.curent_type_of_slip,
-                start:  typeFilter.value === 'mission' ? range.value.start : null,
+                start: typeFilter.value === 'mission' ? range.value.start : null,
                 end: typeFilter.value === 'mission' ? range.value.end : null,
                 effective: effective.value
             },
-         
+
             unit: unitedId.value,
             products: store.products,
-            otherDepenses: addedSpends.value,
-        }
+            otherDepenses: addedSpends.value
+        };
 
-        pError.value = null;    
+        pError.value = null;
         errors.nameError = null;
         errors.shortNameError = null;
-
 
         isLoading.value = true;
         error.value = null;
@@ -248,23 +310,17 @@ const editItem = async (item: any) => {
         range.value.start = item.start;
         range.value.end = item.end;
 
-
         unite.value.value = item.unit?.short_name;
         curent_type_of_slip.value.value = item.category;
 
         openDialog();
         componentKey.value += 1; // Forcer la mise à jour du composant
     } catch (error) {
-        console.error('Erreur lors de l\'édition :', error);
-        showNotification('Erreur lors de l\'édition', 'error');
+        console.error("Erreur lors de l'édition :", error);
+        showNotification("Erreur lors de l'édition", 'error');
     }
 };
 //Computed Property
-
-// PDF related methods
-const openPrintPreview = () => {
-    printPreviewDialog.value = true;
-};
 
 const remove = (item: any) => {
     if (store.products.length > 1) {
@@ -291,28 +347,8 @@ const formButton = computed(() => {
     return editedIndex.value === -1 ? 'Enregistrer' : 'Modifier';
 });
 
-
-const storeSlip = computed(() => {
-    return store.boredereaux;
-});
-
-const filteredSlip = computed(() => {
-    if (!searchValue.value) {
-        return store.boredereaux; // Si aucune recherche n'est effectuée, retournez tous les bordereaux
-    }
-
-    const searchTerm = searchValue.value.toLowerCase();
-    return store.boredereaux.filter((slip: any) => {
-        return (
-            slip.unit.short_name.toLowerCase().includes(searchTerm) || // Recherche par nom
-            slip.category.toLowerCase().includes(searchTerm) || // Recherche par catégorie
-            slip.ref.toLowerCase().includes(searchTerm) // Recherche par référence
-        );
-    });
-});
-
 const headers = [
-    { text: "Réf", value: "ref", sortable: true },
+    { text: 'Réf', value: 'ref', sortable: true },
     { text: 'Unité', value: 'unit.short_name', sortable: true },
     { text: 'Catégorie', value: 'category', sortable: true },
     { text: 'Créé le', value: 'created_at', sortable: true },
@@ -322,7 +358,7 @@ const headers = [
 
 // Add this new computed property
 const unitesFiltred = computed(() => {
-    return  unitStore.unites.filter((unit: any) => unit.type_of_unit === typeFilter.value && !unit.raw.is_created);
+    return unitStore.unites.filter((unit: any) => unit.type_of_unit === typeFilter.value && !unit.raw.is_created);
 });
 
 // editedIndex === -1 ? unite.value.value : current_category.value
@@ -359,7 +395,7 @@ const unitedChanged = async (value: any) => {
     const selectedUnite = unitStore.unites.find((unite: { short_name: any }) => unite.short_name === value);
     if (selectedUnite) {
         selectedUniteDetails.value = selectedUnite;
-        
+
         unitedId.value = selectedUnite.raw.id;
         effective.value = selectedUnite.effective;
 
@@ -371,7 +407,7 @@ const unitedChanged = async (value: any) => {
 
         // Filter uniquement des food
         const menusArrays = store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
-        
+
         otherDepenses.value = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'other');
         // console.log(otherDepenses.value);
 
@@ -382,24 +418,22 @@ const unitedChanged = async (value: any) => {
     loading.value = false;
 };
 
-
 const storeProducts = computed(() => {
     return store.products;
 });
-
 
 const prefixes = ['Riz', 'Hui', 'Tom', 'Oig', 'Lai', 'Suc', 'Sav', 'Sar', 'Sel', 'Caf', 'Pat', 'Eau'];
 
 const filteredProducts = computed(() => {
     return storeProducts.value.filter((product: any) => {
-        const matchesPrefix = prefixes.some(prefix => product.item.name.startsWith(prefix));
+        const matchesPrefix = prefixes.some((prefix) => product.item.name.toLowerCase().includes(prefix.toLowerCase()));
         const matchesSearch = searchValue.value ? product.item.name.toLowerCase().includes(searchValue.value.toLowerCase()) : true;
         return matchesPrefix && matchesSearch;
     });
 });
 
 const productsHeaders = [
-    { text: 'Article', value: 'item.name', sortable: true },
+    { text: 'Article', value: 'item', sortable: true },
     { text: 'Taux', value: 'rate_per_days', sortable: true },
     { text: 'Quantité', value: 'item.quantite', sortable: true },
     { text: 'Unités', value: 'unite', sortable: true },
@@ -509,7 +543,7 @@ const addedSpends = ref([]);
 //     if (selectedSpend.value && spendAmount.value) {
 //         addedSpends.value.push({
 //             name: selectedSpend.value,
-//             amount: parseFloat(spendAmount.value) 
+//             amount: parseFloat(spendAmount.value)
 //         });
 
 //         // Reset both selectedSpend and spendAmount
@@ -519,8 +553,6 @@ const addedSpends = ref([]);
 //         showNotification('Veuillez sélectionner une dépense et entrer un montant', 'error');
 //     }
 // };
-
-
 
 const addSpend = () => {
     if (selectedSpend.value && spendAmount.value) {
@@ -561,11 +593,8 @@ const totalMenus = computed(() => {
 });
 
 const totalAmount = computed(() => {
-
     return totalMenus.value + totalOtherSpends.value;
 });
-
-
 
 const date = ref(new Date());
 const timezone = ref('');
@@ -593,13 +622,21 @@ const range = ref({
 // }, { deep: true });
 
 watchEffect(() => {
-  console.log("Range", {
-    start: range.value.start ? new Date(range.value.start).toISOString() : date,
-    end: range.value.end ? new Date(range.value.end).toISOString() : date,
-  });
+    console.log('Range', {
+        start: range.value.start ? new Date(range.value.start).toISOString() : date,
+        end: range.value.end ? new Date(range.value.end).toISOString() : date
+    });
 });
 
+const openPrintPreview = () => {
+    printPreviewDialog.value = true;
+};
 
+const printSelectedItems = () => {
+    // Logique pour imprimer les éléments sélectionnés
+    console.log('Impression des éléments sélectionnés :', itemsSelected.value);
+    // Vous pouvez utiliser une bibliothèque comme `window.print()` ou une API d'impression personnalisée ici
+};
 </script>
 <template>
     <div class="d-flex align-center gap-4 mb-4">
@@ -621,21 +658,25 @@ watchEffect(() => {
             density="compact"
             v-model="typeFilter"
             :items="type_of_unites"
-            label="Filtrer par catégorie"
+            label="Filtrer par type de bordereau"
             variant="outlined"
             clearable
+            title="Filtrer par type de bordereau"
             hide-details
             style="min-width: 200px"
         ></v-select>
 
-        <!-- Bouton d'ajout -->
-        <v-btn v-if="!itemsSelected.length" color="primary" prepend-icon="mdi-account-multiple-plus" @click="openDialog()" class="ml-auto">
-            Ajouter un boredereau
-        </v-btn>
-
-        <v-btn v-else="itemsSelected.length" icon variant="text" @click="openPrintPreview()" flat class="ml-auto">
-            <PrinterIcon size="20" />
-        </v-btn>
+        <!-- Bouton d'ajout ou icône d'impression -->
+        <template v-if="itemsSelected.length === 0">
+            <v-btn color="primary" prepend-icon="mdi-account-multiple-plus" @click="openDialog()" class="ml-auto">
+                Ajouter un bordereau
+            </v-btn>
+        </template>
+        <template v-else>
+            <v-btn icon variant="text" @click="openPrintPreview()" flat class="ml-auto">
+                <PrinterIcon size="20" />
+            </v-btn>
+        </template>
     </div>
 
     <template>
@@ -672,7 +713,7 @@ watchEffect(() => {
                                                 </v-col>
                                                 <v-col cols="12" md="6">
                                                     <UiChildCard title="Categorie de bordereau">
-                                                       <v-select
+                                                        <v-select
                                                             label="Sélectionnez une catégorie"
                                                             density="compact"
                                                             v-model="curent_type_of_slip.value.value"
@@ -725,8 +766,6 @@ watchEffect(() => {
                                                         :loading="loading"
                                                         :theme-color="themeColor"
                                                         table-class-name="customize-table"
-                                                        :search-field="searchField"
-                                                        :search-value="searchValue"
                                                         :rows-per-page="8"
                                                         buttons-pagination
                                                         show-index
@@ -745,6 +784,7 @@ watchEffect(() => {
                                                                 ></v-switch>
                                                             </div>
                                                         </template>
+
                                                         <template #item-item="{ item }">
                                                             <div class="d-flex align-center">
                                                                 <div class="hoverable">
@@ -797,9 +837,7 @@ watchEffect(() => {
                                                     </EasyDataTable>
                                                 </v-col>
 
-                                                <v-col cols="12" sm="12" class="text-h1" v-else> 
-                                                    veuillez selectionner une unité
-                                                </v-col>
+                                                <v-col cols="12" sm="12" class="text-h1" v-else> veuillez selectionner une unité </v-col>
                                             </v-row>
                                         </v-col>
                                     </v-col>
@@ -829,10 +867,9 @@ watchEffect(() => {
                                                             </v-chip>
                                                             <span class="text-h6 font-weight-medium">
                                                                 {{
-                                                                    formatGuineanFrancs(addedSpends.reduce(
-                                                                                (total, spend) => total + spend.amount,
-                                                                                0
-                                                                            ))
+                                                                    formatGuineanFrancs(
+                                                                        addedSpends.reduce((total, spend) => total + spend.amount, 0)
+                                                                    )
                                                                 }}
                                                             </span>
                                                         </div>
@@ -844,8 +881,14 @@ watchEffect(() => {
                                                             </v-chip>
                                                             <span class="text-h5 font-weight-bold text-success">
                                                                 {{
-                                                                    formatGuineanFrancs(menusData?.budgetTotal || 0 +
-                                                                        addedSpends.reduce((total, spend) => total + spend.amount, 0))
+                                                                    formatGuineanFrancs(
+                                                                        menusData?.budgetTotal ||
+                                                                            0 +
+                                                                                addedSpends.reduce(
+                                                                                    (total, spend) => total + spend.amount,
+                                                                                    0
+                                                                                )
+                                                                    )
                                                                 }}
                                                             </span>
                                                         </div>
@@ -859,7 +902,7 @@ watchEffect(() => {
                                                 <v-expansion-panel-title class="text-h6" v-if="typeFilter === 'mission' && effective">
                                                     La durée de la mission</v-expansion-panel-title
                                                 >
-                                                <v-expansion-panel-text >
+                                                <v-expansion-panel-text>
                                                     <UiChildCard>
                                                         <v-row>
                                                             <v-col cols="12" lg="6" sm="12">
@@ -950,13 +993,13 @@ watchEffect(() => {
                                             </v-expansion-panel>
                                             <v-divider></v-divider>
                                         </v-expansion-panels>
-                                            
+
                                         <!-- Tableau pour afficher les dépenses ajoutées -->
                                         <v-row v-if="effective">
                                             <v-col cols="12">
-                                                <v-card elevation="2" class="pa-4" >
+                                                <v-card elevation="2" class="pa-4">
                                                     <v-card-title class="text-h6">Ajoutez d'autre dépenses</v-card-title>
-    
+
                                                     <!-- Champ de sélection pour les dépenses -->
                                                     <v-col cols="12">
                                                         <CustomComBoxSpend
@@ -968,7 +1011,7 @@ watchEffect(() => {
                                                             :disabled="!effective"
                                                         />
                                                     </v-col>
-    
+
                                                     <!-- Champ pour le montant -->
                                                     <v-col cols="12">
                                                         <v-text-field
@@ -980,13 +1023,10 @@ watchEffect(() => {
                                                             type="number"
                                                         ></v-text-field>
                                                     </v-col>
-    
-                                                    <!-- Bouton pour ajouter la dépense -->
-                                                    <v-btn color="primary" variant="outlined" block flat @click="addSpend">
-                                                        Ajouter
-                                                    </v-btn>
-                                                </v-card>
 
+                                                    <!-- Bouton pour ajouter la dépense -->
+                                                    <v-btn color="primary" variant="outlined" block flat @click="addSpend"> Ajouter </v-btn>
+                                                </v-card>
                                             </v-col>
 
                                             <v-col cols="12">
@@ -1014,14 +1054,17 @@ watchEffect(() => {
                                                             <tr class="font-weight-bold">
                                                                 <td>Total</td>
                                                                 <td colspan="2">
-                                                                    {{ formatGuineanFrancs(addedSpends.reduce((total, spend) => total + spend.amount, 0)) }}
+                                                                    {{
+                                                                        formatGuineanFrancs(
+                                                                            addedSpends.reduce((total, spend) => total + spend.amount, 0)
+                                                                        )
+                                                                    }}
                                                                 </td>
                                                             </tr>
                                                         </tbody>
                                                     </v-table>
                                                 </v-card>
                                             </v-col>
-
                                         </v-row>
                                     </v-col>
                                 </v-row>
@@ -1041,7 +1084,7 @@ watchEffect(() => {
     <!-- Replace v-table with EasyDataTable -->
     <EasyDataTable
         :headers="headers"
-        :items="store.boredereaux"
+        :items="cleanData(filteredSlips)"
         :loading="loading"
         :theme-color="themeColor"
         table-class-name="customize-table"
@@ -1052,7 +1095,6 @@ watchEffect(() => {
         buttons-pagination
         show-index
     >
-       
         <!-- Custom template for Article column -->
         <template #item-category="{ category }">
             <div class="d-flex align-center">
@@ -1263,7 +1305,14 @@ watchEffect(() => {
                 <v-form ref="form" v-model="valid" lazy-validation>
                     <v-row>
                         <v-col cols="12">
-                            <v-text-field variant="outlined" placeholder ="Entrez la nouvlle quantité" v-model="quantityItem" label="La quantité" type="number" block></v-text-field>
+                            <v-text-field
+                                variant="outlined"
+                                placeholder="Entrez la nouvlle quantité"
+                                v-model="quantityItem"
+                                label="La quantité"
+                                type="number"
+                                block
+                            ></v-text-field>
                         </v-col>
                     </v-row>
                 </v-form>
@@ -1271,6 +1320,50 @@ watchEffect(() => {
 
             <v-card-actions class="pa-4">
                 <v-btn color="secondary" variant="flat" @click="submitQuantity" block>Modifier</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
+    <!-- Print Preview Dialog -->
+    <v-dialog v-model="printPreviewDialog" max-width="800">
+        <v-card>
+            <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
+                <span class="title text-white">Aperçu avant impression</span>
+                <v-icon @click="printPreviewDialog = false" class="ml-auto">mdi-close</v-icon>
+            </v-card-title>
+
+            <v-card-text>
+                <v-container>
+                    <v-row>
+                        <v-col cols="12">
+                            <v-table>
+                                <thead>
+                                    <tr>
+                                        <th>Référence</th>
+                                        <th>Unité</th>
+                                        <th>Catégorie</th>
+                                        <th>Créé le</th>
+                                        <th>Effectif</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="item in itemsSelected" :key="item.id">
+                                        <td>{{ item.ref }}</td>
+                                        <td>{{ item.unit?.short_name }}</td>
+                                        <td>{{ item.category }}</td>
+                                        <td>{{ formatDate(item.created_at) }}</td>
+                                        <td>{{ item.effective }}</td>
+                                    </tr>
+                                </tbody>
+                            </v-table>
+                        </v-col>
+                    </v-row>
+                </v-container>
+            </v-card-text>
+
+            <v-card-actions class="pa-4">
+                <v-btn color="primary" @click="printPreviewDialog = false">Fermer</v-btn>
+                <v-btn color="secondary" @click="printSelectedItems">Imprimer</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
