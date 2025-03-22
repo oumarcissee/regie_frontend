@@ -72,25 +72,34 @@ export const useDischargeStore = defineStore({
                 this.products = [];
 
                 if (data) {
-                    // console.log(data);
-                    // return;
-                    // await filterAndOrderObjects(data);
-
                     this.products = data.map((item: any, index: number) => {
-                        // console.log(item, index);
-                        // return;
                         const baseQuantity = effective ? get_quantity(item.item.rate_per_days, effective, item.item.divider) : 0;
 
                         this.finalQuantity = item.offset && item.forfait ? baseQuantity + item.offset : baseQuantity;
 
                         if (item.offset && item.forfait) {
-                            this.finalQuantity   = item.offset;
-                           
+                            this.finalQuantity = item.offset;
                         } else if (item.offset && !item.forfait) {
-                            
                             this.finalQuantity = baseQuantity + item.offset;
                         }
 
+                        // Créer rawItem avec les propriétés supplémentaires
+                        const rawItem = {
+                            name: item.item.name,
+                            image: item.item.image,
+                            description: item.item.description,
+                            created_at: new Date(item.item.created_at),
+                            modified_at: new Date(item.item.modified_at),
+                            forfait: item.forfait,
+                            quantite: this.finalQuantity,
+                            offset: item.offset,
+                        };
+
+                        // Fusionner item.item et rawItem dans raw
+                        const raw = {
+                            ...item.item, // Propriétés de item.item
+                            ...rawItem,    // Propriétés de rawItem
+                        };
 
                         return {
                             ref: item.item.ref,
@@ -99,30 +108,37 @@ export const useDischargeStore = defineStore({
                             price: item.item.price,
                             unite: get_full_unite(item.item.unite),
                             divider: item.item.divider,
-                            item: {
-                                name: item.item.name,
-                                image: item.item.image,
-                                description: item.item.description,
-                                created_at: new Date(item.item.created_at),
-                                modified_at: new Date(item.item.modified_at),
-                                forfait: item.forfait,
-                                quantite: this.finalQuantity ,
-                                offset: item.offset,
-                            },
+                            item: rawItem,
                             actions: item.item,
-                            raw: item.item
+                            raw: raw, // raw contient à la fois item.item et rawItem
                         };
                     });
 
                 } else {
-                    
                     const response = await new ApiAxios().find(`/items/`);
-                    // const products = await filterAndOrderObjects(response.data.results);
-    
+
                     this.products = response.data.results.map((item: any) => {
                         const baseQuantity = effective ? get_quantity(item.rate_per_days, effective, item.divider) : 0;
                         const finalQuantity = offset && forfait ? baseQuantity + offset : baseQuantity;
-    
+
+                        // Créer rawItem avec les propriétés supplémentaires
+                        const rawItem = {
+                            name: item.name,
+                            image: item.image,
+                            description: item.description,
+                            created_at: new Date(item.created_at),
+                            modified_at: new Date(item.modified_at),
+                            forfait: false,
+                            quantite: finalQuantity,
+                            offset: offset,
+                        };
+
+                        // Fusionner item et rawItem dans raw
+                        const raw = {
+                            ...item,    // Propriétés de item
+                            ...rawItem,  // Propriétés de rawItem
+                        };
+
                         return {
                             ref: item.ref,
                             rate_per_days: item.rate_per_days,
@@ -130,25 +146,16 @@ export const useDischargeStore = defineStore({
                             price: item.price,
                             unite: get_full_unite(item.unite),
                             divider: item.divider,
-                            item: {
-                                name: item.name,
-                                image: item.image,
-                                description: item.description,
-                                created_at: new Date(item.created_at),
-                                modified_at: new Date(item.modified_at),
-                                forfait: false,
-                                quantite: finalQuantity,
-                                offset: offset,
-                            },
+                            item: rawItem,
                             actions: item,
-                            raw: item
+                            raw: raw, // raw contient à la fois item et rawItem
                         };
                     });
                 }
+                console.log(this.products);
             } catch (error) {
                 console.error("Error fetching products:", error);
             }
-
         },
         //Modification de la quantité d'un produit
         updateProductQuantity(ref: string, newQuantity: number) {
@@ -197,9 +204,7 @@ export const useDischargeStore = defineStore({
 
                 // Recuperation des dépenses
                 const spends = await new ApiAxios().find(`/${this.url.spend}/`);
-                // console.log(spends.data?.results.);
-                // this.boredereaux = response?.data?.results;
-                
+               
                 // Formater les données pour EasyDataTable
                 this.boredereaux = (response?.data?.results || []).map((slip: any) => {
                     // Assigner des valeurs par défaut si nécessaire
@@ -245,10 +250,46 @@ export const useDischargeStore = defineStore({
         },
 
         //Ajout d'un élement
-        async addOrUpdateDischarge(data: any,spends?:any, param?: any) {
+        async addOrUpdateDischarge(data: any, param?: any) {
             try {
                 if (param) {
-                    const response = await new ApiAxios().updatePartialForm(`/${this.url}/${param}/`, data, param);
+                    const responseDischarge = await new ApiAxios().updatePartialForm(`/${this.url.discharge}/${param}/`, {
+                        unit: data.slip.unit,
+                        category: data.slip.category,
+                        start: data.slip.start,
+                        end: data.slip.end,
+                    })
+               
+             
+
+                    //Suppression des anciennes commande
+                    const responseLine = await new ApiAxios().find(`/${this.url.line_discharge}/?discharge=${responseDischarge.data.id}/`);
+                    // console.log(responseLine);
+                    // return;
+                    
+                    //Suppression des anciennes lignes de bordereaux
+                    responseLine.data.results.forEach(async (item: any) => {
+                        await new ApiAxios().delete(`/${this.url.line_discharge}/${item.id}/`);
+                    });
+
+                    //Ajoute des lignes des bordereaux
+                    data.products.forEach(async (item: any) => {
+                        const res = await new ApiAxios().add(`/${this.url.line_discharge}/`, {
+                            discharge: responseDischarge.data.id,
+                            offset: item?.item?.offset,
+                            forfait: item?.item?.forfait,
+                            item: item.raw.id,
+                        });
+                        // console.log(res);
+                    });
+                    
+                    // Rechargez complètement les archives du authStore
+                    const authStore = useAuthStore();
+                    await authStore.getUniqueMonth();
+
+                    // Puis continuez
+                    this.$reset();
+                    await this.fetchDischarge();
                 } else {
 
                    

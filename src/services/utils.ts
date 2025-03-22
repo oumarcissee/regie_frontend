@@ -446,34 +446,43 @@ const type_of_spending = (value: any) => {
  * @param amount - The amount to format
  * @returns The formatted string (example: "7 205 882 FG")
  */
-function formatGuineanFrancs(amount?: number): string {
-  // Handle undefined, null or NaN values
-  if (amount === undefined || amount === null || isNaN(amount)) {
-    return "0 FG";
-  }
+// function formatGuineanFrancs(amount?: number): string {
+//   // Handle undefined, null or NaN values
+//   if (amount === undefined || amount === null || isNaN(amount)) {
+//     return "0 FG";
+//   }
   
-  // Convert the number to string
-  const amountStr = amount.toString();
+//   // Convert the number to string
+//   const amountStr = amount.toString();
   
-  // Add spaces as thousand separators
-  let formattedAmount = "";
-  const length = amountStr.length;
+//   // Add spaces as thousand separators
+//   let formattedAmount = "";
+//   const length = amountStr.length;
   
-  for (let i = 0; i < length; i++) {
-    formattedAmount += amountStr[i];
-    // Add a space every 3 digits starting from the right
-    // but not after the last digit
-    if ((length - i - 1) % 3 === 0 && i !== length - 1) {
-      formattedAmount += " ";
-    }
-  }
+//   for (let i = 0; i < length; i++) {
+//     formattedAmount += amountStr[i];
+//     // Add a space every 3 digits starting from the right
+//     // but not after the last digit
+//     if ((length - i - 1) % 3 === 0 && i !== length - 1) {
+//       formattedAmount += " ";
+//     }
+//   }
   
-  // Add the "FG" suffix
-  return formattedAmount + " FG";
-}
+//   // Add the "FG" suffix
+//   return formattedAmount + " FG";
+// }
 
 // Example of usage
 // formatGuineanFrancs(7205882) returns "7 205 882 FG"
+
+const formatGuineanFrancs = (amount: number) => {
+    return new Intl.NumberFormat('fr-GN', {
+        style: 'currency',
+        currency: 'GNF',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(amount);
+};
 
 
 const slipCategory = (value: string) => {

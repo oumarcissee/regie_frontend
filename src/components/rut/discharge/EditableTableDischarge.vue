@@ -225,26 +225,35 @@ function openDialog() {
     dialog.value = true;
 }
 
+const componentKey = ref(0);
+
 // Méthode pour modifier un élément
 const editItem = async (item: any) => {
     try {
-        // console.log(item);
         editedIndex.value = item.id;
-        // On récupère les données de l'unité pour remplir le formulaire
         current_unit.value = item.unite?.short_name;
         effective.value = item.effective;
         current_category.value = item.category;
         menusData.value = await repartirBudgetAvecTauxPrecis(item.menus, effective.value);
-        await store.fetchProducts(item.effective, item.items) // Le store 
-        addedSpends.value = [...item.spends];
-        typeFilter.value = item.unit?.type_of_unit;
-        // quantityItem.value = '';
+        await store.fetchProducts(item.effective, item.items);
+        // addedSpends.value = [...item.spends]; // Assurez-vous que cela est correctement assigné
 
-        // Mettre à jour les valeurs de l'unité et de la catégorie
+        // Nettoyer les montants des dépenses ajoutées
+        addedSpends.value = item.spends.map((spend: any) => ({
+            ...spend,
+            amount: parseFloat(spend.amount.replace(/\s/g, '').replace(/\./g, ''))
+        }));
+
+        typeFilter.value = item.unit?.type_of_unit;
+        range.value.start = item.start;
+        range.value.end = item.end;
+
+
         unite.value.value = item.unit?.short_name;
         curent_type_of_slip.value.value = item.category;
 
         openDialog();
+        componentKey.value += 1; // Forcer la mise à jour du composant
     } catch (error) {
         console.error('Erreur lors de l\'édition :', error);
         showNotification('Erreur lors de l\'édition', 'error');
@@ -496,14 +505,34 @@ const spendAmount = ref(null);
 const addedSpends = ref([]);
 
 // Méthode pour ajouter une dépense au tableau
+// const addSpend = () => {
+//     if (selectedSpend.value && spendAmount.value) {
+//         addedSpends.value.push({
+//             name: selectedSpend.value,
+//             amount: parseFloat(spendAmount.value) 
+//         });
+
+//         // Reset both selectedSpend and spendAmount
+//         selectedSpend.value = null;
+//         spendAmount.value = null;
+//     } else {
+//         showNotification('Veuillez sélectionner une dépense et entrer un montant', 'error');
+//     }
+// };
+
+
+
 const addSpend = () => {
     if (selectedSpend.value && spendAmount.value) {
+        // Nettoyer le montant en supprimant les espaces et en le convertissant en nombre
+        const cleanedAmount = parseFloat(spendAmount.value.replace(/\s/g, '').replace(/\./g, ''));
+
         addedSpends.value.push({
             name: selectedSpend.value,
-            amount: parseFloat(spendAmount.value) 
+            amount: cleanedAmount // Utiliser le montant nettoyé
         });
 
-        // Reset both selectedSpend and spendAmount
+        // Réinitialiser les champs
         selectedSpend.value = null;
         spendAmount.value = null;
     } else {
@@ -522,6 +551,21 @@ const availableSpends = computed(() => {
 const removeSpend = (index: number) => {
     addedSpends.value.splice(index, 1);
 };
+
+const totalOtherSpends = computed(() => {
+    return addedSpends.value.reduce((total, spend) => total + spend.amount, 0);
+});
+
+const totalMenus = computed(() => {
+    return menusData.value?.budgetTotal || 0;
+});
+
+const totalAmount = computed(() => {
+
+    return totalMenus.value + totalOtherSpends.value;
+});
+
+
 
 const date = ref(new Date());
 const timezone = ref('');
@@ -698,7 +742,6 @@ watchEffect(() => {
                                                                     @change="() => handleToggle(raw)"
                                                                     hide-details
                                                                     dense
-                                                                    :disabled="!effective ? true : false"
                                                                 ></v-switch>
                                                             </div>
                                                         </template>
@@ -786,9 +829,10 @@ watchEffect(() => {
                                                             </v-chip>
                                                             <span class="text-h6 font-weight-medium">
                                                                 {{
-                                                                    formatGuineanFrancs(
-                                                                        addedSpends.reduce((total, spend) => total + spend.amount, 0)
-                                                                    )
+                                                                    formatGuineanFrancs(addedSpends.reduce(
+                                                                                (total, spend) => total + spend.amount,
+                                                                                0
+                                                                            ))
                                                                 }}
                                                             </span>
                                                         </div>
@@ -800,10 +844,8 @@ watchEffect(() => {
                                                             </v-chip>
                                                             <span class="text-h5 font-weight-bold text-success">
                                                                 {{
-                                                                    formatGuineanFrancs(
-                                                                        (menusData?.budgetTotal || 0) +
-                                                                            addedSpends.reduce((total, spend) => total + spend.amount, 0)
-                                                                    )
+                                                                    formatGuineanFrancs(menusData?.budgetTotal || 0 +
+                                                                        addedSpends.reduce((total, spend) => total + spend.amount, 0))
                                                                 }}
                                                             </span>
                                                         </div>
@@ -951,7 +993,6 @@ watchEffect(() => {
                                                 <!-- Tableau pour afficher les dépenses ajoutées -->
                                                 <v-card elevation="2" class="mt-4 pa-4">
                                                     <v-card-title class="text-h6">Dépenses ajoutées</v-card-title>
-    
                                                     <v-table>
                                                         <thead>
                                                             <tr>
@@ -973,20 +1014,12 @@ watchEffect(() => {
                                                             <tr class="font-weight-bold">
                                                                 <td>Total</td>
                                                                 <td colspan="2">
-                                                                    {{
-                                                                        formatGuineanFrancs(
-                                                                            addedSpends.reduce(
-                                                                                (total, spend) => total + spend.amount,
-                                                                                0
-                                                                            )
-                                                                        )
-                                                                    }}
+                                                                    {{ formatGuineanFrancs(addedSpends.reduce((total, spend) => total + spend.amount, 0)) }}
                                                                 </td>
                                                             </tr>
                                                         </tbody>
                                                     </v-table>
                                                 </v-card>
-
                                             </v-col>
 
                                         </v-row>
