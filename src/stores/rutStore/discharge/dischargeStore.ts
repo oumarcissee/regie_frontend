@@ -23,6 +23,7 @@ export const useDischargeStore = defineStore({
             spend: 'other-spends',
             unit: 'unites'
         },
+        rawDischargeData: [] as any,
         boredereaux: [] as any,
         bordereauxLines: [] as any,
         areas: [] as any,
@@ -122,9 +123,9 @@ export const useDischargeStore = defineStore({
 
                     this.products = response.data.results.map((item: any) => {
                         const baseQuantity = effective ? get_quantity(item.rate_per_days, effective, item.divider) : 0;
-                        const finalQuantity = offset && forfait ? baseQuantity + offset : baseQuantity;
-
-                        const weight = item.item.weight * this.finalQuantity || 0;
+                        this.finalQuantity = offset && forfait ? baseQuantity + offset : baseQuantity;
+              
+                        const weight = item.weight * this.finalQuantity || 0;
 
                         // Créer rawItem avec les propriétés supplémentaires
                         const rawItem = {
@@ -134,7 +135,7 @@ export const useDischargeStore = defineStore({
                             created_at: new Date(item.created_at),
                             modified_at: new Date(item.modified_at),
                             forfait: false,
-                            quantite: finalQuantity,
+                            quantite: this.finalQuantity,
                             offset: offset,
                             weight: weight, // Ajouter le poids du produit
                         };
@@ -212,55 +213,92 @@ export const useDischargeStore = defineStore({
                 await this.fetchAllDischLines();
                 
                 const response = await new ApiAxios().find(`/${this.url.discharge}/`);
-
-                // Recuperation des dépenses
+                
+                // Récupération des dépenses
                 const spends = await new ApiAxios().find(`/${this.url.spend}/`);
-               
-                // Formater les données pour EasyDataTable
+
                 this.boredereaux = (response?.data?.results || []).map((slip: any) => {
-                    // Assigner des valeurs par défaut si nécessaire
-                    slip.ref = slip.ref || 'N/A';
-                    slip.category = slip.category || 'N/A';
-                    slip.unit = slip.unit || 'N/A';
-                    slip.area = slip.unit?.area || 'N/A'; // Utilisez l'opérateur optionnel pour éviter les erreurs si `unit` est null/undefined
+                    // Créer un objet avec toutes les propriétés de base
+                    const baseData = {
+                        ref: slip.ref || 'N/A',
+                        category: slip.category || 'N/A',
+                        unit: slip.unit || 'N/A',
+                        area: slip.unit?.area || 'N/A',
+                        status: slip.status || 0,
+                        created_at: slip.created_at || null,
+                        modified_at: slip.modified_at || null,
+                        menus: this.menus.filter((item: { type_menu: string }) => item.type_menu === 'food'),
+                        actions: slip
+                    };
 
-                    // Trouver l'effectif correspondant dans les archives
-                    slip.effective = authStore.archives.data.results.find(
-                        (archive: { discharge: any }) => archive?.discharge?.id === slip?.id
-                    )?.effective || 0;
+                    // Ajouter les propriétés supplémentaires
+                    const additionalData = {
+                        effective: authStore.archives.data.results.find(
+                            (archive: { discharge: any }) => archive?.discharge?.id === slip?.id
+                        )?.effective || 0,
+                        items: this.bordereauxLines.filter(
+                            (line: { discharge: any }) => line.discharge?.id === slip.id
+                        ),
+                        spends: spends.data?.results.filter(
+                            (spend: { discharge: any }) => spend.discharge?.id === slip.id
+                        ) || []
+                    };
 
-                    // Filtrer les lignes de bordereau et les dépenses
-                    slip.items = this.bordereauxLines.filter(
-                        (line: { discharge: any }) => line.discharge?.id === slip.id
-                    );
-                    slip.spends = spends.data?.results.filter(
-                        (spend: { discharge: any }) => spend.discharge?.id === slip.id
-                    ) || [];
+                    // Fusionner toutes les données dans raw
+                    const rawData = {
+                        ...slip,
+                        ...additionalData
+                    };
 
-                    slip.menus = this.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');;
-
-                    // Assigner des valeurs par défaut pour les dates et le statut
-                    slip.status = slip.status || 0;
-                    slip.created_at = slip.created_at || null;
-                    slip.modified_at = slip.modified_at || null;
-
-                    // Ajouter des propriétés supplémentaires pour les actions
-                    
-                    slip.raw = slip; // Conserver les données brutes pour les actions
-                    console.log(slip);
-
-                    // Retourner l'objet modifié
-                    return slip;
+                    return {
+                        ...baseData,
+                        ...additionalData,
+                        raw: rawData
+                    };
                 });
-
+                
                 return true;
-
+                
             } catch (error) {
                 console.log(error);
                 return false;
             }
         },
 
+        // Ajouter cette méthode dans le store
+        async fetchDischargeDetails(id: number) {
+            try {
+                const response = await new ApiAxios().find(`/${this.url.discharge}/${id}/`);
+                const lineResponse = await new ApiAxios().find(`/${this.url.line_discharge}/?discharge=${id}`);
+                const spendsResponse = await new ApiAxios().find(`/${this.url.spend}/?discharge=${id}`);
+
+                this.boredereaux = (response?.data?.results || []).map((slip: any) => ({
+                    ref: slip.ref || 'N/A',
+                    item: {
+                        id: slip.id, // Garder l'ID pour la référence
+                        ref: slip.ref || 'N/A',
+                        category: slip.category || 'N/A',
+                        unit: slip.unit || 'N/A',
+                        area: slip.unit?.area || 'N/A',
+                        status: slip.status || 0,
+                        created_at: slip.created_at || null,
+                        modified_at: slip.modified_at || null
+                    },
+                    type_menu: slip.type_menu || 'N/A',
+                    
+                    created_at: slip.created_at || null,
+                    modified_at: slip.modified_at || null,
+                    
+                    actions: slip,
+                    raw: slip // Keep raw data for actions
+                }));
+                return true;
+            } catch (error) {
+                console.error("Error fetching discharge details:", error);
+                throw error;
+            }
+        },
+       
         //Ajout d'un élement
         async addOrUpdateDischarge(data: any, param?: any) {
             try {

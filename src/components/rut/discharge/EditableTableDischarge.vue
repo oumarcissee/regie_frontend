@@ -118,49 +118,6 @@ const filteredSlips = computed(() => {
     return slips;
 });
 
-const cleanData = (data: any[]) => {
-    return data.map((item: any) => {
-        const cleanedItem = { ...item };
-        delete cleanedItem.actions; // Supprime la propriété circulaire
-
-        // Nettoyer les objets imbriqués si nécessaire
-        if (cleanedItem.items) {
-            cleanedItem.items = cleanedItem.items.map((nestedItem: any) => {
-                const cleanedNestedItem = { ...nestedItem };
-                delete cleanedNestedItem.actions; // Supprime la circularité dans les objets imbriqués
-                return cleanedNestedItem;
-            });
-        }
-
-        if (cleanedItem.menus) {
-            cleanedItem.menus = cleanedItem.menus.map((nestedItem: any) => {
-                const cleanedNestedItem = { ...nestedItem };
-                delete cleanedNestedItem.actions; // Supprime la circularité dans les objets imbriqués
-                return cleanedNestedItem;
-            });
-        }
-
-        if (cleanedItem.spends) {
-            cleanedItem.spends = cleanedItem.spends.map((nestedItem: any) => {
-                const cleanedNestedItem = { ...nestedItem };
-                delete cleanedNestedItem.actions; // Supprime la circularité dans les objets imbriqués
-                return cleanedNestedItem;
-            });
-        }
-
-        return cleanedItem;
-    });
-};
-
-const rawData = toRaw(filteredSlips);
-
-// const cleanData = (data: any[]) => {
-//     return data.map((item: any) => {
-//         const cleanedItem = { ...item };
-//         delete cleanedItem.actions; // Supprimez la propriété circulaire
-//         return cleanedItem;
-//     });
-// };
 
 const selected = ref<string | null | undefined | number>(null);
 
@@ -290,36 +247,38 @@ function openDialog() {
 const componentKey = ref(0);
 
 // Méthode pour modifier un élément
-const editItem = async (item: any) => {
-    try {
-        editedIndex.value = item.id;
-        current_unit.value = item.unite?.short_name;
-        effective.value = item.effective;
-        current_category.value = item.category;
-        menusData.value = await repartirBudgetAvecTauxPrecis(item.menus, effective.value);
-        await store.fetchProducts(item.effective, item.items);
-        // addedSpends.value = [...item.spends]; // Assurez-vous que cela est correctement assigné
+// const editItem = async (item: any) => {
+//     try {
+//         console.log(item)
+//         return;
+//         editedIndex.value = item.id;
+//         current_unit.value = item.unite?.short_name;
+//         effective.value = item.effective;
+//         current_category.value = item.category;
+//         menusData.value = await repartirBudgetAvecTauxPrecis(item.menus, effective.value);
+//         await store.fetchProducts(item.effective, item.items);
+//         // addedSpends.value = [...item.spends]; // Assurez-vous que cela est correctement assigné
 
-        // Nettoyer les montants des dépenses ajoutées
-        addedSpends.value = item.spends.map((spend: any) => ({
-            ...spend,
-            amount: parseFloat(spend.amount.replace(/\s/g, '').replace(/\./g, ''))
-        }));
+//         // Nettoyer les montants des dépenses ajoutées
+//         addedSpends.value = item.spends.map((spend: any) => ({
+//             ...spend,
+//             amount: parseFloat(spend.amount.replace(/\s/g, '').replace(/\./g, ''))
+//         }));
 
-        typeFilter.value = item.unit?.type_of_unit;
-        range.value.start = item.start;
-        range.value.end = item.end;
+//         typeFilter.value = item.unit?.type_of_unit;
+//         range.value.start = item.start;
+//         range.value.end = item.end;
 
-        unite.value.value = item.unit?.short_name;
-        curent_type_of_slip.value.value = item.category;
+//         unite.value.value = item.unit?.short_name;
+//         curent_type_of_slip.value.value = item.category;
 
-        openDialog();
-        componentKey.value += 1; // Forcer la mise à jour du composant
-    } catch (error) {
-        console.error("Erreur lors de l'édition :", error);
-        showNotification("Erreur lors de l'édition", 'error');
-    }
-};
+//         openDialog();
+//         componentKey.value += 1; // Forcer la mise à jour du composant
+//     } catch (error) {
+//         console.error("Erreur lors de l'édition :", error);
+//         showNotification("Erreur lors de l'édition", 'error');
+//     }
+// };
 //Computed Property
 
 const remove = (item: any) => {
@@ -361,11 +320,6 @@ const unitesFiltred = computed(() => {
     return unitStore.unites.filter((unit: any) => unit.type_of_unit === typeFilter.value && !unit.raw.is_created);
 });
 
-// editedIndex === -1 ? unite.value.value : current_category.value
-
-// const unitedSelected = computed(() => {
-//     return  editedIndex.value === -1 ? unite.value.value : current_category.value
-// });
 
 // Add new ref for selected unite details
 const selectedUniteDetails = ref(null);
@@ -538,21 +492,6 @@ const selectedSpend = ref(null);
 const spendAmount = ref(null);
 const addedSpends = ref([]);
 
-// Méthode pour ajouter une dépense au tableau
-// const addSpend = () => {
-//     if (selectedSpend.value && spendAmount.value) {
-//         addedSpends.value.push({
-//             name: selectedSpend.value,
-//             amount: parseFloat(spendAmount.value)
-//         });
-
-//         // Reset both selectedSpend and spendAmount
-//         selectedSpend.value = null;
-//         spendAmount.value = null;
-//     } else {
-//         showNotification('Veuillez sélectionner une dépense et entrer un montant', 'error');
-//     }
-// };
 
 const addSpend = () => {
     if (selectedSpend.value && spendAmount.value) {
@@ -637,6 +576,65 @@ const printSelectedItems = () => {
     console.log('Impression des éléments sélectionnés :', itemsSelected.value);
     // Vous pouvez utiliser une bibliothèque comme `window.print()` ou une API d'impression personnalisée ici
 };
+
+
+// Modifier la fonction editItem pour qu'elle fonctionne correctement
+const editRecord = async (item: any) => {
+    try {
+
+        // console.log(item);
+        // return;
+        editedIndex.value = item.id;
+        current_unit.value = item.unit?.short_name;
+        effective.value = item.effective;
+        current_category.value = item.category;
+        
+        // Charger les données existantes
+
+        menusData.value = await repartirBudgetAvecTauxPrecis(store.menus, effective.value);
+        await store.fetchProducts(effective.value, item.items);
+        //keep the products in the store
+        store.products = [...store.products];
+        
+        addedSpends.value = item.spends.map((spend: any) => ({
+            ...spend,
+            amount: parseFloat(spend.amount.toString().replace(/\s/g, '').replace(/\./g, ''))
+        }));        
+
+        typeFilter.value = item.unit?.type_of_unit;
+        range.value.start = item.start ? new Date(item.start) : null;
+        range.value.end = item.end ? new Date(item.end) : null;
+
+        unite.value.value = item.unit?.short_name;
+        curent_type_of_slip.value.value = item.category;
+
+        openDialog();
+        componentKey.value += 1;
+    } catch (error) {
+        console.error("Erreur lors de l'édition :", error);
+        showNotification("Erreur lors de l'édition", 'error');
+    }
+};
+
+// Implémenter correctement les fonctions d'actions
+const viewDetails = (item: any) => {
+    selectedUnited.value = { ...item };
+    viewDialog.value = true;
+};
+
+
+const deleteRecord = async (item: any) => {
+    try {
+        await store.deleteItem(item, 'discharges');
+        await refreshTable();
+        // showNotification('Bordereau supprimé avec succès', 'success');
+    } catch (error) {
+        console.error('Erreur lors de la suppression :', error);
+        showNotification('Erreur lors de la suppression', 'error');
+    }
+};
+
+
 </script>
 <template>
     <div class="d-flex align-center gap-4 mb-4">
@@ -1084,7 +1082,7 @@ const printSelectedItems = () => {
     <!-- Replace v-table with EasyDataTable -->
     <EasyDataTable
         :headers="headers"
-        :items="cleanData(filteredSlips)"
+        :items="filteredSlips"
         :loading="loading"
         :theme-color="themeColor"
         table-class-name="customize-table"
@@ -1095,60 +1093,80 @@ const printSelectedItems = () => {
         buttons-pagination
         show-index
     >
-        <!-- Custom template for Article column -->
+        <!-- Colonne Référence -->
+        <template #item-ref="{ ref }">
+            <span class="font-weight-bold">{{ ref }}</span>
+        </template>
+
+        <!-- Colonne Unité -->
+        <template #item-unit.short_name="{ unit }">
+            <v-chip color="primary" small>
+                {{ unit?.short_name || 'N/A' }}
+            </v-chip>
+        </template>
+
+        <!-- Colonne Catégorie -->
         <template #item-category="{ category }">
-            <div class="d-flex align-center">
-                <div class="ml-5">
-                    <h4 class="text-h6 font-weight-semibold">{{ slipCategory(category) }}</h4>
-                </div>
-            </div>
+            <v-chip :color="category === 'full' ? 'success' : 'warning'" small>
+                {{ slipCategory(category) }}
+            </v-chip>
         </template>
 
-        <template #item-area="{ area }">
-            <div class="d-flex align-center">
-                <div class="ml-5">
-                    <h4 class="text-h6 font-weight-semibold">{{ get_areas(area) }}</h4>
-                </div>
-            </div>
-        </template>
-
+        <!-- Colonne Date de création -->
         <template #item-created_at="{ created_at }">
-            <div class="d-flex align-center">
-                <div class="ml-5">
-                    <h4 class=" ">{{ formatDate(created_at) }}</h4>
-                </div>
-            </div>
+            {{ formatDate(created_at) }}
         </template>
 
-        <template #item-modified_at="{ modified_at }">
-            <div class="d-flex align-center">
-                <div class="ml-5">
-                    <h4 class=" ">{{ formatDate(modified_at) }}</h4>
-                </div>
-            </div>
+        <!-- Colonne Effectif -->
+        <template #item-effective="{ effective }">
+            <span class="font-weight-bold">{{ effective || 0 }}</span> hommes
         </template>
 
-        <!-- Custom template for Actions column -->
+        <!-- Colonne Actions -->
         <template #item-actions="{ raw }">
             <div class="d-flex align-center">
-                <v-tooltip text="Voir">
+                <!-- Bouton Voir -->
+                <v-tooltip text="Voir les détails">
                     <template v-slot:activator="{ props }">
-                        <v-btn icon flat @click="viewItem(raw)" v-bind="props">
-                            <EyeIcon stroke-width="1.5" :size="20" class="text-success" />
+                        <v-btn 
+                            icon 
+                            flat 
+                            v-bind="props"
+                            @click="viewDetails(raw)"
+                            color="info"
+                        >
+                            <EyeIcon stroke-width="1.5" :size="20" />
                         </v-btn>
                     </template>
                 </v-tooltip>
-                <v-tooltip text="Editer">
+
+                <!-- Bouton Modifier -->
+                <v-tooltip text="Modifier">
                     <template v-slot:activator="{ props }">
-                        <v-btn icon flat @click="editItem(raw)" v-bind="props">
-                            <PencilIcon stroke-width="1.5" size="20" class="text-primary" />
+                        <v-btn 
+                            icon 
+                            flat                                         
+                            v-bind="props"
+                            @click="editRecord(raw)"
+                            color="warning"
+                            class="mx-2"
+                        >
+                            <PencilIcon stroke-width="1.5" size="20" />
                         </v-btn>
                     </template>
                 </v-tooltip>
+
+                <!-- Bouton Supprimer -->
                 <v-tooltip text="Supprimer">
                     <template v-slot:activator="{ props }">
-                        <v-btn icon flat @click="deletion(raw)" v-bind="props">
-                            <TrashIcon stroke-width="1.5" size="20" class="text-error" />
+                        <v-btn 
+                            icon 
+                            flat 
+                            v-bind="props"
+                            @click="deleteRecord(raw)"
+                            color="error"
+                        >
+                            <TrashIcon stroke-width="1.5" size="20" />
                         </v-btn>
                     </template>
                 </v-tooltip>
