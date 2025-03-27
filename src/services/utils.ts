@@ -480,7 +480,7 @@ const formatGuineanFrancs = (amount: number) => {
         style: 'currency',
         currency: 'GNF',
         minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        maximumFractionDigits: 2,
     }).format(amount);
 };
 

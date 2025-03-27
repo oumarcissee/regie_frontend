@@ -265,39 +265,7 @@ export const useDischargeStore = defineStore({
             }
         },
 
-        // Ajouter cette méthode dans le store
-        async fetchDischargeDetails(id: number) {
-            try {
-                const response = await new ApiAxios().find(`/${this.url.discharge}/${id}/`);
-                const lineResponse = await new ApiAxios().find(`/${this.url.line_discharge}/?discharge=${id}`);
-                const spendsResponse = await new ApiAxios().find(`/${this.url.spend}/?discharge=${id}`);
-
-                this.boredereaux = (response?.data?.results || []).map((slip: any) => ({
-                    ref: slip.ref || 'N/A',
-                    item: {
-                        id: slip.id, // Garder l'ID pour la référence
-                        ref: slip.ref || 'N/A',
-                        category: slip.category || 'N/A',
-                        unit: slip.unit || 'N/A',
-                        area: slip.unit?.area || 'N/A',
-                        status: slip.status || 0,
-                        created_at: slip.created_at || null,
-                        modified_at: slip.modified_at || null
-                    },
-                    type_menu: slip.type_menu || 'N/A',
-                    
-                    created_at: slip.created_at || null,
-                    modified_at: slip.modified_at || null,
-                    
-                    actions: slip,
-                    raw: slip // Keep raw data for actions
-                }));
-                return true;
-            } catch (error) {
-                console.error("Error fetching discharge details:", error);
-                throw error;
-            }
-        },
+     
        
         //Ajout d'un élement
         async addOrUpdateDischarge(data: any, param?: any) {
@@ -308,18 +276,29 @@ export const useDischargeStore = defineStore({
                         category: data.slip.category,
                         start: data.slip.start,
                         end: data.slip.end,
-                    })
-               
-             
+                    });
 
                     //Suppression des anciennes commande
-                    const responseLine = await new ApiAxios().find(`/${this.url.line_discharge}/?discharge=${responseDischarge.data.id}/`);
-                    // console.log(responseLine);
-                    // return;
-                    
-                    //Suppression des anciennes lignes de bordereaux
+                    const responseLine = await new ApiAxios().find(`/${this.url.line_discharge}/?discharge=${responseDischarge.data.id}`); 
+                    const responseOherSpenses = await new ApiAxios().find(`/${this.url.spend}/?discharge=${responseDischarge.data.id}`); 
+                 
+                    //Suppression des anciennes dépenses
+                    responseOherSpenses.data.results.forEach(async (item: any) => {
+                        await new ApiAxios().delete(`/${this.url.spend}/${item.id}/`);
+                    });
+
+                    //Suppression des anciennes denrees
                     responseLine.data.results.forEach(async (item: any) => {
                         await new ApiAxios().delete(`/${this.url.line_discharge}/${item.id}/`);
+                    });
+
+                     //Ajout des dépenses
+                    data.otherDepenses.forEach(async (item: any) => {
+                        const res = await new ApiAxios().add(`/${this.url.spend}/`, {
+                            discharge: responseDischarge.data.id,
+                            name: item.name,
+                            amount: item.amount,
+                        });
                     });
 
                     //Ajoute des lignes des bordereaux
@@ -332,6 +311,7 @@ export const useDischargeStore = defineStore({
                         });
                         // console.log(res);
                     });
+
                     
                     // Rechargez complètement les archives du authStore
                     const authStore = useAuthStore();
@@ -370,7 +350,7 @@ export const useDischargeStore = defineStore({
                     });
 
                    // Après l'ajout d'archive
-                    const archiveResponse = await new ApiAxios().add('/archives/', { discharge: resDischarge.data.id, effective: data.slip.effective });
+                    await new ApiAxios().add('/archives/', { discharge: resDischarge.data.id, effective: data.slip.effective });
 
                     // Rechargez complètement les archives du authStore
                     const authStore = useAuthStore();
