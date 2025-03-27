@@ -536,7 +536,7 @@
     });
 
     const totalAmount = computed(() => {
-        return totalMenus.value + totalOtherSpends.value;
+        return (menusData.value?.budgetTotal || 0) + (addedSpends.value.reduce((total, spend) => total + spend.amount, 0) || 0);
     });
 
     const date = ref(new Date());
@@ -627,15 +627,37 @@
     // Implémenter correctement les fonctions d'actions
     const viewDetails = async (item: any) => {
         try {
+            console.log("Avant:",item);
             loading.value = true;
             // Récupérer les détails complets du bordereau
             // const fullDetails = await store.fetchDischargeDetails(item.id);
+
+            const menusArrays = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
+
+            await store.fetchProducts(effective.value, item.items);
+            store.products = [...store.products];
+            console.log(filteredProducts);
+
+            // filteredProducts
+
             selectedUnited.value = {
                 ...item,
-                items: item.items,
-                spends: item.spends,
-                menus: item.menus
+                items: [...item.items],
+                spends: item.spends.map((spend: any) => ({
+                    ...spend,
+                    amount: typeof spend.amount === 'string' 
+                        ? parseFloat(spend.amount.replace(/\s/g, '').replace(/\./g, '')) 
+                        : spend.amount
+                })),
+                menus: await repartirBudgetAvecTauxPrecis(menusArrays, item.effective)
             };
+
+            menusData.value = selectedUnited.value.menus;
+            addedSpends.value = selectedUnited.value.spends;
+            console.log("Après:", selectedUnited.value);
+            // console.log('Total menus:', menusData.value?.budgetTotal);
+            // console.log('Total dépenses:', addedSpends.value.reduce((total, spend) => total + spend.amount, 0));
+            // console.log('Montant total:', totalAmount.value);
             viewDialog.value = true;
         } catch (error) {
             console.error('Erreur lors de la récupération des détails:', error);
@@ -1048,16 +1070,10 @@
                                                                     <v-icon start>mdi-sigma</v-icon>
                                                                     Total
                                                                 </v-chip>
+                                                                                                                                <!-- Dans la section montant global -->
                                                                 <span class="text-h5 font-weight-bold text-success">
                                                                     {{
-                                                                        formatGuineanFrancs(
-                                                                            menusData?.budgetTotal ||
-                                                                                0 +
-                                                                                    addedSpends.reduce(
-                                                                                        (total, spend) => total + spend.amount,
-                                                                                        0
-                                                                                    )
-                                                                        )
+                                                                        formatGuineanFrancs(totalAmount)
                                                                     }}
                                                                 </span>
                                                             </div>
@@ -1432,14 +1448,18 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr v-for="(spend, index) in selectedUnited.spends" :key="index">
+                                                    <tr v-for="(spend, index) in addedSpends" :key="index">
                                                         <td>{{ spend.name }}</td>
                                                         <td class="text-right">{{ formatGuineanFrancs(spend.amount) }}</td>
                                                     </tr>
                                                     <tr class="font-weight-bold">
                                                         <td>Total</td>
-                                                        <td class="text-right">
-                                                            {{ formatGuineanFrancs(selectedUnited.spends.reduce((total :number, s: any) => total + s.amount, 0)) }}
+                                                       <td class="text-right">
+                                                            {{
+                                                                formatGuineanFrancs(
+                                                                    (addedSpends ? addedSpends.reduce((total: number, s: any) => total + s.amount, 0) : 0)
+                                                                )
+                                                            }}
                                                         </td>
                                                     </tr>
                                                 </tbody>
@@ -1450,47 +1470,9 @@
 
                                 <!-- Produits et menus -->
                                 <v-col cols="12" md="6">
-                                    <!-- Liste des produits -->
-                                    <v-card elevation="2" class="mb-4">
-                                        <v-card-title class="bg-green-lighten-4">
-                                            <v-icon class="mr-2">mdi-food</v-icon>
-                                            Produits attribués
-                                        </v-card-title>
-                                        <v-card-text>
-                                            <v-table density="compact">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Article</th>
-                                                        <th class="text-right">Quantité</th>
-                                                        <th class="text-right">Unité</th>
-                                                        <th>Forfait</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr v-for="(item, index) in selectedUnited.items" :key="index">
-                                                        <td>
-                                                            <div class="d-flex align-center">
-                                                                <v-avatar size="36" class="mr-2">
-                                                                    <v-img :src="item.image" :alt="item.name" />
-                                                                </v-avatar>
-                                                                <span>{{ item.name }}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td class="text-right">{{ item.quantite }}</td>
-                                                        <td class="text-right">{{ item.unite }}</td>
-                                                        <td>
-                                                            <v-chip :color="item.forfait ? 'success' : 'warning'" small>
-                                                                {{ item.forfait ? 'Oui' : 'Non' }}
-                                                            </v-chip>
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </v-table>
-                                        </v-card-text>
-                                    </v-card>
 
-                                    <!-- Répartition des menus -->
-                                    <v-card elevation="2">
+                                     <!-- Répartition des menus -->
+                                    <v-card elevation="2" class="mb-4">
                                         <v-card-title class="bg-purple-lighten-4">
                                             <v-icon class="mr-2">mdi-chart-pie</v-icon>
                                             Répartition des menus
@@ -1505,7 +1487,7 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <tr v-for="(menu, index) in selectedUnited.menus" :key="index">
+                                                    <tr v-for="(menu, index) in selectedUnited?.menus?.repartition" :key="index">
                                                         <td>{{ menu.name }}</td>
                                                         <td class="text-right">{{ formatGuineanFrancs(menu.montantAlloue) }}</td>
                                                         <td>
@@ -1524,33 +1506,83 @@
                                                     <tr class="font-weight-bold">
                                                         <td>Total Menus</td>
                                                         <td class="text-right">
-                                                            <!-- {{ formatGuineanFrancs(selectedUnited.menus.reduce((total: number, m: any) => total + m.montantAlloue, 0)) }} -->
+                                                            {{ formatGuineanFrancs(totalMenus)}}
                                                         </td>
-                                                        <td></td>
+                                                        <td>
+                                                             <v-progress-linear
+                                                                :model-value="selectedUnited?.menus?.progressTotal"
+                                                                color="primary"
+                                                                height="20"
+                                                                rounded
+                                                            >
+                                                                <template v-slot:default="{ value }">
+                                                                    <strong>{{ Math.ceil(value) }}%</strong>
+                                                                </template>
+                                                            </v-progress-linear>
+                                                        </td>
                                                     </tr>
                                                     <tr class="font-weight-bold" v-if="selectedUnited.spends && selectedUnited.spends.length > 0">
                                                         <td>Total Dépenses</td>
                                                         <td class="text-right">
-                                                            {{ formatGuineanFrancs(selectedUnited.spends.reduce((total: number, s: any) => total + s.amount, 0)) }}
+                                                            {{ formatGuineanFrancs((addedSpends ? addedSpends.reduce((total: number, s: any) => total + s.amount, 0) : 0)) }}
                                                         </td>
                                                         <td></td>
                                                     </tr>
-                                                    <tr class="font-weight-bold text-h6 bg-grey-lighten-3">
-                                                        <td>Total Général</td>
-                                                        <td class="text-right">
-                                                            <!-- {{
-                                                                formatGuineanFrancs(
-                                                                    selectedUnited.menus.reduce((total: number, m: any) => total + m.montantAlloue, 0) +
-                                                                        selectedUnited.spends.reduce((total: number, s: any) => total + s.amount, 0)
-                                                                )
-                                                            }} -->
+                                                    <tr class="font-weight-bold text-h4 bg-grey-lighten-3">
+                                                        <td>Montant Total</td>
+                                                        <td class="text-right" cols="2">
+                                                            {{
+                                                                formatGuineanFrancs(totalAmount)
+                                                            }}
                                                         </td>
-                                                        <td></td>
+                                                        <td>
+                                                           
+                                                        </td>
                                                     </tr>
                                                 </tbody>
                                             </v-table>
                                         </v-card-text>
                                     </v-card>
+
+                                    <!-- Liste des produits -->
+                                    <v-card elevation="2" >
+                                        <v-card-title class="bg-green-lighten-4">
+                                            <v-icon class="mr-2">mdi-food</v-icon>
+                                            Denrées attribués
+                                        </v-card-title>
+                                        <v-card-text>
+                                            <v-table density="compact">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Article</th>
+                                                        <th class="text-right">Quantité</th>
+                                                        <th class="text-right">Unité</th>
+                                                        <th>Forfait</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="(item, index) in filteredProducts" :key="index">
+                                                        <td>
+                                                            <div class="d-flex align-center">
+                                                                <v-avatar size="36" class="mr-2">
+                                                                    <v-img :src="item.item.image" :alt="item.item.name" />
+                                                                </v-avatar>
+                                                                <span>{{ item.item.name }}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-right">{{ item.item.quantite }}</td>
+                                                        <td class="text-right">{{ item.item.unite }}</td>
+                                                        <td>
+                                                            <v-chip :color="item.forfait ? 'success' : 'warning'" small>
+                                                                {{ item.forfait ? 'Oui' : 'Non' }}
+                                                            </v-chip>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </v-table>
+                                        </v-card-text>
+                                    </v-card>
+                                   
                                 </v-col>
                             </v-row>
                         </v-container>

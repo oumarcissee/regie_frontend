@@ -237,12 +237,15 @@ const repartirBudgetAvecTauxPrecis = async (items: Item[], GlobalEffectif: numbe
     }
     
     // Recalculer la somme finale après correction
-    const sommeFinaleBudget = repartition.reduce((sum, item) => sum + item.montantAlloue, 0);
+      const sommeFinaleBudget = repartition.reduce((sum, item) => sum + item.montantAlloue, 0);
+      
+      const progressTotal = Math.round(((sommeFinaleBudget * 100) / budgetTotalInt))
     
     return {
         budgetTotal: budgetTotalInt,
         repartition: repartition,
         sommeAllouee: sommeFinaleBudget,
+        progressTotal: progressTotal,
         // difference: budgetTotalInt - sommeFinaleBudget // Sera toujours zéro après correction
     };
 
