@@ -118,7 +118,6 @@
         return slips;
     });
 
-
     const selected = ref<string | null | undefined | number>(null);
 
     const loading = ref(false);
@@ -635,8 +634,8 @@
             const menusArrays = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
 
             await store.fetchProducts(effective.value, item.items);
-            store.products = [...store.products];
-            console.log(filteredProducts);
+            // store.products = [...store.products];
+            // console.log(filteredProducts.value);
 
             // filteredProducts
 
@@ -1522,7 +1521,7 @@
                                                         </td>
                                                     </tr>
                                                     <tr class="font-weight-bold" v-if="selectedUnited.spends && selectedUnited.spends.length > 0">
-                                                        <td>Total Dépenses</td>
+                                                        <td>Total Dépenses supplémentaires</td>
                                                         <td class="text-right">
                                                             {{ formatGuineanFrancs((addedSpends ? addedSpends.reduce((total: number, s: any) => total + s.amount, 0) : 0)) }}
                                                         </td>
@@ -1599,7 +1598,7 @@
             </v-dialog>
         </template>
 
-        <v-dialog v-model="quantityDialog" max-width="300" class="dialog-mw">
+        <v-dialog v-model="quantityDialog" max-width="600" class="dialog-mw">
             <v-card>
                 <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
                     <span class="title text-white">Nouvelle Quantité</span>
@@ -1658,6 +1657,12 @@
                                             <td>{{ formatDate(item.created_at) }}</td>
                                             <td>{{ item.effective }}</td>
                                         </tr>
+
+                                        <tr >
+                                            <!-- <td>{{ itemsSelected }}</td> -->
+                                            
+                                        </tr>
+
                                     </tbody>
                                 </v-table>
                             </v-col>
