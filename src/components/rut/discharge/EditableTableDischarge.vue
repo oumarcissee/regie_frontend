@@ -125,6 +125,7 @@
     const closeViewDialog = () => {
         viewDialog.value = false;
         selectedUnited.value = null;
+        itemsSelected.value = [];
     };
 
     const count = ref(0);
@@ -530,7 +531,9 @@
     });
 
     const openPrintPreview = () => {
-        printPreviewDialog.value = true;
+        // printPreviewDialog.value = true;
+        viewDialog.value = true;
+
     };
 
     const printSelectedItems = () => {
@@ -1325,7 +1328,223 @@
                         <v-icon @click="closeViewDialog" class="ml-auto text-white">mdi-close</v-icon>
                     </v-card-title>
 
-                    <v-card-text class="pa-4" v-if="selectedUnited">
+                     <v-card-text class="pa-4" v-if="itemsSelected.length > 0 && !selectedUnited">
+                        <v-container  v-for="(item, index) in itemsSelected" :key="index" class="mb-8" fluid>
+                            <v-row>
+                                <!-- Informations de base -->
+                                <v-col cols="12" md="6">
+                                    <v-card elevation="2" class="mb-4">
+                                        <v-card-title class="bg-blue-lighten-4">
+                                            <v-icon class="mr-2">mdi-information</v-icon>
+                                            Informations de base
+                                        </v-card-title>
+                                        <v-card-text>
+                                            <v-list density="compact">
+                                                <v-list-item>
+                                                    <v-list-item-title>Référence</v-list-item-title>
+                                                    <v-list-item-subtitle class="text-right font-weight-bold">
+                                                        {{ item.ref }}
+                                                    </v-list-item-subtitle>
+                                                </v-list-item>
+
+                                                <v-list-item>
+                                                    <v-list-item-title>Unité</v-list-item-title>
+                                                    <v-list-item-subtitle class="text-right">
+                                                        <v-chip color="primary" small>
+                                                            {{ item.unit?.short_name }}
+                                                        </v-chip>
+                                                    </v-list-item-subtitle>
+                                                </v-list-item>
+
+                                                <v-list-item>
+                                                    <v-list-item-title>Catégorie</v-list-item-title>
+                                                    <v-list-item-subtitle class="text-right">
+                                                        <v-chip :color="item.category === 'full' ? 'success' : 'warning'" small>
+                                                            {{ slipCategory(item.category) }}
+                                                        </v-chip>
+                                                    </v-list-item-subtitle>
+                                                </v-list-item>
+
+                                                <v-list-item>
+                                                    <v-list-item-title>Effectif</v-list-item-title>
+                                                    <v-list-item-subtitle class="text-right font-weight-bold">
+                                                        {{ item.effective }} hommes
+                                                    </v-list-item-subtitle>
+                                                </v-list-item>
+
+                                                <v-list-item v-if="item.start && item.end">
+                                                    <v-list-item-title>Période</v-list-item-title>
+                                                    <v-list-item-subtitle class="text-right">
+                                                        Du {{ formatDate(item.start) }} au {{ formatDate(item.end) }}
+                                                    </v-list-item-subtitle>
+                                                </v-list-item>
+
+                                                <v-list-item>
+                                                    <v-list-item-title>Créé le</v-list-item-title>
+                                                    <v-list-item-subtitle class="text-right">
+                                                        {{ formatDate(item.created_at) }}
+                                                    </v-list-item-subtitle>
+                                                </v-list-item>
+                                            </v-list>
+                                        </v-card-text>
+                                    </v-card>
+
+                                    <!-- Dépenses supplémentaires -->
+                                    <v-card elevation="2" v-if="item.spends && item.spends.length > 0">
+                                        <v-card-title class="bg-orange-lighten-4">
+                                            <v-icon class="mr-2">mdi-cash-plus</v-icon>
+                                            Dépenses supplémentaires
+                                        </v-card-title>
+                                        <v-card-text>
+                                            <v-table density="compact">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Désignation</th>
+                                                        <th class="text-right">Montant</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="(spend, index) in addedSpends" :key="index">
+                                                        <td>{{ spend.name }}</td>
+                                                        <td class="text-right">{{ formatGuineanFrancs(spend.amount) }}</td>
+                                                    </tr>
+                                                    <tr class="font-weight-bold">
+                                                        <td>Total</td>
+                                                       <td class="text-right">
+                                                            {{
+                                                                formatGuineanFrancs(
+                                                                    (addedSpends ? addedSpends.reduce((total: number, s: any) => total + s.amount, 0) : 0)
+                                                                )
+                                                            }}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </v-table>
+                                        </v-card-text>
+                                    </v-card>
+                                </v-col>
+
+                                <!-- Produits et menus -->
+                                <v-col cols="12" md="6">
+
+                                     <!-- Répartition des menus -->
+                                    <v-card elevation="2" class="mb-4">
+                                        <v-card-title class="bg-purple-lighten-4">
+                                            <v-icon class="mr-2">mdi-chart-pie</v-icon>
+                                            Répartition des menus
+                                        </v-card-title>
+                                        <v-card-text>
+                                            <v-table density="compact">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Menu</th>
+                                                        <th class="text-right">Montant</th>
+                                                        <th>Pourcentage</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="(menu, index) in item?.menus?.repartition" :key="index">
+                                                        <td>{{ menu.name }}</td>
+                                                        <td class="text-right">{{ formatGuineanFrancs(menu.montantAlloue) }}</td>
+                                                        <td>
+                                                            <v-progress-linear
+                                                                :model-value="menu.progress"
+                                                                color="primary"
+                                                                height="20"
+                                                                rounded
+                                                            >
+                                                                <template v-slot:default="{ value }">
+                                                                    <strong>{{ Math.ceil(value) }}%</strong>
+                                                                </template>
+                                                            </v-progress-linear>
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="font-weight-bold">
+                                                        <td>Total Menus</td>
+                                                        <td class="text-right">
+                                                            {{ formatGuineanFrancs(totalMenus)}}
+                                                        </td>
+                                                        <td>
+                                                             <v-progress-linear
+                                                                :model-value="item?.menus?.progressTotal"
+                                                                color="primary"
+                                                                height="20"
+                                                                rounded
+                                                            >
+                                                                <template v-slot:default="{ value }">
+                                                                    <strong>{{ Math.ceil(value) }}%</strong>
+                                                                </template>
+                                                            </v-progress-linear>
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="font-weight-bold" v-if="item.spends && item.spends.length > 0">
+                                                        <td>Total Dépenses supplémentaires</td>
+                                                        <td class="text-right">
+                                                            {{ formatGuineanFrancs((addedSpends ? addedSpends.reduce((total: number, s: any) => total + s.amount, 0) : 0)) }}
+                                                        </td>
+                                                        <td></td>
+                                                    </tr>
+                                                    <tr class="font-weight-bold text-h4 bg-grey-lighten-3">
+                                                        <td>Montant Total</td>
+                                                        <td class="text-right" cols="2">
+                                                            {{
+                                                                formatGuineanFrancs(totalAmount)
+                                                            }}
+                                                        </td>
+                                                        <td>
+                                                           
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </v-table>
+                                        </v-card-text>
+                                    </v-card>
+
+                                    <!-- Liste des produits -->
+                                    <v-card elevation="2" >
+                                        <v-card-title class="bg-green-lighten-4">
+                                            <v-icon class="mr-2">mdi-food</v-icon>
+                                            Denrées attribués
+                                        </v-card-title>
+                                        <v-card-text>
+                                            <v-table density="compact">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Article</th>
+                                                        <th class="text-right">Quantité</th>
+                                                        <th class="text-right">Unité</th>
+                                                        <th>Forfait</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="(product, index) in filteredProducts" :key="index">
+                                                        <td>
+                                                            <div class="d-flex align-center">
+                                                                <v-avatar size="36" class="mr-2">
+                                                                    <v-img :src="product.item.image" :alt="product.item.name" />
+                                                                </v-avatar>
+                                                                <span>{{ product.item.name }}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-right">{{ product.item.quantite }}</td>
+                                                        <td class="text-right">{{ item.unite }}</td>
+                                                        <td>
+                                                            <v-chip :color="product.item.forfait ? 'success' : 'warning'" small>
+                                                                {{ product.item.forfait ? 'Oui' : 'Non' }}
+                                                            </v-chip>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </v-table>
+                                        </v-card-text>
+                                    </v-card>
+                                   
+                                </v-col>
+                            </v-row>
+                        </v-container>
+                    </v-card-text>
+
+                     <v-card-text class="pa-4" v-if="selectedUnited">
                         <v-container fluid>
                             <v-row>
                                 <!-- Informations de base -->
@@ -1582,7 +1801,7 @@
         </v-dialog>
 
         <!-- Print Preview Dialog -->
-        <v-dialog v-model="printPreviewDialog" max-width="800">
+        <!-- <v-dialog v-model="printPreviewDialog" max-width="800">
             <v-card>
                 <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
                     <span class="title text-white">Aperçu avant impression</span>
@@ -1613,7 +1832,6 @@
                                         </tr>
 
                                         <tr >
-                                            <!-- <td>{{ itemsSelected }}</td> -->
                                             
                                         </tr>
 
@@ -1629,7 +1847,7 @@
                     <v-btn color="secondary" @click="printSelectedItems">Imprimer</v-btn>
                 </v-card-actions>
             </v-card>
-        </v-dialog>
+        </v-dialog> -->
 
         <!-- Snackbar pour les notifications -->
         <v-snackbar v-model="notif.snackbar.value" :color="notif.snackbarColor.value" :timeout="3000" location="top">
