@@ -122,13 +122,6 @@
 
     const loading = ref(false);
 
-    // // Add this new method
-    const viewItem = (item: any) => {
-        // console.log('Item clicked:', item); // Pour le debug
-        selectedUnited.value = { ...item }; // Faire une copie de l'objet
-        viewDialog.value = true;
-    };
-
     const closeViewDialog = () => {
         viewDialog.value = false;
         selectedUnited.value = null;
@@ -245,40 +238,6 @@
 
     const componentKey = ref(0);
 
-    // Méthode pour modifier un élément
-    // const editItem = async (item: any) => {
-    //     try {
-    //         console.log(item)
-    //         return;
-    //         editedIndex.value = item.id;
-    //         current_unit.value = item.unite?.short_name;
-    //         effective.value = item.effective;
-    //         current_category.value = item.category;
-    //         menusData.value = await repartirBudgetAvecTauxPrecis(item.menus, effective.value);
-    //         await store.fetchProducts(item.effective, item.items);
-    //         // addedSpends.value = [...item.spends]; // Assurez-vous que cela est correctement assigné
-
-    //         // Nettoyer les montants des dépenses ajoutées
-    //         addedSpends.value = item.spends.map((spend: any) => ({
-    //             ...spend,
-    //             amount: parseFloat(spend.amount.replace(/\s/g, '').replace(/\./g, ''))
-    //         }));
-
-    //         typeFilter.value = item.unit?.type_of_unit;
-    //         range.value.start = item.start;
-    //         range.value.end = item.end;
-
-    //         unite.value.value = item.unit?.short_name;
-    //         curent_type_of_slip.value.value = item.category;
-
-    //         openDialog();
-    //         componentKey.value += 1; // Forcer la mise à jour du composant
-    //     } catch (error) {
-    //         console.error("Erreur lors de l'édition :", error);
-    //         showNotification("Erreur lors de l'édition", 'error');
-    //     }
-    // };
-    //Computed Property
 
     const remove = (item: any) => {
         if (store.products.length > 1) {
@@ -583,45 +542,45 @@
 
     // Modifier la fonction editItem pour qu'elle fonctionne correctement
     const editRecord = async (item: any) => {
-    try {
-        editedIndex.value = item.id;
-        current_unit.value = item.unit?.short_name;
-        effective.value = item.effective;
-        current_category.value = item.category;
-        
-        // Charger les données existantes
-        const menusArrays = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
-        menusData.value = await repartirBudgetAvecTauxPrecis(menusArrays, effective.value);
-        await store.fetchProducts(effective.value, item.items);
-        
-        // Garder les produits dans le store
-        store.products = [...store.products];
-        
-        // Initialiser les dépenses supplémentaires
-        addedSpends.value = item.spends.map((spend: any) => ({
-            ...spend,
-            amount: typeof spend.amount === 'string' 
-                ? parseFloat(spend.amount.replace(/\s/g, '').replace(/\./g, '')) 
-                : spend.amount
-        }));      
-        
-        // Charger les autres dépenses disponibles
-        otherDepenses.value = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'other');
+        try {
+            editedIndex.value = item.id;
+            current_unit.value = item.unit?.short_name;
+            effective.value = item.effective;
+            current_category.value = item.category;
+            
+            // Charger les données existantes
+            const menusArrays = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
+            menusData.value = await repartirBudgetAvecTauxPrecis(menusArrays, effective.value);
+            await store.fetchProducts(effective.value, item.items);
+            
+            // Garder les produits dans le store
+            store.products = [...store.products];
+            
+            // Initialiser les dépenses supplémentaires
+            addedSpends.value = item.spends.map((spend: any) => ({
+                ...spend,
+                amount: typeof spend.amount === 'string' 
+                    ? parseFloat(spend.amount.replace(/\s/g, '').replace(/\./g, '')) 
+                    : spend.amount
+            }));      
+            
+            // Charger les autres dépenses disponibles
+            otherDepenses.value = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'other');
 
-        typeFilter.value = item.unit?.type_of_unit;
-        range.value.start = item.start ? new Date(item.start) : null;
-        range.value.end = item.end ? new Date(item.end) : null;
+            typeFilter.value = item.unit?.type_of_unit;
+            range.value.start = item.start ? new Date(item.start) : null;
+            range.value.end = item.end ? new Date(item.end) : null;
 
-        unite.value.value = item.unit?.short_name;
-        curent_type_of_slip.value.value = item.category;
+            unite.value.value = item.unit?.short_name;
+            curent_type_of_slip.value.value = item.category;
 
-        openDialog();
-        componentKey.value += 1;
-    } catch (error) {
-        console.error("Erreur lors de l'édition :", error);
-        showNotification("Erreur lors de l'édition", 'error');
-    }
-};
+            openDialog();
+            componentKey.value += 1;
+        } catch (error) {
+            console.error("Erreur lors de l'édition :", error);
+            showNotification("Erreur lors de l'édition", 'error');
+        }
+    };
 
     // Implémenter correctement les fonctions d'actions
     const viewDetails = async (item: any) => {
@@ -632,31 +591,26 @@
             // const fullDetails = await store.fetchDischargeDetails(item.id);
 
             const menusArrays = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
+            menusData.value = await repartirBudgetAvecTauxPrecis(menusArrays, item.effective);
+            await store.fetchProducts(item.effective, item.items);
 
-            await store.fetchProducts(effective.value, item.items);
-            // store.products = [...store.products];
-            // console.log(filteredProducts.value);
-
-            // filteredProducts
-
-            selectedUnited.value = {
-                ...item,
-                items: [...item.items],
-                spends: item.spends.map((spend: any) => ({
+            addedSpends.value =  item.spends.map((spend: any) => ({
                     ...spend,
                     amount: typeof spend.amount === 'string' 
                         ? parseFloat(spend.amount.replace(/\s/g, '').replace(/\./g, '')) 
                         : spend.amount
-                })),
-                menus: await repartirBudgetAvecTauxPrecis(menusArrays, item.effective)
+            }))
+            
+            // Garder les produits dans le store
+            store.products = [...store.products];
+
+            selectedUnited.value = {
+                ...item,
+                items: [...store.products],
+                spends: addedSpends.value,
+                menus: menusData.value
             };
 
-            menusData.value = selectedUnited.value.menus;
-            addedSpends.value = selectedUnited.value.spends;
-            console.log("Après:", selectedUnited.value);
-            // console.log('Total menus:', menusData.value?.budgetTotal);
-            // console.log('Total dépenses:', addedSpends.value.reduce((total, spend) => total + spend.amount, 0));
-            // console.log('Montant total:', totalAmount.value);
             viewDialog.value = true;
         } catch (error) {
             console.error('Erreur lors de la récupération des détails:', error);
@@ -1570,10 +1524,10 @@
                                                             </div>
                                                         </td>
                                                         <td class="text-right">{{ item.item.quantite }}</td>
-                                                        <td class="text-right">{{ item.item.unite }}</td>
+                                                        <td class="text-right">{{ item.unite }}</td>
                                                         <td>
-                                                            <v-chip :color="item.forfait ? 'success' : 'warning'" small>
-                                                                {{ item.forfait ? 'Oui' : 'Non' }}
+                                                            <v-chip :color="item.item.forfait ? 'success' : 'warning'" small>
+                                                                {{ item.item.forfait ? 'Oui' : 'Non' }}
                                                             </v-chip>
                                                         </td>
                                                     </tr>
