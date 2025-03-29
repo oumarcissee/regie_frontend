@@ -29,6 +29,7 @@ export const useDischargeStore = defineStore({
         areas: [] as any,
         menus: [] as any,
         products: [] as any,
+        subAreas: [] as any,
         totalWeightKg: 0 ,
         unitedSelected: null as any,
         dialog: false,
@@ -60,6 +61,18 @@ export const useDischargeStore = defineStore({
                 const response = await new ApiAxios().find(`/spends/`);
                 this.menus = response?.data?.results 
                 return this.menus;
+
+            } catch (error) {
+                console.log(error);
+                return false;
+            }
+        },
+
+        async fetchSubAreas() {
+            try {
+                const response = await new ApiAxios().find(`/subareas/`);
+                this.subAreas = response?.data?.results 
+                return this.subAreas;
 
             } catch (error) {
                 console.log(error);
@@ -218,12 +231,15 @@ export const useDischargeStore = defineStore({
                 const spends = await new ApiAxios().find(`/${this.url.spend}/`);
 
                 this.boredereaux = (response?.data?.results || []).map((slip: any) => {
+                    // console.log(slip);
                     // Créer un objet avec toutes les propriétés de base
                     const baseData = {
                         ref: slip.ref || 'N/A',
                         category: slip.category || 'N/A',
                         unit: slip.unit || 'N/A',
                         area: slip.unit?.area || 'N/A',
+                        sub_area: slip?.sub_area.name || 'N/A', //
+                        recap: slip.recap || 'N/A',
                         status: slip.status || 0,
                         created_at: slip.created_at || null,
                         modified_at: slip.modified_at || null,
@@ -276,6 +292,9 @@ export const useDischargeStore = defineStore({
                         category: data.slip.category,
                         start: data.slip.start,
                         end: data.slip.end,
+                        sub_area: data.slip.sub_area,
+                        recap: data.slip.recap,
+                         //  type_of_discharge: data.slip.type_of_discharge
                     });
 
                     //Suppression des anciennes commande
@@ -326,7 +345,12 @@ export const useDischargeStore = defineStore({
                     //Ajout d'un bordereau
                     const resDischarge = await new ApiAxios().add(`/${this.url.discharge}/`,{
                         unit: data.unit,
-                        category: data.slip.category
+                        category: data.slip.category,
+                        start: data.slip.start,
+                        end: data.slip.end,
+                        sub_area: data.slip.sub_area,
+                        recap: data.slip.recap,
+                        //  type_of_discharge: data.slip.type_of_discharge
                     });
                     //Changement de l'état de l'unité
                     new ApiAxios().updatePartialForm(`/${this.url.unit}/${data.unit}/`,{ is_created:  true});

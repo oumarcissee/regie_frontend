@@ -7,23 +7,20 @@
         notif,
         formatDate,
         showNotification,
-        get_staffs,
-        get_unite_type,
-        get_areas,
-        get_category_of_unite,
-        get_full_unite,
         formatGuineanFrancs,
         slipCategory
     } from '@/services/utils';
     import { get_quantity, repartirBudgetAvecTauxPrecis } from '@/services/utilsMoment';
     import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBoxUnites.vue';
     import CustomComBoxSpend from '@/components/forms/form-elements/autocomplete/CustomComBoxSpend.vue'; //
+    import CustomComBoxSubArea from '@/components/forms/form-elements/autocomplete/CustomComBoxSubArea.vue'; //
+
     import 'v-calendar/dist/style.css';
     import UiChildCard from '@/components/shared/UiChildCard.vue';
 
     const themeColor = ref('rgb(var(--v-theme-secondary))');
     const itemsSelected = ref<Item[]>([]);
-    const searchField = ref(['unit.short_name', 'category', 'ref']);
+    const searchField = ref(['unit.short_name', 'category', 'ref', 'recap','sub_area']);
     const printPreviewDialog = ref(false);
     const quantityDialog = ref(false);
     const quantityItem = ref('');
@@ -56,12 +53,22 @@
             curent_type_of_slip(value: string | any[]) {
                 if (value) return true;
                 return 'Selectionnez une catégorie.';
+            },
+            current_sub_area(value: string | any[]) {
+                if (value) return true;
+                return 'Selectionnez une sous Region.';
+            },
+            recap(value: string | any[]) {
+                if (!value) return true;
+                return true;
             }
         }
     });
 
     const curent_type_of_slip = useField('curent_type_of_slip');
     const unite = useField('unite');
+    const current_sub_area = useField('current_sub_area');
+    const recap = useField('recap');
 
     const current_unit = ref(null);
     const current_category = ref(null);
@@ -90,6 +97,9 @@
         // Filtrer par type si un type est sélectionné
         if (typeFilter.value) {
             slips = slips.filter((slip: any) => slip.unit.type_of_unit === typeFilter.value);
+        } else {
+            // Si aucun type n'est sélectionné, ne rien ne filtrer
+            return slips;
         }
 
         // Filtrer par terme de recherche si présent
@@ -101,7 +111,7 @@
                 const matchedType = type_of_slip.value.find(
                     (type) =>
                         type.title.toLowerCase().startsWith(searchTerm) || // Recherche par titre (partiel)
-                        type.value.toLowerCase().startsWith(searchTerm) // Recherche par valeur (partielle)
+                        type.value.toLowerCase().startsWith(searchTerm)  // Recherche par valeur (partielle)
                 );
 
                 // Si une correspondance est trouvée, utiliser la valeur pour filtrer
@@ -111,6 +121,7 @@
                     slip.unit.short_name.toLowerCase().includes(searchTerm) || // Recherche par nom (partiel)
                     slip.category.toLowerCase().includes(categoryValue) || // Recherche par catégorie (partielle)
                     slip.ref.toLowerCase().includes(searchTerm) // Recherche par référence (partielle)
+                    // Recherche par référence (partielle)
                 );
             });
         }
@@ -142,7 +153,11 @@
                     category: values.curent_type_of_slip,
                     start: typeFilter.value === 'mission' ? range.value.start : null,
                     end: typeFilter.value === 'mission' ? range.value.end : null,
-                    effective: effective.value
+                    effective: effective.value,
+                    sub_area: values.current_sub_area,
+                    recap: values.recap,
+                    // type_of_discharge: values.type_of_discharge,
+                    // Les produits
                 },
 
                 unit: unitedId.value,
@@ -188,10 +203,12 @@
             loading.value = true;
             await unitStore.fetchUnites();
             store.fetchMenus();
+            await store.fetchSubAreas();
             //On passe les unites dans la fonction
             await store.fetchDischarge();
             // Forcer la réactivité en créant une nouvelle référence
             store.boredereaux = [...store.boredereaux];
+            console.log(store.boredereaux);
         } catch (error) {
             console.error('Erreur lors du rafraîchissement :', error);
             showNotification('Erreur lors du rafraîchissement des données', 'error');
@@ -268,6 +285,7 @@
     const headers = [
         { text: 'Réf', value: 'ref', sortable: true },
         { text: 'Unité', value: 'unit.short_name', sortable: true },
+        { text: 'S/Region', value: 'sub_area', sortable: true },
         { text: 'Catégorie', value: 'category', sortable: true },
         { text: 'Créé le', value: 'created_at', sortable: true },
         { text: 'Effectif', value: 'effective', sortable: true },
@@ -284,6 +302,7 @@
     const selectedUniteDetails = ref(null);
     const effective = ref(null);
     const unitedId = ref(null);
+    const currentArea = ref(null);
     const menusData = ref();
     const otherDepenses = ref();
 
@@ -292,6 +311,11 @@
             selectedUniteDetails.value = null;
             return;
         }
+    };
+
+    const onAreaChange = async (value: any) => {
+        current_sub_area.setValue(value);
+        // console.log(current_sub_area.value.value);
     };
 
     // Update the unitedChanged function to handle selection
@@ -311,7 +335,7 @@
 
             unitedId.value = selectedUnite.raw.id;
             effective.value = selectedUnite.effective;
-
+            currentArea.value = selectedUnite.area;
             // Mettre à jour la valeur de l'unité
             unite.value.value = selectedUnite.short_name;
 
@@ -331,6 +355,10 @@
         isLoading.value = false;
         loading.value = false;
     };
+
+    const storeSubAreas = computed(() => {
+        return store.subAreas.filter(((subArea: { area: any; }) => subArea.area === currentArea.value));
+    });
 
     const storeProducts = computed(() => {
         return store.products;
@@ -438,7 +466,7 @@
         try {
             isLoading.value = true;
             await refreshTable();
-            console.log(unitStore.unites);
+            // console.log(unitStore.unites);
             allProductsEnabled.value = initialAllProductsState.value;
         } catch (err) {
             error.value = 'Error loading data';
@@ -550,6 +578,8 @@
             current_unit.value = item.unit?.short_name;
             effective.value = item.effective;
             current_category.value = item.category;
+            recap.value  = item.category;
+            current_sub_area.value = item.sub_area;
             
             // Charger les données existantes
             const menusArrays = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
@@ -623,7 +653,6 @@
         }
     };
 
-
     const deleteRecord = async (item: any) => {
         try {
             await store.deleteItem(item, 'discharges');
@@ -634,155 +663,6 @@
             showNotification('Erreur lors de la suppression', 'error');
         }
     };
-
-    //Impression de la suppression
-    const printBordereau = (bordereau: any) => {
-        // Ouvrir une nouvelle fenêtre avec le contenu à imprimer
-        const printWindow = window.open('', '_blank');
-        
-        if (printWindow) {
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Bordereau ${bordereau.ref}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; margin: 20px; }
-                        .header { text-align: center; margin-bottom: 20px; }
-                        .title { font-size: 18px; font-weight: bold; }
-                        .subtitle { font-size: 14px; }
-                        .info { margin-bottom: 15px; }
-                        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                        th { background-color: #f2f2f2; }
-                        .total { font-weight: bold; }
-                        .text-right { text-align: right; }
-                        .page-break { page-break-after: always; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <div class="title">BORDEREAU DE LIVRAISON</div>
-                        <div class="subtitle">Référence: ${bordereau.ref}</div>
-                    </div>
-
-                    <div class="info">
-                        <div><strong>Unité:</strong> ${bordereau.unit?.short_name}</div>
-                        <div><strong>Catégorie:</strong> ${slipCategory(bordereau.category)}</div>
-                        <div><strong>Effectif:</strong> ${bordereau.effective} hommes</div>
-                        ${bordereau.start && bordereau.end ? 
-                            `<div><strong>Période:</strong> Du ${formatDate(bordereau.start)} au ${formatDate(bordereau.end)}</div>` : ''}
-                        <div><strong>Date de création:</strong> ${formatDate(bordereau.created_at)}</div>
-                    </div>
-
-                    <h3>Produits attribués</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Article</th>
-                                <th class="text-right">Quantité</th>
-                                <th>Unité</th>
-                                <th>Forfait</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${bordereau.items.map((item: { name: any; quantite: any; unite: any; forfait: any; }) => `
-                                <tr>
-                                    <td>${item.name}</td>
-                                    <td class="text-right">${item.quantite}</td>
-                                    <td>${item.unite}</td>
-                                    <td>${item.forfait ? 'Oui' : 'Non'}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-
-                    ${bordereau.spends && bordereau.spends.length > 0 ? `
-                        <h3>Dépenses supplémentaires</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Désignation</th>
-                                    <th class="text-right">Montant</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${bordereau.spends.map((spend: { name: any; amount: number; }) => `
-                                    <tr>
-                                        <td>${spend.name}</td>
-                                        <td class="text-right">${formatGuineanFrancs(spend.amount)}</td>
-                                    </tr>
-                                `).join('')}
-                                <tr class="total">
-                                    <td>Total</td>
-                                    <td class="text-right">${formatGuineanFrancs(bordereau.spends.reduce((total: any, s: { amount: any; }) => total + s.amount, 0))}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    ` : ''}
-
-                    <h3>Répartition des menus</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Menu</th>
-                                <th class="text-right">Montant</th>
-                                <th>Pourcentage</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${bordereau.menus.map((menu: { name: any; montantAlloue: number; progress: number; }) => `
-                                <tr>
-                                    <td>${menu.name}</td>
-                                    <td class="text-right">${formatGuineanFrancs(menu.montantAlloue)}</td>
-                                    <td>${Math.ceil(menu.progress)}%</td>
-                                </tr>
-                            `).join('')}
-                            <tr class="total">
-                                <td>Total Menus</td>
-                                <td class="text-right">${formatGuineanFrancs(bordereau.menus.reduce((total: any, m: { montantAlloue: any; }) => total + m.montantAlloue, 0))}</td>
-                                <td></td>
-                            </tr>
-                            ${bordereau.spends && bordereau.spends.length > 0 ? `
-                                <tr class="total">
-                                    <td>Total Dépenses</td>
-                                    <td class="text-right">${formatGuineanFrancs(bordereau.spends.reduce((total: any, s: { amount: any; }) => total + s.amount, 0))}</td>
-                                    <td></td>
-                                </tr>
-                            ` : ''}
-                            <tr class="total" style="background-color: #f5f5f5;">
-                                <td><strong>Total Général</strong></td>
-                                <td class="text-right"><strong>${formatGuineanFrancs(
-                                    bordereau.menus.reduce((total: any, m: { montantAlloue: any; }) => total + m.montantAlloue, 0) + 
-                                    (bordereau.spends ? bordereau.spends.reduce((total: any, s: { amount: any; }) => total + s.amount, 0) : 0)
-                                )}</strong></td>
-                                <td></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div style="margin-top: 30px; text-align: center;">
-                        <div style="margin-top: 50px;">
-                            <div style="border-top: 1px solid #000; width: 200px; margin: 0 auto; padding-top: 5px;">
-                                Signature et cachet
-                            </div>
-                        </div>
-                    </div>
-                </body>
-                </html>
-            `);
-            
-            printWindow.document.close();
-            printWindow.focus();
-            
-            // Attendre que le contenu soit chargé avant d'imprimer
-            setTimeout(() => {
-                printWindow.print();
-                printWindow.close();
-            }, 500);
-        }
-    };
-
 
     </script>
     <template>
@@ -844,49 +724,67 @@
                                             <v-col cols="12">
                                                 <!-- Filtre par type -->
                                                 <v-row>
-                                                    <v-col cols="12" md="6">
-                                                        <UiChildCard title="Filtrer par type d'unité">
-                                                            <v-select
-                                                                density="compact"
-                                                                v-model="typeFilter"
-                                                                :items="type_of_unites"
-                                                                label="Type d'unité"
-                                                                variant="outlined"
-                                                                hide-details
-                                                                style="min-width: 200px"
-                                                                :disabled="!effective ? false : true"
-                                                            ></v-select>
-                                                        </UiChildCard>
-                                                    </v-col>
-                                                    <v-col cols="12" md="6">
-                                                        <UiChildCard title="Categorie de bordereau">
+                                                    <v-col cols="12" md="8">
+                                                        <v-col cols="12" >
                                                             <v-select
                                                                 label="Sélectionnez une catégorie"
-                                                                density="compact"
+                                                              
                                                                 v-model="curent_type_of_slip.value.value"
                                                                 :error-messages="curent_type_of_slip.errorMessage.value"
                                                                 :items="type_of_slip"
                                                                 hide-details
-                                                                variant="outlined"
+                                                             
                                                                 style="min-width: 200px"
                                                                 :disabled="!effective ? false : true"
                                                             ></v-select>
-                                                        </UiChildCard>
+                                                        </v-col>    
+                                                      
+                                                    </v-col>
+
+                                                    <v-col cols="12" md="4">
+                                                         <v-col cols="12" >
+                                                            <v-text-field
+                                                                placeholder="Saisissez une chaine"
+                                                                variant="outlined"
+                                                                v-model="recap.value.value"
+                                                                @input="recap.value.value = $event.target.value.toUpperCase()"   
+                                                                :error-messages="recap.errorMessage.value"
+                                                                label="Chaine de recapitulation"
+                                                            >
+                                                            </v-text-field>
+                                                        </v-col>
                                                     </v-col>
                                                 </v-row>
 
                                                 <!-- Bouton d'ajout -->
                                             </v-col>
                                             <v-col cols="12">
-                                                <CustomComBox
-                                                    :items="editedIndex === -1 ? unitesFiltred : unitesFiltred"
-                                                    label="Séletionnez une unité"
-                                                    title="short_name"
-                                                    v-model="unite.value.value"
-                                                    :error-messages="unite.errorMessage.value"
-                                                    @update:modelValue="unitedChanged"
-                                                    :disabled="!curent_type_of_slip.value.value ? true : false"
-                                                />
+                                                <v-row>
+                                                    <v-col cols="12" md="8">   
+                                                        <CustomComBox
+                                                            :items="editedIndex === -1 ? unitesFiltred : unitesFiltred"
+                                                            label="Séletionnez une unité"
+                                                            title="short_name"
+                                                            v-model="unite.value.value"
+                                                            :error-messages="unite.errorMessage.value"
+                                                            @update:modelValue="unitedChanged"
+                                                            :disabled="!curent_type_of_slip.value.value ? true : false"
+                                                        />
+
+                                                    </v-col>
+                                                    <v-col cols="12" md="4">
+                                                        <CustomComBoxSubArea
+                                                            :items="storeSubAreas"
+                                                            label="Sélectionnez une sous-Region"
+                                                            title="name"
+                                                            v-model="current_sub_area.value.value"
+                                                            @update:modelValue="onAreaChange"
+                                                            :error-messages="current_sub_area.errorMessage.value"
+                                                            hide-details
+                                                            :disabled="effective ? false : true"
+                                                        />
+                                                    </v-col>
+                                                </v-row>
                                             </v-col>
 
                                             <v-col cols="12">
@@ -1317,7 +1215,6 @@
             </template>
         </EasyDataTable>
 
-        <!-- Add the View Dialog -->
         <!-- Remplacez le dialogue de visualisation existant par celui-ci -->
         <template>
             <!-- View Dialog -->
@@ -1328,11 +1225,12 @@
                         <v-icon @click="closeViewDialog" class="ml-auto text-white">mdi-close</v-icon>
                     </v-card-title>
 
-                     <v-card-text class="pa-4" v-if="itemsSelected.length > 0 && !selectedUnited">
+                    <v-card-text class="pa-4" v-if="itemsSelected.length > 0 && !selectedUnited">
                         <v-container  v-for="(item, index) in itemsSelected" :key="index" class="mb-8" fluid>
                             <v-row>
                                 <!-- Informations de base -->
-                                <v-col cols="12" md="6">
+                                 <!-- {{ item }} -->
+                                <v-col cols="12" md="12">
                                     <v-card elevation="2" class="mb-4">
                                         <v-card-title class="bg-blue-lighten-4">
                                             <v-icon class="mr-2">mdi-information</v-icon>
@@ -1388,158 +1286,8 @@
                                             </v-list>
                                         </v-card-text>
                                     </v-card>
-
-                                    <!-- Dépenses supplémentaires -->
-                                    <v-card elevation="2" v-if="item.spends && item.spends.length > 0">
-                                        <v-card-title class="bg-orange-lighten-4">
-                                            <v-icon class="mr-2">mdi-cash-plus</v-icon>
-                                            Dépenses supplémentaires
-                                        </v-card-title>
-                                        <v-card-text>
-                                            <v-table density="compact">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Désignation</th>
-                                                        <th class="text-right">Montant</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr v-for="(spend, index) in addedSpends" :key="index">
-                                                        <td>{{ spend.name }}</td>
-                                                        <td class="text-right">{{ formatGuineanFrancs(spend.amount) }}</td>
-                                                    </tr>
-                                                    <tr class="font-weight-bold">
-                                                        <td>Total</td>
-                                                       <td class="text-right">
-                                                            {{
-                                                                formatGuineanFrancs(
-                                                                    (addedSpends ? addedSpends.reduce((total: number, s: any) => total + s.amount, 0) : 0)
-                                                                )
-                                                            }}
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </v-table>
-                                        </v-card-text>
-                                    </v-card>
                                 </v-col>
 
-                                <!-- Produits et menus -->
-                                <v-col cols="12" md="6">
-
-                                     <!-- Répartition des menus -->
-                                    <v-card elevation="2" class="mb-4">
-                                        <v-card-title class="bg-purple-lighten-4">
-                                            <v-icon class="mr-2">mdi-chart-pie</v-icon>
-                                            Répartition des menus
-                                        </v-card-title>
-                                        <v-card-text>
-                                            <v-table density="compact">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Menu</th>
-                                                        <th class="text-right">Montant</th>
-                                                        <th>Pourcentage</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr v-for="(menu, index) in item?.menus?.repartition" :key="index">
-                                                        <td>{{ menu.name }}</td>
-                                                        <td class="text-right">{{ formatGuineanFrancs(menu.montantAlloue) }}</td>
-                                                        <td>
-                                                            <v-progress-linear
-                                                                :model-value="menu.progress"
-                                                                color="primary"
-                                                                height="20"
-                                                                rounded
-                                                            >
-                                                                <template v-slot:default="{ value }">
-                                                                    <strong>{{ Math.ceil(value) }}%</strong>
-                                                                </template>
-                                                            </v-progress-linear>
-                                                        </td>
-                                                    </tr>
-                                                    <tr class="font-weight-bold">
-                                                        <td>Total Menus</td>
-                                                        <td class="text-right">
-                                                            {{ formatGuineanFrancs(totalMenus)}}
-                                                        </td>
-                                                        <td>
-                                                             <v-progress-linear
-                                                                :model-value="item?.menus?.progressTotal"
-                                                                color="primary"
-                                                                height="20"
-                                                                rounded
-                                                            >
-                                                                <template v-slot:default="{ value }">
-                                                                    <strong>{{ Math.ceil(value) }}%</strong>
-                                                                </template>
-                                                            </v-progress-linear>
-                                                        </td>
-                                                    </tr>
-                                                    <tr class="font-weight-bold" v-if="item.spends && item.spends.length > 0">
-                                                        <td>Total Dépenses supplémentaires</td>
-                                                        <td class="text-right">
-                                                            {{ formatGuineanFrancs((addedSpends ? addedSpends.reduce((total: number, s: any) => total + s.amount, 0) : 0)) }}
-                                                        </td>
-                                                        <td></td>
-                                                    </tr>
-                                                    <tr class="font-weight-bold text-h4 bg-grey-lighten-3">
-                                                        <td>Montant Total</td>
-                                                        <td class="text-right" cols="2">
-                                                            {{
-                                                                formatGuineanFrancs(totalAmount)
-                                                            }}
-                                                        </td>
-                                                        <td>
-                                                           
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </v-table>
-                                        </v-card-text>
-                                    </v-card>
-
-                                    <!-- Liste des produits -->
-                                    <v-card elevation="2" >
-                                        <v-card-title class="bg-green-lighten-4">
-                                            <v-icon class="mr-2">mdi-food</v-icon>
-                                            Denrées attribués
-                                        </v-card-title>
-                                        <v-card-text>
-                                            <v-table density="compact">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Article</th>
-                                                        <th class="text-right">Quantité</th>
-                                                        <th class="text-right">Unité</th>
-                                                        <th>Forfait</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr v-for="(product, index) in filteredProducts" :key="index">
-                                                        <td>
-                                                            <div class="d-flex align-center">
-                                                                <v-avatar size="36" class="mr-2">
-                                                                    <v-img :src="product.item.image" :alt="product.item.name" />
-                                                                </v-avatar>
-                                                                <span>{{ product.item.name }}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td class="text-right">{{ product.item.quantite }}</td>
-                                                        <td class="text-right">{{ item.unite }}</td>
-                                                        <td>
-                                                            <v-chip :color="product.item.forfait ? 'success' : 'warning'" small>
-                                                                {{ product.item.forfait ? 'Oui' : 'Non' }}
-                                                            </v-chip>
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </v-table>
-                                        </v-card-text>
-                                    </v-card>
-                                   
-                                </v-col>
                             </v-row>
                         </v-container>
                     </v-card-text>
@@ -1763,7 +1511,7 @@
                     <v-card-actions class="pa-4">
                         <v-spacer></v-spacer>
                         <v-btn color="primary" @click="closeViewDialog">Fermer</v-btn>
-                        <v-btn color="secondary" @click="printBordereau(selectedUnited)" prepend-icon="mdi-printer">
+                        <v-btn color="secondary" @click="" prepend-icon="mdi-printer">
                             Imprimer
                         </v-btn>
                     </v-card-actions>
@@ -1800,55 +1548,6 @@
             </v-card>
         </v-dialog>
 
-        <!-- Print Preview Dialog -->
-        <!-- <v-dialog v-model="printPreviewDialog" max-width="800">
-            <v-card>
-                <v-card-title class="pa-4 bg-secondary d-flex align-center justify-space-between">
-                    <span class="title text-white">Aperçu avant impression</span>
-                    <v-icon @click="printPreviewDialog = false" class="ml-auto">mdi-close</v-icon>
-                </v-card-title>
-
-                <v-card-text>
-                    <v-container>
-                        <v-row>
-                            <v-col cols="12">
-                                <v-table>
-                                    <thead>
-                                        <tr>
-                                            <th>Référence</th>
-                                            <th>Unité</th>
-                                            <th>Catégorie</th>
-                                            <th>Créé le</th>
-                                            <th>Effectif</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="item in itemsSelected" :key="item.id">
-                                            <td>{{ item.ref }}</td>
-                                            <td>{{ item.unit?.short_name }}</td>
-                                            <td>{{ item.category }}</td>
-                                            <td>{{ formatDate(item.created_at) }}</td>
-                                            <td>{{ item.effective }}</td>
-                                        </tr>
-
-                                        <tr >
-                                            
-                                        </tr>
-
-                                    </tbody>
-                                </v-table>
-                            </v-col>
-                        </v-row>
-                    </v-container>
-                </v-card-text>
-
-                <v-card-actions class="pa-4">
-                    <v-btn color="primary" @click="printPreviewDialog = false">Fermer</v-btn>
-                    <v-btn color="secondary" @click="printSelectedItems">Imprimer</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog> -->
-
         <!-- Snackbar pour les notifications -->
         <v-snackbar v-model="notif.snackbar.value" :color="notif.snackbarColor.value" :timeout="3000" location="top">
             {{ notif.snackbarMessage }}
@@ -1862,17 +1561,7 @@
         <v-overlay :model-value="isLoading" class="align-center justify-center">
             <v-progress-circular color="primary" indeterminate size="64"></v-progress-circular>
         </v-overlay>
-
-        <!-- Error Alert -->
-        <!-- <v-alert
-            v-if="error"
-            type="error"
-            closable
-            class="mb-4"
-            @click:close="error = null"
-        >
-            {{ error }}
-        </v-alert> -->
+       
     </template>
 
     <style scoped>
