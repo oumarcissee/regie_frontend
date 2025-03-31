@@ -1,8 +1,4 @@
-import type jsPDF from "jspdf";
-import { getcurrentMoment, currentMoment, convertNumberToWords } from '@/services/utils';
-import { useSettingStore } from '@/stores/rutStore/settings/settingStore';
-
-const { getSignators, fetchSignators } = useSettingStore();
+import { convertNumberToWords } from '@/services/utils';
 
 const signature = (doc: any, signators: any[], montant: number, amount :string, style: any) => {
     // Default Y position if autoTable information is not available

@@ -2,9 +2,9 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import autoTable, { type UserOptions, type Color, type CellDef } from 'jspdf-autotable';
 import { get_full_unite } from '@/services/utils';
-import headerPortrait from './includes/headerPortrait';
-import footerPortrait from './includes/footerPortrait';
-import signature from './includes/signature';
+import headerPortrait from '../includes/headerPortrait';
+import footerPortrait from '../includes/footerPortrait';
+import signature from '../includes/signature';
 
 // Types
 interface OrderItem {
@@ -51,11 +51,11 @@ const STYLES = {
     table: {
         width: 7.67,
         columnWidths: {
-            no: 0.05,        // 5%
-            image: 0.12,     // 12%
-            article: 0.17,   // 17%
-            quantity: 0.12,  // 12%
-            unite: 0.13,     // 13%
+            no: 0.05, // 5%
+            image: 0.12, // 12%
+            article: 0.17, // 17%
+            quantity: 0.12, // 12%
+            unite: 0.13, // 13%
             unitPrice: 0.18, // 18%
             totalPrice: 0.22 // 20% (augmenté pour accommoder les grands nombres)
         }
@@ -73,7 +73,6 @@ const ICONS = {
 
 const toColor = (color: readonly [number, number, number]): Color => color as Color;
 
-
 /*  
     Génère un PDF contenant les détails d'une commande
     @param title: Titre du document
@@ -82,7 +81,7 @@ const toColor = (color: readonly [number, number, number]): Color => color as Co
     @param signators: Signataires de la commande
     @param currentDate: Date actuelle
 */
-const orderFormPdf = async (title: string, heading: string, data: any[], signators: any[], currentDate: string) => {
+const menusState = async (title: string, heading: string, data: any[], signators: any[], currentDate: string) => {
     const doc = new jsPDF({
         unit: 'in',
         format: 'a4'
@@ -98,7 +97,7 @@ const orderFormPdf = async (title: string, heading: string, data: any[], signato
         drawClientInfoBox(doc, item, yCoord);
         yCoord += 1.5;
         drawOrderDetails(doc, item, yCoord);
-        signature(doc, signators, orderTotal,formatPrice(orderTotal),  STYLES.spacing.margin);
+        signature(doc, signators, orderTotal, formatPrice(orderTotal), STYLES.spacing.margin);
         footerPortrait(doc, data, index + 1, data.length);
     });
 
@@ -110,16 +109,8 @@ const orderFormPdf = async (title: string, heading: string, data: any[], signato
 const drawClientInfoBox = (doc: jsPDF, item: OrderData, startY: number) => {
     const accent = STYLES.colors.accent;
     doc.setFillColor(accent[0], accent[1], accent[2]);
-    
-    doc.roundedRect(
-        STYLES.spacing.margin,
-        startY - 0.2,
-        STYLES.table.width,
-        1.3,
-        0.1,
-        0.1,
-        'F'
-    );
+
+    doc.roundedRect(STYLES.spacing.margin, startY - 0.2, STYLES.table.width, 1.3, 0.1, 0.1, 'F');
 
     const primary = STYLES.colors.primary;
     doc.setFontSize(STYLES.fonts.subHeader.size);
@@ -134,12 +125,8 @@ const drawClientInfoBox = (doc: jsPDF, item: OrderData, startY: number) => {
     ];
 
     let y = startY;
-    clientInfo.forEach(info => {
-        doc.text(
-            `${info.icon} ${info.label}: ${info.value}`,
-            STYLES.spacing.margin + 0.2,
-            y
-        );
+    clientInfo.forEach((info) => {
+        doc.text(`${info.icon} ${info.label}: ${info.value}`, STYLES.spacing.margin + 0.2, y);
         y += STYLES.spacing.lineHeight;
     });
 };
@@ -148,9 +135,10 @@ const formatPrice = (price: number): string => {
     try {
         // Convertir le nombre en entier pour éviter les décimales
         const priceInt = Math.round(price);
-        
+
         // Formatter le nombre avec des espaces comme séparateurs de milliers
-        const formattedNumber = priceInt.toString()
+        const formattedNumber = priceInt
+            .toString()
             .split('')
             .reverse()
             .reduce((acc, digit, i) => {
@@ -172,8 +160,6 @@ const truncateText = (text: string, maxLength: number): string => {
     return text.substring(0, maxLength - 3) + '...';
 };
 
-
-
 const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
     const secondary = STYLES.colors.secondary;
     doc.setFontSize(STYLES.fonts.section.size);
@@ -182,18 +168,16 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
 
     const totalWidth = STYLES.table.width;
     const columnWidths = {
-        no: totalWidth * 0.05,        // 5%
-        image: totalWidth * 0.12,     // 12%
-        article: totalWidth * 0.23,    // 23%
-        quantity: totalWidth * 0.12,   // 12%
-        unite: totalWidth * 0.13,     // 13%
-        unitPrice: totalWidth * 0.17,  // 17%
-        totalPrice: totalWidth * 0.18  // 18%
+        no: totalWidth * 0.05, // 5%
+        image: totalWidth * 0.12, // 12%
+        article: totalWidth * 0.23, // 23%
+        quantity: totalWidth * 0.12, // 12%
+        unite: totalWidth * 0.13, // 13%
+        unitPrice: totalWidth * 0.17, // 17%
+        totalPrice: totalWidth * 0.18 // 18%
     };
 
-    orderTotal = item.orders.reduce((sum, order) =>
-        sum + (order.quantity * order.item.price), 0
-    );
+    orderTotal = item.orders.reduce((sum, order) => sum + order.quantity * order.item.price, 0);
 
     // Calculer la largeur approximative en caractères pour chaque colonne
     const charWidthEstimate = STYLES.fonts.normal.size / 3.5; // Estimation approximative
@@ -220,19 +204,22 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
                 ];
                 return row;
             }),
-            [{
-                content: 'Montant total',
-                colSpan: 6,
-                styles: {
-                    fontStyle: 'bold',
-                    halign: 'right'
+            [
+                {
+                    content: 'Montant total',
+                    colSpan: 6,
+                    styles: {
+                        fontStyle: 'bold',
+                        halign: 'right'
+                    }
+                },
+                {
+                    content: formatPrice(orderTotal),
+                    styles: {
+                        fontStyle: 'bold'
+                    }
                 }
-            }, {
-                content: formatPrice(orderTotal),
-                styles: {
-                    fontStyle: 'bold'
-                }
-            }]
+            ]
         ],
         styles: {
             fontSize: STYLES.fonts.normal.size,
@@ -254,24 +241,24 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
         columnStyles: {
             0: { halign: 'center', cellWidth: STYLES.table.columnWidths.no * STYLES.table.width },
             1: { cellWidth: STYLES.table.columnWidths.image * STYLES.table.width },
-            2: { 
+            2: {
                 halign: 'left',
                 cellWidth: STYLES.table.columnWidths.article * STYLES.table.width,
                 overflow: 'ellipsize' // Corrigé ici aussi
             },
-            3: { 
+            3: {
                 halign: 'center',
                 cellWidth: STYLES.table.columnWidths.quantity * STYLES.table.width
             },
-            4: { 
+            4: {
                 halign: 'center',
                 cellWidth: STYLES.table.columnWidths.unite * STYLES.table.width
             },
-            5: { 
+            5: {
                 halign: 'right',
                 cellWidth: STYLES.table.columnWidths.unitPrice * STYLES.table.width
             },
-            6: { 
+            6: {
                 halign: 'right',
                 cellWidth: STYLES.table.columnWidths.totalPrice * STYLES.table.width
             }
@@ -287,7 +274,6 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
     };
 
     autoTable(doc, tableConfig);
-
 };
 
 const handleImageCell = (doc: jsPDF, data: any, item: OrderData) => {
@@ -308,19 +294,12 @@ const handleImageCell = (doc: jsPDF, data: any, item: OrderData) => {
             };
 
             try {
-                doc.addImage(
-                    imgData,
-                    'PNG',
-                    position.x,
-                    position.y,
-                    dimensions.width,
-                    dimensions.height
-                );
+                doc.addImage(imgData, 'PNG', position.x, position.y, dimensions.width, dimensions.height);
             } catch (error) {
-                console.warn('Erreur de chargement de l\'image:', error);
+                console.warn("Erreur de chargement de l'image:", error);
             }
         }
     }
 };
 
-export { orderFormPdf };
+export { menusState };

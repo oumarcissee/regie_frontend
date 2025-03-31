@@ -1,7 +1,8 @@
     <script setup lang="ts">
-    import { ref, computed, onMounted, onUnmounted, watch, watchEffect, toRaw } from 'vue';
+    import { ref, computed, onMounted, onUnmounted, watch, watchEffect } from 'vue';
     import { useDischargeStore } from '@/stores/rutStore/discharge/dischargeStore';
     import { useUnitStore } from '@/stores/rutStore/unit/unitStore';
+    import {  currentMoment, loadCurrentMoment } from '@/services/utilsMoment';
     import {
         truncateText,
         notif,
@@ -14,9 +15,20 @@
     import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBoxUnites.vue';
     import CustomComBoxSpend from '@/components/forms/form-elements/autocomplete/CustomComBoxSpend.vue'; //
     import CustomComBoxSubArea from '@/components/forms/form-elements/autocomplete/CustomComBoxSubArea.vue'; //
+    
+    import { slipsOfMenus } from '@/utils/helpers/pdfForms/prints/slipsOfMenus';
 
     import 'v-calendar/dist/style.css';
     import UiChildCard from '@/components/shared/UiChildCard.vue';
+
+    import { useField, useForm } from 'vee-validate';
+
+    import type { Item } from 'vue3-easy-data-table';
+    import { EyeIcon } from 'lucide-vue-next';
+
+    import { useSettingStore } from '@/stores/rutStore/settings/settingStore';
+
+    const { fetchSignators, getSignators } = useSettingStore();     
 
     const themeColor = ref('rgb(var(--v-theme-secondary))');
     const itemsSelected = ref<Item[]>([]);
@@ -27,7 +39,6 @@
     const myIndex = ref(null);
 
     const searchValue = ref('');
-    import { EyeIcon } from 'lucide-vue-next';
 
     // Add these new refs
     const viewDialog = ref(false);
@@ -35,10 +46,6 @@
 
     const isLoading = ref(false);
     const error = ref<string | null>(null);
-
-    import { useField, useForm } from 'vee-validate';
-
-    import type { Item } from 'vue3-easy-data-table';
 
     const { addOrUpdateDischarge, errors, getTotalWeight, fetchAllDischLines } = useDischargeStore();
     const store = useDischargeStore();
@@ -305,8 +312,51 @@
     const currentArea = ref(null);
     const menusData = ref();
     const otherDepenses = ref();
+    
 
-    const onSpendChange = async (value: any) => {
+    const doSlipPdfFull = async () => {
+        try {
+            const allItems: any[] = [];
+            // console.log(itemsSelected.value)
+            itemsSelected.value.forEach(async (item: any) => {
+                
+                const menusArrays = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
+                menusData.value = await repartirBudgetAvecTauxPrecis(menusArrays, item.effective);
+                await store.fetchProducts(item.effective, item.items);
+    
+                addedSpends.value =  item.spends.map((spend: any) => ({
+                        ...spend,
+                        amount: typeof spend.amount === 'string' 
+                            ? parseFloat(spend.amount.replace(/\s/g, '').replace(/\./g, '')) 
+                            : spend.amount
+                }))
+                
+                // Garder les produits dans le store
+                // store.products = [...store.products];
+
+                allItems.push({
+                    ...item,
+                    items: [...store.products],
+                    spends: addedSpends.value,
+                    menus: menusData.value
+
+                });
+
+            });
+
+            const signators = await fetchSignators();
+
+            console.table(allItems);
+            // return;
+            await slipsOfMenus("BORDEREAU D'ENVOI",allItems, signators, currentMoment.value )
+
+
+        } catch (error) {
+            
+        }
+    };
+
+       const onSpendChange = async (value: any) => {
         if (!value) {
             selectedUniteDetails.value = null;
             return;
@@ -1511,7 +1561,7 @@
                     <v-card-actions class="pa-4">
                         <v-spacer></v-spacer>
                         <v-btn color="primary" @click="closeViewDialog">Fermer</v-btn>
-                        <v-btn color="secondary" @click="" prepend-icon="mdi-printer">
+                        <v-btn color="secondary" @click="doSlipPdfFull" prepend-icon="mdi-printer">
                             Imprimer
                         </v-btn>
                     </v-card-actions>
