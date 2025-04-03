@@ -150,7 +150,7 @@ export const useOrderStore = defineStore({
                             
                     //     }
                     // });
-                useAuthStore().getUniqueMonth();
+                    useAuthStore().getUniqueMonth();
 
                     Swal.fire({
                         position: "center",

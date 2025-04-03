@@ -281,8 +281,6 @@ export const useDischargeStore = defineStore({
             }
         },
 
-     
-       
         //Ajout d'un élement
         async addOrUpdateDischarge(data: any, param?: any) {
             try {
@@ -340,8 +338,6 @@ export const useDischargeStore = defineStore({
                     this.$reset();
                     await this.fetchDischarge();
                 } else {
-
-                   
                     //Ajout d'un bordereau
                     const resDischarge = await new ApiAxios().add(`/${this.url.discharge}/`,{
                         unit: data.unit,
@@ -352,6 +348,7 @@ export const useDischargeStore = defineStore({
                         recap: data.slip.recap,
                         //  type_of_discharge: data.slip.type_of_discharge
                     });
+
                     //Changement de l'état de l'unité
                     new ApiAxios().updatePartialForm(`/${this.url.unit}/${data.unit}/`,{ is_created:  true});
                     //Ajoute des lignes des bordereaux
@@ -376,19 +373,18 @@ export const useDischargeStore = defineStore({
                    // Après l'ajout d'archive
                     await new ApiAxios().add('/archives/', { discharge: resDischarge.data.id, effective: data.slip.effective });
 
-                    // Rechargez complètement les archives du authStore
-                    const authStore = useAuthStore();
-                    await authStore.getUniqueMonth();
+                    useAuthStore().getUniqueMonth();
 
-                    // Puis continuez
+                    //Récuperation des commandes
+                    this.fetchDischarge();
+
+                    //Réinitialisation du formulaire
                     this.$reset();
-                    await this.fetchDischarge();
                 }
                 return true;
             } catch (error: any) {
                 // Vérification du type d'erreur
                 console.log(error)
-             
                 showNotification("Y'a une erreur serveur.", 'error');
             
             }

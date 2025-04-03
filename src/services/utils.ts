@@ -46,20 +46,49 @@ const signatorPosition = (chaine: string): string => {
  * @returns
  */
 
-const truncateText = (text: string | any, limit: number) => {
-  if (text.length > limit) {
-    let truncated = text.slice(0, limit);
-    // Trouver l'index du dernier espace dans la partie tronquée du texte
-    const lastSpaceIndex = truncated.lastIndexOf(' ');
-    if (lastSpaceIndex !== -1) {
-      // Tronquer jusqu'au dernier espace pour ne pas couper un mot
-      truncated = truncated.slice(0, lastSpaceIndex);
-    }
-    return truncated + '...'; // Ajouter les points de suspension à la fin
-  }
-  return text;
+// const truncateText = (text: string | any, limit: number) => {
+//   if (text.length > limit) {
+//     let truncated = text.slice(0, limit);
+//     // Trouver l'index du dernier espace dans la partie tronquée du texte
+//     const lastSpaceIndex = truncated.lastIndexOf(' ');
+//     if (lastSpaceIndex !== -1) {
+//       // Tronquer jusqu'au dernier espace pour ne pas couper un mot
+//       truncated = truncated.slice(0, lastSpaceIndex);
+//     }
+//     return truncated + '...'; // Ajouter les points de suspension à la fin
+//   }
+//   return text;
+// };
+
+const truncateText = (text: string, maxLength: number): string => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength - 3) + '...';
 };
 
+const numberToWords = (num: number): string => {
+    // Cette fonction pourrait être beaucoup plus complexe pour couvrir tous les cas
+    // Ici c'est une version simplifiée
+    const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+    const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+    const tens = ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
+
+    if (num === 0) return 'zéro';
+
+    // Formater le nombre avec des espaces comme séparateurs
+    const formattedNumber = num
+        .toString()
+        .split('')
+        .reverse()
+        .reduce((acc, digit, i) => {
+            if (i > 0 && i % 3 === 0) {
+                return digit + ' ' + acc;
+            }
+            return digit + acc;
+        }, '');
+
+    // Pour cet exemple, on renvoie simplement le nombre formaté
+    return formattedNumber;
+};
 
 const formatSlug = (chaine: string) => {
     // Convertir en minuscules

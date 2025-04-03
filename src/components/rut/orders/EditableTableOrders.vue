@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, provide } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { truncateText, get_full_unite, formatDate, showNotification } from '@/services/utils';
-import {  currentMoment, loadCurrentMoment } from '@/services/utilsMoment';
+import { currentMoment, loadCurrentMoment } from '@/services/utilsMoment';
 import { orderFormPdf } from '@/utils/helpers/pdfForms/orderFormPdf';
 import { purchaseOrderFormPdf } from '@/utils/helpers/pdfForms/purcharseOrderFormPdf';
 import { useField, useForm } from 'vee-validate';

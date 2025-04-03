@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import autoTable, { type UserOptions, type Color, type CellDef } from 'jspdf-autotable';
-import { get_full_unite } from '@/services/utils';
+import { truncateText } from '@/services/utils';
 import headerPortrait from '../includes/headerPortrait';
 import footerPortrait from '../includes/footerPortrait';
 import signature from '../includes/signature';
@@ -25,6 +25,15 @@ interface OrderData {
     modified_at: string;
     address: string;
     orders: OrderItem[];
+}
+
+// Extension de jsPDF pour inclure la propriété lastAutoTable
+declare module 'jspdf' {
+    interface jsPDF {
+        lastAutoTable?: {
+            finalY: number;
+        };
+    }
 }
 
 type FontStyle = 'normal' | 'bold' | 'italic' | 'bolditalic';
@@ -61,14 +70,15 @@ const STYLES = {
         }
     }
 };
-let orderTotal: any;
+let itemsTotal: any;
 
 const ICONS = {
     REF: '•',
     CLIENT: '•',
     CONTACT: '•',
     ADDRESS: '•',
-    PACKAGE: '•'
+    PACKAGE: '•',
+    EXPENSE: '•'
 } as const;
 
 const toColor = (color: readonly [number, number, number]): Color => color as Color;
@@ -87,26 +97,38 @@ const slipsOfMenus = async (title: string, data: any[], signators: any[], curren
         format: 'a4'
     });
 
-    data.forEach((item: OrderData, index: number) => {
+    // Dans slipsOfMenus()
+    data.forEach((item: any, index: number) => {
         if (index > 0) {
             doc.addPage();
         }
 
-        headerPortrait(doc, title, currentDate);
-        let yCoord = 2.5;
+        headerPortrait(doc, title, currentDate, item.unit.name);
+
+        // Position initiale après l'en-tête avec plus d'espace
+        let yCoord = 2.8; // Augmenté de 2.5 à 2.8
+
         drawClientInfoBox(doc, item, yCoord);
-        yCoord += 1.5;
-        drawOrderDetails(doc, item, yCoord);
-        signature(doc, signators, 0, formatPrice(orderTotal), STYLES.spacing.margin);
+        yCoord += 1.2; // Augmenté de 1 à 1.2
+
+        // Dessiner les détails de commande avec espacement accru
+        yCoord = drawOrderDetails(doc, item, yCoord + 0.5) ; // Ajout de 0.5 d'espace
+
+        // Dessiner les tableaux de dépenses avec position calculée
+        const finalTableY = drawExpensesTables(doc, item, yCoord);
+
+        // Positionner la signature avec espace suffisant
+        signature(doc, signators, itemsTotal, formatPrice(itemsTotal), finalTableY + 0.8); // Ajout de 0.8 d'espace
+
         footerPortrait(doc, data, index + 1, data.length);
+        const blob = doc.output('blob');
+        const url = URL.createObjectURL(blob);
+        window.open(url);
     });
 
-    const blob = doc.output('blob');
-    const url = URL.createObjectURL(blob);
-    window.open(url);
 };
 
-const drawClientInfoBox = (doc: jsPDF, item: OrderData, startY: number) => {
+const drawClientInfoBox = (doc: jsPDF, item: any, startY: number) => {
     const accent = STYLES.colors.accent;
     doc.setFillColor(accent[0], accent[1], accent[2]);
 
@@ -118,10 +140,10 @@ const drawClientInfoBox = (doc: jsPDF, item: OrderData, startY: number) => {
     doc.setFont('helvetica', STYLES.fonts.subHeader.style);
 
     const clientInfo = [
-        { icon: ICONS.REF, label: 'Référence', value: item.ref },
-        { icon: ICONS.CLIENT, label: 'Client', value: item.last_name },
-        { icon: ICONS.CONTACT, label: 'Contact', value: item.contact },
-        { icon: ICONS.ADDRESS, label: 'Adresse', value: item.address }
+        // { icon: ICONS.REF, label: 'Référence', value: item.ref },
+        { icon: ICONS.CLIENT, label: 'Destinateur', value: "Monsieur le commandant de l'unité" },
+        { icon: ICONS.CONTACT, label: 'Contact', value: 35335533 },
+        { icon: ICONS.ADDRESS, label: 'Adresse', value: 'Quartier yimbaya' }
     ];
 
     let y = startY;
@@ -155,16 +177,11 @@ const formatPrice = (price: number): string => {
     }
 };
 
-const truncateText = (text: string, maxLength: number): string => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength - 3) + '...';
-};
-
-const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
+const drawOrderDetails = (doc: jsPDF, item: any, startY: number) => {
     const secondary = STYLES.colors.secondary;
     doc.setFontSize(STYLES.fonts.section.size);
     doc.setTextColor(secondary[0], secondary[1], secondary[2]);
-    doc.text(`${ICONS.PACKAGE} Détails de la commande:`, STYLES.spacing.margin, startY);
+    doc.text(`${ICONS.PACKAGE} Denrées :`, STYLES.spacing.margin, startY);
 
     const totalWidth = STYLES.table.width;
     const columnWidths = {
@@ -176,7 +193,10 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
         obs: totalWidth * 0.1 // 28%
     };
 
-    orderTotal = item.orders.reduce((sum, order) => sum + order.quantity * order.item.price, 0);
+    //calcul des montants
+    const spendsTotal = item.spends ? item.spends.reduce((total: number, spend: any) => total + spend.amount, 0) : 0;
+    const menusTotal = item.menus?.budgetTotal || 0;
+    itemsTotal = spendsTotal + menusTotal;
 
     // Calculer la largeur approximative en caractères pour chaque colonne
     const charWidthEstimate = STYLES.fonts.normal.size / 3.5; // Estimation approximative
@@ -187,16 +207,16 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
         margin: { left: STYLES.spacing.margin },
         head: [['N°', 'Image', 'Article', 'Quantité', 'Unité', 'Obs']],
         body: [
-            ...item.orders.map((order, i) => {
+            ...item.items.map((product: { item: { name: string; quantite: number }; unite: string }, i: number) => {
                 const row: CellDef[] = [
                     { content: (i + 1).toString() },
                     { content: '', styles: { minCellHeight: 0.4 } },
                     {
-                        content: truncateText(order.item.name, maxCharsInArticle),
-                        title: order.item.name
+                        content: truncateText(product.item.name, maxCharsInArticle),
+                        title: product.item.name
                     },
-                    { content: order.quantity.toString() },
-                    { content: get_full_unite(order.item.unite) },
+                    { content: product.item.quantite },
+                    { content: product.unite },
                     { content: '' } // Colonne pour les observations
                 ];
                 return row;
@@ -251,12 +271,154 @@ const drawOrderDetails = (doc: jsPDF, item: OrderData, startY: number) => {
     };
 
     autoTable(doc, tableConfig);
+
+    // Retourner la position Y finale
+    return doc.lastAutoTable?.finalY || startY + 2;
 };
 
-const handleImageCell = (doc: jsPDF, data: any, item: OrderData) => {
-    if (data.column.index === 1 && data.cell.section === 'body' && data.row.index < item.orders.length) {
-        const order = item.orders[data.row.index];
-        const imgData = order.item.image;
+// Nouvelle fonction pour dessiner les tableaux de dépenses
+const drawExpensesTables = (doc: jsPDF, item: any, startY: number) => {
+    // Titre de la section dépenses avec espacement réduit
+    const secondary = STYLES.colors.secondary;
+    doc.setFontSize(STYLES.fonts.section.size);
+    doc.setTextColor(secondary[0], secondary[1], secondary[2]);
+    doc.text(`${ICONS.EXPENSE} Dépenses :`, STYLES.spacing.margin, startY);
+
+    // Données pour la table de dépenses
+    const expensesData = item.spends || [
+        { name: 'Viande et poisson', amount: 4851000 },
+        { name: 'Pain (TN)', amount: 792000 },
+        { name: 'Menus-Dépenses (TN)', amount: 660000 }
+    ];
+
+    // Largeur totale disponible
+    const totalWidth = STYLES.table.width;
+
+    // Largeur pour la première table (dépenses)
+    const expensesTableWidth = totalWidth * 0.45;
+
+    // Première table (dépenses) - Hauteur fortement réduite
+    const expensesTableConfig: UserOptions = {
+        startY: startY + 0.15, // Espacement avant tableau réduit
+        margin: { left: STYLES.spacing.margin },
+        tableWidth: expensesTableWidth,
+        head: [['N/O', 'Dépenses', 'Montant']],
+        body: expensesData.map((expense: any, i: number) => [i + 1, expense.name, formatPrice(expense.amount)]),
+        styles: {
+            fontSize: STYLES.fonts.normal.size - 0.5, // Police légèrement réduite
+            cellPadding: 0.03, // Padding très minimal
+            lineColor: [0, 0, 0],
+            lineWidth: 0.01,
+            minCellHeight: 0.2 // Hauteur de cellule minimale
+        },
+        headStyles: {
+            fillColor: toColor(STYLES.colors.secondary),
+            textColor: toColor(STYLES.colors.white),
+            fontSize: STYLES.fonts.subHeader.size - 0.5, // En-tête plus petit
+            fontStyle: 'bold',
+            halign: 'center',
+            minCellHeight: 0.25 // Hauteur d'en-tête réduite
+        },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: expensesTableWidth * 0.15 },
+            1: { halign: 'left', cellWidth: expensesTableWidth * 0.5 },
+            2: { halign: 'right', cellWidth: expensesTableWidth * 0.35 }
+        }
+    };
+
+    autoTable(doc, expensesTableConfig);
+
+    // Largeur pour la deuxième table (carburant)
+    const fuelTableWidth = totalWidth * 0.35;
+
+    // Décalage pour la deuxième table
+    const fuelTableX = STYLES.spacing.margin + expensesTableWidth + 0.4;
+
+    // Deuxième table (carburant) - Hauteur fortement réduite
+    const fuelTableConfig: UserOptions = {
+        startY: startY + 0.15, // Alignement avec la première table
+        margin: { left: fuelTableX },
+        tableWidth: fuelTableWidth,
+        head: [['Carburant']],
+        body: [['6 600 000']],
+        styles: {
+            fontSize: STYLES.fonts.normal.size - 0.5, // Police légèrement réduite
+            cellPadding: 0.03, // Padding très minimal
+            lineColor: [0, 0, 0],
+            lineWidth: 0.01,
+            minCellHeight: 0.2 // Hauteur de cellule minimale
+        },
+        headStyles: {
+            fillColor: toColor(STYLES.colors.secondary),
+            textColor: toColor(STYLES.colors.white),
+            fontSize: STYLES.fonts.subHeader.size - 0.5, // En-tête plus petit
+            fontStyle: 'bold',
+            halign: 'center',
+            minCellHeight: 0.25 // Hauteur d'en-tête réduite
+        },
+        bodyStyles: {
+            halign: 'center'
+        }
+    };
+
+    autoTable(doc, fuelTableConfig);
+
+    // Calcul du total des dépenses
+    const totalExpenses = expensesData.reduce((total: number, expense: any) => total + expense.amount, 0);
+    const fuelExpense = 6600000; // Montant pour le carburant
+    const grandTotal = totalExpenses + fuelExpense;
+
+    // Vérifie la position finale des tableaux et ajuste la position du texte
+    const finalY = Math.max(
+        doc.lastAutoTable?.finalY || startY + 0.6,
+        startY + 0.6 // Minimum pour assurer un espacement
+    );
+
+    // Texte du montant total en toutes lettres - position optimisée
+    doc.setFontSize(STYLES.fonts.normal.size - 0.5); // Police légèrement réduite
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+
+    // // Ajout du montant total à la position optimisée pour éviter les chevauchements
+    // const amountInWords = `Soit un Montant Total de: ${numberToWords(grandTotal)} Francs Guinéens`;
+    // doc.text(amountInWords, STYLES.spacing.margin, finalY + 0.15);
+
+    // itemsTotal = grandTotal; // Mettre à jour le total global
+
+    // Retourner la position Y finale pour que la fonction appelante puisse positionner la signature
+    return finalY + 0.4; // Position Y suggérée pour commencer la signature
+};
+
+// Fonction simple pour convertir un nombre en toutes lettres (à améliorer selon besoins)
+const numberToWords = (num: number): string => {
+    // Cette fonction pourrait être beaucoup plus complexe pour couvrir tous les cas
+    // Ici c'est une version simplifiée
+    const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+    const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+    const tens = ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante-dix', 'quatre-vingt', 'quatre-vingt-dix'];
+
+    if (num === 0) return 'zéro';
+
+    // Formater le nombre avec des espaces comme séparateurs
+    const formattedNumber = num
+        .toString()
+        .split('')
+        .reverse()
+        .reduce((acc, digit, i) => {
+            if (i > 0 && i % 3 === 0) {
+                return digit + ' ' + acc;
+            }
+            return digit + acc;
+        }, '');
+
+    // Pour cet exemple, on renvoie simplement le nombre formaté
+    return formattedNumber;
+};
+
+const handleImageCell = (doc: jsPDF, data: any, item: any) => {
+    if (data.column.index === 1 && data.cell.section === 'body' && data.row.index < item.items.length) {
+        const product = item.items[data.row.index];
+        const imgData = product.item.image;
 
         if (imgData) {
             const padding = 0.05;

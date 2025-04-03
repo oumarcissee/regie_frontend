@@ -11,12 +11,14 @@
         formatGuineanFrancs,
         slipCategory
     } from '@/services/utils';
+
+    import {generatePDF} from '@/utils/helpers/pdfForms/prints/defaut';
     import { get_quantity, repartirBudgetAvecTauxPrecis } from '@/services/utilsMoment';
     import CustomComBox from '@/components/forms/form-elements/autocomplete/CustomComBoxUnites.vue';
     import CustomComBoxSpend from '@/components/forms/form-elements/autocomplete/CustomComBoxSpend.vue'; //
     import CustomComBoxSubArea from '@/components/forms/form-elements/autocomplete/CustomComBoxSubArea.vue'; //
     
-    import { slipsOfMenus } from '@/utils/helpers/pdfForms/prints/slipsOfMenus';
+    import {  slipsOfMenus} from '@/utils/helpers/pdfForms/prints/slipsOfMenus';
 
     import 'v-calendar/dist/style.css';
     import UiChildCard from '@/components/shared/UiChildCard.vue';
@@ -95,8 +97,12 @@
     // Add type filter
     const typeFilter = ref('current'); //
 
+    // const getSlipPerDate = computed(() => {
+    //     return store.boredereaux.filter((item: any) => formatDate(item.created_at, 'chaine').includes(currentMoment.value));
+    // });
+
     const filteredSlips = computed(() => {
-        let slips = store.boredereaux;
+        let slips = store.boredereaux.filter((item: any) => formatDate(item.created_at, 'chaine').includes(currentMoment.value));
 
         // Vérifier si slips est défini
         if (!slips) return [];
@@ -224,6 +230,7 @@
         }
     };
 
+
     const uniteSelected = ref();
     const productSelected = ref([]);
 
@@ -231,7 +238,6 @@
     const dialog = ref(false);
 
     const editedIndex = ref(-1);
-
     //Methods
 
     // Ajouter une fonction de nettoyage
@@ -312,9 +318,10 @@
     const currentArea = ref(null);
     const menusData = ref();
     const otherDepenses = ref();
-    
+    const isSubmittingPdf = ref(false);
 
     const doSlipPdfFull = async () => {
+        isSubmittingPdf.value = true;
         try {
             const allItems: any[] = [];
             // console.log(itemsSelected.value)
@@ -323,7 +330,7 @@
                 const menusArrays = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
                 menusData.value = await repartirBudgetAvecTauxPrecis(menusArrays, item.effective);
                 await store.fetchProducts(item.effective, item.items);
-    
+
                 addedSpends.value =  item.spends.map((spend: any) => ({
                         ...spend,
                         amount: typeof spend.amount === 'string' 
@@ -332,14 +339,13 @@
                 }))
                 
                 // Garder les produits dans le store
-                // store.products = [...store.products];
+                store.products = [...store.products];
 
                 allItems.push({
                     ...item,
                     items: [...store.products],
                     spends: addedSpends.value,
                     menus: menusData.value
-
                 });
 
             });
@@ -347,12 +353,17 @@
             const signators = await fetchSignators();
 
             console.table(allItems);
+        
             // return;
-            await slipsOfMenus("BORDEREAU D'ENVOI",allItems, signators, currentMoment.value )
+            generatePDF();
+            // await slipsOfMenus("BORDEREAU D'ENVOI",allItems, signators, currentMoment.value)
 
 
         } catch (error) {
-            
+            console.error('Error generating PDF:', error);
+        } finally {
+            isSubmittingPdf.value = false;
+            closeViewDialog()
         }
     };
 
@@ -620,7 +631,6 @@
         // Vous pouvez utiliser une bibliothèque comme `window.print()` ou une API d'impression personnalisée ici
     };
 
-
     // Modifier la fonction editItem pour qu'elle fonctionne correctement
     const editRecord = async (item: any) => {
         try {
@@ -694,7 +704,9 @@
                 menus: menusData.value
             };
 
+            // console.log(selectedUnited.value);
             viewDialog.value = true;
+            // return selectedUnited;
         } catch (error) {
             console.error('Erreur lors de la récupération des détails:', error);
             showNotification('Erreur lors du chargement des détails', 'error');
@@ -1561,7 +1573,7 @@
                     <v-card-actions class="pa-4">
                         <v-spacer></v-spacer>
                         <v-btn color="primary" @click="closeViewDialog">Fermer</v-btn>
-                        <v-btn color="secondary" @click="doSlipPdfFull" prepend-icon="mdi-printer">
+                        <v-btn color="secondary" @click="doSlipPdfFull"  :loading="isSubmittingPdf" prepend-icon="mdi-printer">
                             Imprimer
                         </v-btn>
                     </v-card-actions>

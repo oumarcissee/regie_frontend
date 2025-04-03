@@ -39,16 +39,14 @@ const signature = (doc: any, signators: any[], montant: number, amount :string, 
     doc.setFontSize(12);
 
     // Format the amount text
-    const amountText = `Arrête ce montant à la somme de : ${convertNumberToWords(montant)} (${amount})`;
+    const amountText = `Soit un Montant Total de: ${convertNumberToWords(montant)} (${amount})`;
     const wrappedLines = wrapText(amountText, textWidth);
 
-    if (montant) {
-        
-        // Draw each line of the wrapped text centered
-        wrappedLines.forEach((line, index) => {
-            doc.text(line, centerX, finalY + (index * 0.2), { align: 'center' });
-        });
-    }
+    // if (montant) {
+    //     wrappedLines.forEach((line, index) => {
+    //         doc.text(line, centerX, finalY + index * 0.25, { align: 'center' }); // Changé de 0.2 à 0.25
+    //     });
+    // }
 
     // Restore original font size
     doc.setFontSize(currentFontSize);
