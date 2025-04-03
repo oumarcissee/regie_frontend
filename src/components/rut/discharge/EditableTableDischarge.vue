@@ -339,7 +339,7 @@
                 }))
                 
                 // Garder les produits dans le store
-                store.products = [...store.products];
+                // store.products = [...store.products];
 
                 allItems.push({
                     ...item,

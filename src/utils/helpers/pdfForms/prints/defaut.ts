@@ -198,14 +198,16 @@ const createItemsTable = (doc: jsPDF, items: any[]) => {
         margin: { left: marginLeft },
         tableWidth: tableWidth,
         head: [['N°', 'Image', 'Article', ' Quantité', 'Unité', 'Obs']],
-        body: items.map((item, index) => [
-            (index + 1).toString(),
-            { content: '', image: item.item.image }, // Format spécial pour les images
-            item.item.name,
-            item.item.quantite,
-            item.unite,
-            ''
-        ]),
+        body: [
+                ...items.map((item, index) => [
+                (index + 1).toString(),
+                { content: '', image: item.item.image }, // Format spécial pour les images
+                item.item.name,
+                item.item.quantite,
+                item.unite,
+                ''
+            ]),
+        ],
         styles: {
             fontSize: STYLES.table.fontSize,
             cellPadding: 0.1,
@@ -260,7 +262,7 @@ const createItemsTable = (doc: jsPDF, items: any[]) => {
 
 // Créer les tableaux des dépenses
 const createExpensesTables = (doc: jsPDF, spends: any[], fuelAmount: number = 0) => {
-    let startY = (doc.lastAutoTable?.finalY || 6) + 0.5;
+    let startY = (doc.lastAutoTable?.finalY) + 0.5;
 
     doc.setFontSize(STYLES.fonts.section.size);
     doc.setTextColor(...STYLES.colors.secondary);
@@ -415,8 +417,8 @@ export const generatePDF = async (data: any) => {
         // Passez directement dynamicData.items sans pré-traitement
         createItemsTable(doc, dynamicData.items);
 
-        const { finalY } = createExpensesTables(doc, dynamicData.spends);
-        createSignature(doc, finalY);
+        // const { finalY } = createExpensesTables(doc, dynamicData.spends);
+        // createSignature(doc, finalY);
         createFooter(doc);
     });
 
