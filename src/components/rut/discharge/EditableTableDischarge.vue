@@ -355,7 +355,7 @@
             console.table(allItems);
         
             // return;
-            generatePDF();
+            await generatePDF(allItems);
             // await slipsOfMenus("BORDEREAU D'ENVOI",allItems, signators, currentMoment.value)
 
 

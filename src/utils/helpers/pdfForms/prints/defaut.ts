@@ -146,9 +146,24 @@ const createHeader = (doc: jsPDF, title: string, unitName: string) => {
     doc.setTextColor(...STYLES.colors.primary);
     doc.text(title, pageWidth / 2, 1.75, { align: 'center' });
 
-    // Nom de l'unité
-    doc.setFontSize(STYLES.fonts.subHeader.size);
-    doc.text(unitName, pageWidth / 2, 2, { align: 'center' });
+    if (unitName) {
+        doc.setFontSize(STYLES.fonts.subHeader.size);
+        // doc.setTextColor(styles.subtitle.r, styles.subtitle.g, styles.subtitle.b);
+
+        // Calculate if text needs wrapping
+        const maxWidth = pageWidth - 2; // Leave margins on both sides
+        const nameWidth = doc.getTextWidth(unitName);
+
+        if (nameWidth > maxWidth) {
+            // Text needs wrapping
+            const splitText = doc.splitTextToSize(unitName, maxWidth);
+            doc.text(splitText, pageWidth / 2, 2, { align: 'center' });
+        } else {
+            // Text fits on one line
+            doc.text(unitName, pageWidth / 2, 2, { align: 'center' });
+        }
+    }
+
 };
 
 // Créer la section des informations client
@@ -160,7 +175,7 @@ const createClientInfo = (doc: jsPDF) => {
     doc.setTextColor(...STYLES.colors.primary);
     doc.setFont('helvetica', STYLES.fonts.subHeader.style);
 
-    let y = 2;
+    let y = 2.5;
     doc.text(`• Destinateur: Monsieur le commandant de l'unité`, STYLES.spacing.margin + 0.2, y);
     y += STYLES.spacing.lineHeight;
     doc.text(`• Contact: 35335533`, STYLES.spacing.margin + 0.2, y);
@@ -185,7 +200,7 @@ const createItemsTable = (doc: jsPDF, items: any[]) => {
         head: [['N°', 'Image', 'Article', ' Quantité', 'Unité', 'Obs']],
         body: items.map((item, index) => [
             (index + 1).toString(),
-            { content: '', image: item.image }, // Format spécial pour les images
+            { content: '', image: item.item.image }, // Format spécial pour les images
             item.item.name,
             item.item.quantite,
             item.unite,
@@ -244,7 +259,7 @@ const createItemsTable = (doc: jsPDF, items: any[]) => {
 
 
 // Créer les tableaux des dépenses
-const createExpensesTables = (doc: jsPDF, spends: any[], fuelAmount: number) => {
+const createExpensesTables = (doc: jsPDF, spends: any[], fuelAmount: number = 0) => {
     let startY = (doc.lastAutoTable?.finalY || 6) + 0.5;
 
     doc.setFontSize(STYLES.fonts.section.size);
@@ -284,33 +299,33 @@ const createExpensesTables = (doc: jsPDF, spends: any[], fuelAmount: number) => 
     autoTable(doc, expensesTableConfig);
 
     // Tableau du carburant
-    const fuelTableConfig: UserOptions = {
-        startY: startY,
-        margin: { left: STYLES.spacing.margin + 4.0 },
-        tableWidth: 2.0,
-        head: [['Carburant']],
-        body: [[formatPrice(fuelAmount)]],
-        styles: {
-            fontSize: STYLES.table.fontSize - 0.5,
-            cellPadding: 0.03,
-            lineColor: [0, 0, 0],
-            lineWidth: 0.03,
-            minCellHeight: 0.12
-        },
-        headStyles: {
-            minCellHeight: 0.15,
-            fillColor: toColor(STYLES.colors.secondary),
-            textColor: toColor(STYLES.colors.white),
-            fontSize: STYLES.fonts.subHeader.size - 0.5,
-            fontStyle: 'bold',
-            halign: 'center'
-        },
-        bodyStyles: {
-            halign: 'center'
-        }
-    };
+    // const fuelTableConfig: UserOptions = {
+    //     startY: startY,
+    //     margin: { left: STYLES.spacing.margin + 4.0 },
+    //     tableWidth: 2.0,
+    //     head: [['Carburant']],
+    //     body: [[formatPrice(fuelAmount)]],
+    //     styles: {
+    //         fontSize: STYLES.table.fontSize - 0.5,
+    //         cellPadding: 0.03,
+    //         lineColor: [0, 0, 0],
+    //         lineWidth: 0.03,
+    //         minCellHeight: 0.12
+    //     },
+    //     headStyles: {
+    //         minCellHeight: 0.15,
+    //         fillColor: toColor(STYLES.colors.secondary),
+    //         textColor: toColor(STYLES.colors.white),
+    //         fontSize: STYLES.fonts.subHeader.size - 0.5,
+    //         fontStyle: 'bold',
+    //         halign: 'center'
+    //     },
+    //     bodyStyles: {
+    //         halign: 'center'
+    //     }
+    // };
 
-    autoTable(doc, fuelTableConfig);
+    // autoTable(doc, fuelTableConfig);
 
     // Calcul du total
     const totalExpenses = spends.reduce((total, spend) => total + spend.amount, 0) + fuelAmount;
@@ -383,21 +398,29 @@ const loadImages = async (items: any[]) => {
 
 
 // Fonction principale pour générer le PDF
-export const generatePDF = async () => {
+export const generatePDF = async (data: any) => {
     const doc = new jsPDF({
         unit: 'in',
         format: 'a4'
     });
 
-    createHeader(doc, 'BON DE COMMANDE', dynamicData.unit.name);
-    createClientInfo(doc);
+    data.forEach((dynamicData: any, index: number) => {
+        if (index > 0) {
+            doc.addPage();
+        }
 
-    // Passez directement dynamicData.items sans pré-traitement
-    createItemsTable(doc, dynamicData.items);
+        createHeader(doc, 'BON DE COMMANDE', dynamicData.unit.name);
+        createClientInfo(doc);
 
-    const { finalY } = createExpensesTables(doc, dynamicData.spends, dynamicData.fuelAmount);
-    createSignature(doc, finalY);
-    createFooter(doc);
+        // Passez directement dynamicData.items sans pré-traitement
+        createItemsTable(doc, dynamicData.items);
+
+        const { finalY } = createExpensesTables(doc, dynamicData.spends);
+        createSignature(doc, finalY);
+        createFooter(doc);
+    });
+
+
 
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);
