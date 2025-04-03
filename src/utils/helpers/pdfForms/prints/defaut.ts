@@ -169,7 +169,7 @@ const createHeader = (doc: jsPDF, title: string, unitName: string) => {
 // Créer la section des informations client
 const createClientInfo = (doc: jsPDF) => {
     doc.setFillColor(...STYLES.colors.accent);
-    doc.roundedRect(STYLES.spacing.margin, 2.8, 7.67, 1.3, 0.1, 0.1, 'F');
+    doc.roundedRect(STYLES.spacing.margin, 2.3, 7.50, 1.1, 0.1, 0.1, 'F');
 
     doc.setFontSize(STYLES.fonts.subHeader.size);
     doc.setTextColor(...STYLES.colors.primary);
@@ -187,14 +187,14 @@ const createClientInfo = (doc: jsPDF) => {
 const createItemsTable = (doc: jsPDF, items: any[]) => {
     doc.setFontSize(STYLES.fonts.section.size);
     doc.setTextColor(...STYLES.colors.secondary);
-    doc.text(`• Denrées :`, STYLES.spacing.margin, 4);
+    doc.text(`• Denrées :`, STYLES.spacing.margin, 3.5);
 
     const clientInfoWidth = STYLES.layout.clientInfoWidth;
     const tableWidth = clientInfoWidth * STYLES.layout.tableWidthRatio;
     const marginLeft = STYLES.spacing.margin + (clientInfoWidth - tableWidth) / 2;
 
     const tableConfig: UserOptions = {
-        startY: 4.2,
+        startY: 3.6,
         margin: { left: marginLeft },
         tableWidth: tableWidth,
         head: [['N°', 'Image', 'Article', ' Quantité', 'Unité', 'Obs']],
@@ -409,7 +409,7 @@ export const generatePDF = async (data: any) => {
             doc.addPage();
         }
 
-        createHeader(doc, 'BON DE COMMANDE', dynamicData.unit.name);
+        createHeader(doc, "BORDEREAU D'ENVOI", dynamicData.unit.name);
         createClientInfo(doc);
 
         // Passez directement dynamicData.items sans pré-traitement
