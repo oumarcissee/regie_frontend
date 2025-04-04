@@ -262,12 +262,12 @@ const createItemsTable = (doc: jsPDF, items: any[]) => {
 
 // Créer les tableaux des dépenses
 const createExpensesTables = (doc: jsPDF, spends: any[], fuelAmount: number = 0) => {
-    let startY = (doc.lastAutoTable?.finalY) + 0.5;
+    let startY = (doc.lastAutoTable?.finalY) + 0.2;
 
-    doc.setFontSize(STYLES.fonts.section.size);
+    doc.setFontSize(STYLES.fonts.section.size - 1.5);
     doc.setTextColor(...STYLES.colors.secondary);
     doc.text(`• Dépenses :`, STYLES.spacing.margin, startY);
-    startY += 0.3;
+    startY += 0.15;
 
     // Tableau des dépenses principales
     const expensesTableConfig: UserOptions = {
@@ -403,7 +403,8 @@ const loadImages = async (items: any[]) => {
 export const generatePDF = async (data: any) => {
     const doc = new jsPDF({
         unit: 'in',
-        format: 'a4'
+        format: 'a4',
+        compress: true // Active la compression du PDF
     });
 
     data.forEach((dynamicData: any, index: number) => {
@@ -417,8 +418,8 @@ export const generatePDF = async (data: any) => {
         // Passez directement dynamicData.items sans pré-traitement
         createItemsTable(doc, dynamicData.items);
 
-        // const { finalY } = createExpensesTables(doc, dynamicData.spends);
-        // createSignature(doc, finalY);
+        const { finalY } = createExpensesTables(doc, dynamicData.spends);
+        createSignature(doc, finalY);
         createFooter(doc);
     });
 

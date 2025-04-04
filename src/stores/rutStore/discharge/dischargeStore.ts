@@ -177,6 +177,8 @@ export const useDischargeStore = defineStore({
                 this.totalWeightKg = this.products.reduce((sum: any, product: { item: { weight: any; }; }) => sum + (product.item.weight || 0), 0);
 
                 console.log("LE TONNAGE", this.getTotalWeight);
+
+                return this.products;
                 
             } catch (error) {
                 console.error("Error fetching products:", error);

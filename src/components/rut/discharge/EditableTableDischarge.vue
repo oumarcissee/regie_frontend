@@ -221,7 +221,7 @@
             await store.fetchDischarge();
             // Forcer la réactivité en créant une nouvelle référence
             store.boredereaux = [...store.boredereaux];
-            console.log(store.boredereaux);
+            // console.log(store.boredereaux);
         } catch (error) {
             console.error('Erreur lors du rafraîchissement :', error);
             showNotification('Erreur lors du rafraîchissement des données', 'error');
@@ -326,10 +326,9 @@
             const allItems: any[] = [];
             // console.log(itemsSelected.value)
             itemsSelected.value.forEach(async (item: any) => {
-                
+                // console.log("avant", item.items);
                 const menusArrays = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
                 menusData.value = await repartirBudgetAvecTauxPrecis(menusArrays, item.effective);
-                await store.fetchProducts(item.effective, item.items);
 
                 addedSpends.value =  item.spends.map((spend: any) => ({
                         ...spend,
@@ -337,13 +336,10 @@
                             ? parseFloat(spend.amount.replace(/\s/g, '').replace(/\./g, '')) 
                             : spend.amount
                 }))
-                
-                // Garder les produits dans le store
-                // store.products = [...store.products];
 
                 allItems.push({
                     ...item,
-                    items: [...store.products],
+                    items: await store.fetchProducts(item.effective, item.items),
                     spends: addedSpends.value,
                     menus: menusData.value
                 });
@@ -352,9 +348,7 @@
 
             const signators = await fetchSignators();
 
-            console.table(allItems);
-        
-            // return;
+            // console.table(allItems);
             await generatePDF(allItems);
             // await slipsOfMenus("BORDEREAU D'ENVOI",allItems, signators, currentMoment.value)
 
