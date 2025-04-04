@@ -217,31 +217,24 @@ const createItemsTable = (doc: jsPDF, items: any[]) => {
         margin: { left: marginLeft },
         tableWidth: tableWidth,
         head: [['N°', 'Image', 'Article', ' Quantité', 'Unité', 'Obs']],
-        body: [
-            ...items.map((item, index) => [
-                (index + 1).toString(),
-                { content: '', image: item.item.image }, // Format spécial pour les images
-                item.item.name,
-                item.item.quantite,
-                item.unite,
-                ''
-            ])
-        ],
+            body: [
+                ...items.map((item, index) => [
+                    (index + 1).toString(),
+                    { content: '', image: item.item.image }, // Format spécial pour les images
+                    item.item.name,
+                    item.item.quantite,
+                    item.unite,
+                    ''
+                ])
+            ],
         styles: {
-            fontSize: STYLES.table.fontSize,
-            cellPadding: 0.1,
-            lineColor: toColor(STYLES.colors.separator),
+            fontSize: STYLES.table.fontSize - 0.5,
+            cellPadding: 0.03,
+            lineColor: [0, 0, 0],
             lineWidth: 0.001,
             halign: 'center'
         },
-        headStyles: {
-            fillColor: toColor(STYLES.colors.secondary),
-            textColor: toColor(STYLES.colors.white),
-            fontSize: STYLES.table.headerFontSize,
-            fontStyle: 'bold',
-            halign: 'center'
-        },
-        columnStyles: {
+       columnStyles: {
             0: { cellWidth: 0.4, halign: 'center' },
             1: { cellWidth: 0.8, halign: 'center' },
             2: { cellWidth: 3.0, halign: 'left' },
@@ -274,14 +267,12 @@ const createItemsTable = (doc: jsPDF, items: any[]) => {
         }
     };
 
+
+    
     autoTable(doc, tableConfig);
     return doc.lastAutoTable?.finalY || 6;
 };
 
-// Créer les tableaux des dépenses
-// Créer les tableaux des dépenses (version corrigée avec alignement)
-// Créer les tableaux des dépenses avec lignes de total
-// Créer les tableaux des dépenses avec totaux en gras uniquement
 // Créer les tableaux des dépenses avec entête séparé pour les dépenses supplémentaires
 const createExpensesTables = (doc: jsPDF, menus: any[], spends: any[]) => {
     let startY = doc.lastAutoTable?.finalY + 0.2;
@@ -313,7 +304,7 @@ const createExpensesTables = (doc: jsPDF, menus: any[], spends: any[]) => {
         head: [['N°', 'Désignation', 'Montant']],
         body: [
             ...menus.map((menu, index) => [(index + 1).toString(), menu.name, formatPrice(menu.montantAlloue)]),
-            ...(menus.length > 0 ? [['', 'TOTAL', formatPrice(totalSpends)]] : []) // Ligne de total
+            ...(menus.length > 0 ? [['', 'TOTAL', formatPrice(totalMenus)]] : []) // Ligne de total
         ],
         styles: {
             fontSize: STYLES.table.fontSize - 0.5,
@@ -380,13 +371,24 @@ const createExpensesTables = (doc: jsPDF, menus: any[], spends: any[]) => {
     // Position finale
     const finalY = Math.max(doc.lastAutoTable?.finalY || startY + 1, startY + Math.max(menus.length, spends.length) * 0.15 + 0.5) + 0.3;
 
+    // Cadre autour du total général
+    doc.setFillColor(...STYLES.colors.accent);
+    doc.rect(marginLeft, finalY - 0.1, tableWidth, 0.3, 'F');
+
     // Total général (en gras)
     doc.setFontSize(STYLES.fonts.normal.size);
     doc.setTextColor(0, 0, 0);
     doc.setFont(undefined, 'bold');
-    doc.text(`TOTAL GÉNÉRAL: ${numberToWords(totalExpenses)} (${formatPrice(totalExpenses)})`, marginLeft + tableWidth / 2, finalY + 0.1, {
-        align: 'center'
-    });
+    doc.text(
+        `TOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRAL: ${numberToWords(
+            totalExpenses
+        )} (${formatPrice(totalExpenses)})`,
+        marginLeft + tableWidth / 2,
+        finalY + 0.1,
+        {
+            align: 'center'
+        }
+    );
 
     return {
         finalY: finalY + 0.5,

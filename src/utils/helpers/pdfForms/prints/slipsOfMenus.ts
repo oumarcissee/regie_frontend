@@ -177,6 +177,68 @@ const formatPrice = (price: number): string => {
     }
 };
 
+//  const tableConfig: UserOptions = {
+//         startY: 3.6,
+//         margin: { left: marginLeft },
+//         tableWidth: tableWidth,
+//         head: [['N°', 'Image', 'Article', ' Quantité', 'Unité', 'Obs']],
+//         body: [
+//             ...items.map((item, index) => [
+//                 (index + 1).toString(),
+//                 { content: '', image: item.item.image }, // Format spécial pour les images
+//                 item.item.name,
+//                 item.item.quantite,
+//                 item.unite,
+//                 ''
+//             ])
+//         ],
+//         styles: {
+//             fontSize: STYLES.table.fontSize,
+//             cellPadding: 0.1,
+//             lineColor: toColor(STYLES.colors.separator),
+//             lineWidth: 0.001,
+//             halign: 'center'
+//         },
+//         headStyles: {
+//             fillColor: toColor(STYLES.colors.secondary),
+//             textColor: toColor(STYLES.colors.white),
+//             fontSize: STYLES.table.headerFontSize,
+//             fontStyle: 'bold',
+//             halign: 'center'
+//         },
+//         columnStyles: {
+//             0: { cellWidth: 0.4, halign: 'center' },
+//             1: { cellWidth: 0.8, halign: 'center' },
+//             2: { cellWidth: 3.0, halign: 'left' },
+//             3: { cellWidth: 0.8, halign: 'center' },
+//             4: { cellWidth: 0.8, halign: 'center' },
+//             5: { cellWidth: 1.07, halign: 'left' }
+//         },
+//         didDrawCell: (data: any) => {
+//             if (data.column.index === 1 && data.cell.raw?.image) {
+//                 try {
+//                     // Ajouter l'image directement (sans passer par un objet Image)
+//                     const imgWidth = data.cell.width - 0.2;
+//                     const imgHeight = data.cell.height - 0.2;
+
+//                     doc.addImage(
+//                         data.cell.raw.image,
+//                         'PNG', // ou 'JPEG' selon le format
+//                         data.cell.x + 0.1,
+//                         data.cell.y + 0.1,
+//                         imgWidth,
+//                         imgHeight
+//                     );
+//                 } catch (error) {
+//                     console.error("Erreur de chargement de l'image:", error);
+//                     // Afficher un placeholder si l'image ne charge pas
+//                     doc.setTextColor(150, 150, 150);
+//                     doc.text('Image', data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2, { align: 'center' });
+//                 }
+//             }
+//         }
+//     };
+
 const drawOrderDetails = (doc: jsPDF, item: any, startY: number) => {
     const secondary = STYLES.colors.secondary;
     doc.setFontSize(STYLES.fonts.section.size);

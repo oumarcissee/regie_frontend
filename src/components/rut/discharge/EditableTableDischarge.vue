@@ -328,20 +328,21 @@
             itemsSelected.value.forEach(async (item: any) => {
                 // console.log("avant", item.items);
                 const menusArrays = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
-                menusData.value = await repartirBudgetAvecTauxPrecis(menusArrays, item.effective);
+                // menusData.value = await repartirBudgetAvecTauxPrecis(menusArrays, item.effective);
+                // console.log("apres", item.items);
 
-                addedSpends.value =  item.spends.map((spend: any) => ({
-                        ...spend,
-                        amount: typeof spend.amount === 'string' 
-                            ? parseFloat(spend.amount.replace(/\s/g, '').replace(/\./g, '')) 
-                            : spend.amount
-                }))
+                // addedSpends.value =  item.spends.map((spend: any) => ({
+                //         ...spend,
+                //         amount: typeof spend.amount === 'string' 
+                //             ? parseFloat(spend.amount.replace(/\s/g, '').replace(/\./g, '')) 
+                //             : spend.amount
+                // }))
 
                 allItems.push({
                     ...item,
                     items: await store.fetchProducts(item.effective, item.items),
-                    spends: addedSpends.value,
-                    menus: menusData.value
+                    spends: item.spends.map((spend: any) => ({...spend,amount: typeof spend.amount === 'string' ? parseFloat(spend.amount.replace(/\s/g, '').replace(/\./g, '')) : spend.amount})),
+                    menus: await repartirBudgetAvecTauxPrecis(menusArrays, item.effective)
                 });
 
             });
