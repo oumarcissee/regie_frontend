@@ -81,7 +81,27 @@ const toColor = (color: readonly [number, number, number] | number[]): Color => 
 
 // Formater les prix
 const formatPrice = (price: number): string => {
-    return new Intl.NumberFormat('fr-FR').format(price) + ' GNF';
+    try {
+        // Convertir le nombre en entier pour éviter les décimales
+        const priceInt = Math.round(price);
+
+        // Formatter le nombre avec des espaces comme séparateurs de milliers
+        const formattedNumber = priceInt
+            .toString()
+            .split('')
+            .reverse()
+            .reduce((acc, digit, i) => {
+                if (i > 0 && i % 3 === 0) {
+                    return digit + ' ' + acc;
+                }
+                return digit + acc;
+            }, '');
+
+        return `${formattedNumber} FG`;
+    } catch (error) {
+        console.error('Erreur lors du formatage du prix:', error);
+        return `${price} GNF`; // Fallback au cas où
+    }
 };
 
 // Convertir les nombres en lettres
@@ -163,13 +183,12 @@ const createHeader = (doc: jsPDF, title: string, unitName: string) => {
             doc.text(unitName, pageWidth / 2, 2, { align: 'center' });
         }
     }
-
 };
 
 // Créer la section des informations client
 const createClientInfo = (doc: jsPDF) => {
     doc.setFillColor(...STYLES.colors.accent);
-    doc.roundedRect(STYLES.spacing.margin, 2.3, 7.50, 1.1, 0.1, 0.1, 'F');
+    doc.roundedRect(STYLES.spacing.margin, 2.3, 7.5, 1.1, 0.1, 0.1, 'F');
 
     doc.setFontSize(STYLES.fonts.subHeader.size);
     doc.setTextColor(...STYLES.colors.primary);
@@ -199,14 +218,14 @@ const createItemsTable = (doc: jsPDF, items: any[]) => {
         tableWidth: tableWidth,
         head: [['N°', 'Image', 'Article', ' Quantité', 'Unité', 'Obs']],
         body: [
-                ...items.map((item, index) => [
+            ...items.map((item, index) => [
                 (index + 1).toString(),
                 { content: '', image: item.item.image }, // Format spécial pour les images
                 item.item.name,
                 item.item.quantite,
                 item.unite,
                 ''
-            ]),
+            ])
         ],
         styles: {
             fontSize: STYLES.table.fontSize,
@@ -259,83 +278,115 @@ const createItemsTable = (doc: jsPDF, items: any[]) => {
     return doc.lastAutoTable?.finalY || 6;
 };
 
-
 // Créer les tableaux des dépenses
-const createExpensesTables = (doc: jsPDF, spends: any[], fuelAmount: number = 0) => {
-    let startY = (doc.lastAutoTable?.finalY) + 0.2;
+// Créer les tableaux des dépenses (version corrigée avec alignement)
+// Créer les tableaux des dépenses avec lignes de total
+// Créer les tableaux des dépenses avec totaux en gras uniquement
+// Créer les tableaux des dépenses avec entête séparé pour les dépenses supplémentaires
+const createExpensesTables = (doc: jsPDF, menus: any[], spends: any[]) => {
+    let startY = doc.lastAutoTable?.finalY + 0.2;
 
-    doc.setFontSize(STYLES.fonts.section.size - 1.5);
+    // Entête principal
+    doc.setFontSize(STYLES.fonts.section.size - 3);
     doc.setTextColor(...STYLES.colors.secondary);
     doc.text(`• Dépenses :`, STYLES.spacing.margin, startY);
     startY += 0.15;
 
-    // Tableau des dépenses principales
-    const expensesTableConfig: UserOptions = {
+    // Calculer la largeur totale disponible
+    const clientInfoWidth = STYLES.layout.clientInfoWidth;
+    const tableWidth = clientInfoWidth * STYLES.layout.tableWidthRatio;
+    const marginLeft = STYLES.spacing.margin + (clientInfoWidth - tableWidth) / 2;
+
+    // Largeur des deux petits tableaux
+    const smallTableWidth = (tableWidth - 0.2) / 2;
+
+    // Calcul des totaux
+    const totalMenus = menus.reduce((total, menu) => total + menu.montantAlloue, 0);
+    const totalSpends = spends.reduce((total, spend) => total + spend.amount, 0);
+    const totalExpenses = totalMenus + totalSpends;
+
+    // Tableau des dépenses principales (gauche)
+    const menusTableConfig: UserOptions = {
         startY: startY,
-        margin: { left: STYLES.spacing.margin },
-        tableWidth: 3.5,
-        head: [['N/O', 'Dépenses', 'Montant']],
-        body: spends.map((spend, index) => [(index + 1).toString(), spend.name, formatPrice(spend.amount)]),
+        margin: { left: marginLeft },
+        tableWidth: smallTableWidth,
+        head: [['N°', 'Désignation', 'Montant']],
+        body: [
+            ...menus.map((menu, index) => [(index + 1).toString(), menu.name, formatPrice(menu.montantAlloue)]),
+            ...(menus.length > 0 ? [['', 'TOTAL', formatPrice(totalSpends)]] : []) // Ligne de total
+        ],
         styles: {
-            fontSize: STYLES.table.fontSize - 0.5, // Taille très compacte
-            cellPadding: 0.03, // Padding minimal
+            fontSize: STYLES.table.fontSize - 0.5,
+            cellPadding: 0.03,
             lineColor: [0, 0, 0],
-            lineWidth: 0.03, // Lignes très fines
-            minCellHeight: 0.12 // Hauteur minimale réduite
-        },
-        headStyles: {
-            fillColor: toColor(STYLES.colors.secondary),
-            textColor: toColor(STYLES.colors.white),
-            fontSize: STYLES.fonts.subHeader.size - 0.5,
-            fontStyle: 'bold',
-            halign: 'center',
-            minCellHeight: 0.15 // En-tête plus compact
+            lineWidth: 0.001,
+            halign: 'center'
         },
         columnStyles: {
-            0: { halign: 'center', cellWidth: 0.5 },
-            1: { halign: 'left', cellWidth: 2.0 },
+            0: { halign: 'center', cellWidth: 0.4 },
+            1: { halign: 'left', cellWidth: 'auto' },
             2: { halign: 'right', cellWidth: 1.0 }
+        },
+        willDrawCell: (data) => {
+            if (data.row.index === menus.length) {
+                doc.setFont(undefined, 'bold'); // Total en gras
+            }
         }
     };
 
-    autoTable(doc, expensesTableConfig);
+    autoTable(doc, menusTableConfig);
 
-    // Tableau du carburant
-    // const fuelTableConfig: UserOptions = {
-    //     startY: startY,
-    //     margin: { left: STYLES.spacing.margin + 4.0 },
-    //     tableWidth: 2.0,
-    //     head: [['Carburant']],
-    //     body: [[formatPrice(fuelAmount)]],
-    //     styles: {
-    //         fontSize: STYLES.table.fontSize - 0.5,
-    //         cellPadding: 0.03,
-    //         lineColor: [0, 0, 0],
-    //         lineWidth: 0.03,
-    //         minCellHeight: 0.12
-    //     },
-    //     headStyles: {
-    //         minCellHeight: 0.15,
-    //         fillColor: toColor(STYLES.colors.secondary),
-    //         textColor: toColor(STYLES.colors.white),
-    //         fontSize: STYLES.fonts.subHeader.size - 0.5,
-    //         fontStyle: 'bold',
-    //         halign: 'center'
-    //     },
-    //     bodyStyles: {
-    //         halign: 'center'
-    //     }
-    // };
+    // Position pour l'entête et le tableau des dépenses supplémentaires
+    const secondTableLeft = marginLeft + smallTableWidth + 0.2;
 
-    // autoTable(doc, fuelTableConfig);
+    // Entête séparé pour les dépenses supplémentaires
+    doc.setFontSize(STYLES.fonts.section.size - 3);
+    doc.setTextColor(...STYLES.colors.secondary);
+    doc.text(`• Dépenses supplémentaires :`, secondTableLeft, startY - 0.15);
 
-    // Calcul du total
-    const totalExpenses = spends.reduce((total, spend) => total + spend.amount, 0) + fuelAmount;
-    const finalY = (doc.lastAutoTable?.finalY || startY + 1) + 0.3;
+    // Tableau des dépenses supplémentaires (sans entête intégré)
+    const expensesTableConfig: UserOptions = {
+        startY: startY,
+        margin: { left: secondTableLeft },
+        tableWidth: smallTableWidth,
+        head: [['N°', 'Désignation', 'Montant']],
+        body: [
+            ...spends.map((spend, index) => [(index + 1).toString(), spend.name, formatPrice(spend.amount)]),
+            ...(spends.length > 0 ? [['', 'TOTAL', formatPrice(totalSpends)]] : []) // Ligne de total
+        ],
+        styles: {
+            fontSize: STYLES.table.fontSize - 0.5,
+            cellPadding: 0.03,
+            lineColor: [0, 0, 0],
+            lineWidth: 0.001,
+            halign: 'center'
+        },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: 0.4 },
+            1: { halign: 'left', cellWidth: 'auto' },
+            2: { halign: 'right', cellWidth: 1.0 }
+        },
+        willDrawCell: (data) => {
+            if (spends.length > 0 && data.row.index === spends.length) {
+                doc.setFont(undefined, 'bold'); // Total en gras
+            }
+        }
+    };
 
+    if (spends.length > 0) {
+        autoTable(doc, expensesTableConfig);
+    }
+
+    // Position finale
+    const finalY = Math.max(doc.lastAutoTable?.finalY || startY + 1, startY + Math.max(menus.length, spends.length) * 0.15 + 0.5) + 0.3;
+
+    // Total général (en gras)
     doc.setFontSize(STYLES.fonts.normal.size);
     doc.setTextColor(0, 0, 0);
-    doc.text(`Soit un Montant Total: ${numberToWords(totalExpenses)} (${formatPrice(totalExpenses)})`, STYLES.spacing.margin, finalY);
+    doc.setFont(undefined, 'bold');
+    doc.text(`TOTAL GÉNÉRAL: ${numberToWords(totalExpenses)} (${formatPrice(totalExpenses)})`, marginLeft + tableWidth / 2, finalY + 0.1, {
+        align: 'center'
+    });
 
     return {
         finalY: finalY + 0.5,
@@ -397,8 +448,6 @@ const loadImages = async (items: any[]) => {
     return Promise.all(promises);
 };
 
-
-
 // Fonction principale pour générer le PDF
 export const generatePDF = async (data: any) => {
     const doc = new jsPDF({
@@ -418,12 +467,10 @@ export const generatePDF = async (data: any) => {
         // Passez directement dynamicData.items sans pré-traitement
         createItemsTable(doc, dynamicData.items);
 
-        const { finalY } = createExpensesTables(doc, dynamicData.spends);
+        const { finalY } = createExpensesTables(doc, dynamicData.menus.repartition, dynamicData.spends);
         createSignature(doc, finalY);
         createFooter(doc);
     });
-
-
 
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);

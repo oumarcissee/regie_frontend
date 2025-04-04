@@ -348,7 +348,7 @@
 
             const signators = await fetchSignators();
 
-            // console.table(allItems);
+            console.table(allItems);
             await generatePDF(allItems);
             // await slipsOfMenus("BORDEREAU D'ENVOI",allItems, signators, currentMoment.value)
 
