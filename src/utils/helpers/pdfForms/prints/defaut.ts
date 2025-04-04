@@ -217,30 +217,31 @@ const createItemsTable = (doc: jsPDF, items: any[]) => {
         margin: { left: marginLeft },
         tableWidth: tableWidth,
         head: [['N°', 'Image', 'Article', ' Quantité', 'Unité', 'Obs']],
-            body: [
-                ...items.map((item, index) => [
-                    (index + 1).toString(),
-                    { content: '', image: item.item.image }, // Format spécial pour les images
-                    item.item.name,
-                    item.item.quantite,
-                    item.unite,
-                    ''
-                ])
-            ],
+        body: [
+            ...items.map((item, index) => [
+                (index + 1).toString(),
+                { content: '', image: item.item.image }, // Format spécial pour les images
+                item.item.name,
+                item.item.quantite,
+                item.unite,
+                ''
+            ])
+        ],
         styles: {
-            fontSize: STYLES.table.fontSize - 0.5,
-            cellPadding: 0.03,
+            fontSize: STYLES.table.fontSize,
+            cellPadding: 0.05,
             lineColor: [0, 0, 0],
             lineWidth: 0.001,
-            halign: 'center'
+            halign: 'center',
+            minCellHeight: 0.3 // Augmentez cette valeur si nécessaire
         },
-       columnStyles: {
+        columnStyles: {
             0: { cellWidth: 0.4, halign: 'center' },
-            1: { cellWidth: 0.8, halign: 'center' },
+            1: { cellWidth: 0.6, halign: 'center' }, // Colonne image légèrement plus large
             2: { cellWidth: 3.0, halign: 'left' },
-            3: { cellWidth: 0.8, halign: 'center' },
-            4: { cellWidth: 0.8, halign: 'center' },
-            5: { cellWidth: 1.07, halign: 'left' }
+            3: { cellWidth: 0.7, halign: 'center' },
+            4: { cellWidth: 0.7, halign: 'center' },
+            5: { cellWidth: 'auto', halign: 'left' }
         },
         didDrawCell: (data: any) => {
             if (data.column.index === 1 && data.cell.raw?.image) {
@@ -295,6 +296,7 @@ const createExpensesTables = (doc: jsPDF, menus: any[], spends: any[]) => {
     const totalMenus = menus.reduce((total, menu) => total + menu.montantAlloue, 0);
     const totalSpends = spends.reduce((total, spend) => total + spend.amount, 0);
     const totalExpenses = totalMenus + totalSpends;
+
 
     // Tableau des dépenses principales (gauche)
     const menusTableConfig: UserOptions = {
@@ -450,6 +452,43 @@ const loadImages = async (items: any[]) => {
     return Promise.all(promises);
 };
 
+
+// Fonction pour redimensionner une image
+const resizeImage = (base64Str: string, maxWidth: number, maxHeight: number): Promise<string> => {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.src = base64Str;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width *= maxHeight / height;
+                    height = maxHeight;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => resolve(base64Str); // Retourne l'original si erreur
+    });
+};
+
+// Puis dans votre boucle de données :
+
+
+
 // Fonction principale pour générer le PDF
 export const generatePDF = async (data: any) => {
     const doc = new jsPDF({
@@ -464,6 +503,7 @@ export const generatePDF = async (data: any) => {
         }
 
         createHeader(doc, "BORDEREAU D'ENVOI", dynamicData.unit.name);
+
         createClientInfo(doc);
 
         // Passez directement dynamicData.items sans pré-traitement
