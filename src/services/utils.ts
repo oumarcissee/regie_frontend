@@ -237,7 +237,7 @@ function convertNumberToWords(number: number) {
     const tens = ["", "dix", "vingt", "trente", "quarante", "cinquante", "soixante", "soixante", "quatre-vingt", "quatre-vingt"];
 
     // Cas particuliers
-    if (number === 0) return "zéro GNF";
+    if (number === 0) return "zéro Francs Guinéens";
     if (isNaN(number)) return "Nombre invalide";
 
     // Fonction interne pour gérer les nombres < 1000
@@ -321,7 +321,7 @@ function convertNumberToWords(number: number) {
         result += convertLessThanOneThousand(number);
     }
     
-    return result.trim() + " GNF";
+    return result.trim() + ' Francs Guinéens';
 }
 
 

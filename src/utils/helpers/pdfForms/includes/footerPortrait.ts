@@ -4,6 +4,14 @@ const footerPortrait = (doc: jsPDF, data: any,  pageNumber: number, totalPages: 
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
 
+    // Obtenir la date et l'heure actuelles
+    const now = new Date();
+    const date = now.toLocaleDateString();
+    const time = now.toLocaleTimeString();
+    doc.setFontSize(10);
+    doc.text(`${date} ${time}`, 0.2, pageHeight - 0.2, { align: 'left' });
+
+    
      // Ajouter le texte "DOC CONFIDENTIEL"
    
     
@@ -16,14 +24,6 @@ const footerPortrait = (doc: jsPDF, data: any,  pageNumber: number, totalPages: 
     const domain = window.location.hostname; // Capturer le domaine dynamiquement
 
     // Ajouter le texte "DGIM"
-    
-    // Obtenir la date et l'heure actuelles
-    const now = new Date();
-    const date = now.toLocaleDateString();
-    const time = now.toLocaleTimeString();
-    doc.setFontSize(10);
-    doc.text(`${date} ${time}`, 0.2, pageHeight - 0.2, { align: 'left' });
-
     
 
 

@@ -42,11 +42,11 @@ const signature = (doc: any, signators: any[], montant: number, amount :string, 
     const amountText = `Soit un Montant Total de: ${convertNumberToWords(montant)} (${amount})`;
     const wrappedLines = wrapText(amountText, textWidth);
 
-    // if (montant) {
-    //     wrappedLines.forEach((line, index) => {
-    //         doc.text(line, centerX, finalY + index * 0.25, { align: 'center' }); // Changé de 0.2 à 0.25
-    //     });
-    // }
+    if (montant) {
+        wrappedLines.forEach((line, index) => {
+            doc.text(line, centerX, finalY + index * 0.25, { align: 'center' }); // Changé de 0.2 à 0.25
+        });
+    }
 
     // Restore original font size
     doc.setFontSize(currentFontSize);

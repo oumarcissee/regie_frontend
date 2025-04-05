@@ -1,5 +1,8 @@
+import { convertNumberToWords } from '@/services/utils';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import footerPortrait from '@/utils/helpers/pdfForms/includes/footerPortrait';
+import signature from '@/utils/helpers/pdfForms/includes/signature';
 import autoTable, { type UserOptions, type Color } from 'jspdf-autotable';
 
 // Déclaration du type pour lastAutoTable
@@ -73,11 +76,6 @@ const STYLES = {
     }
 };
 
-// Fonction de conversion de couleur corrigée
-const toColor = (color: readonly [number, number, number] | number[]): Color => {
-    if (color.length !== 3) throw new Error('Color array must have exactly 3 elements');
-    return [color[0], color[1], color[2]];
-};
 
 // Formater les prix
 const formatPrice = (price: number): string => {
@@ -102,11 +100,6 @@ const formatPrice = (price: number): string => {
         console.error('Erreur lors du formatage du prix:', error);
         return `${price} GNF`; // Fallback au cas où
     }
-};
-
-// Convertir les nombres en lettres
-const numberToWords = (num: number): string => {
-    return formatPrice(num); // Version simplifiée
 };
 
 // Créer l'en-tête du document
@@ -268,8 +261,6 @@ const createItemsTable = (doc: jsPDF, items: any[]) => {
         }
     };
 
-
-    
     autoTable(doc, tableConfig);
     return doc.lastAutoTable?.finalY || 6;
 };
@@ -296,7 +287,6 @@ const createExpensesTables = (doc: jsPDF, menus: any[], spends: any[]) => {
     const totalMenus = menus.reduce((total, menu) => total + menu.montantAlloue, 0);
     const totalSpends = spends.reduce((total, spend) => total + spend.amount, 0);
     const totalExpenses = totalMenus + totalSpends;
-
 
     // Tableau des dépenses principales (gauche)
     const menusTableConfig: UserOptions = {
@@ -375,25 +365,39 @@ const createExpensesTables = (doc: jsPDF, menus: any[], spends: any[]) => {
 
     // Cadre autour du total général
     doc.setFillColor(...STYLES.colors.accent);
-    doc.rect(marginLeft, finalY - 0.1, tableWidth, 0.3, 'F');
+    doc.rect(marginLeft, finalY - 0.1, tableWidth, 0.5, 'F');
 
     // Total général (en gras)
     doc.setFontSize(STYLES.fonts.normal.size);
     doc.setTextColor(0, 0, 0);
     doc.setFont(undefined, 'bold');
-    doc.text(
-        `TOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRALTOTAL GÉNÉRAL: ${numberToWords(
-            totalExpenses
-        )} (${formatPrice(totalExpenses)})`,
-        marginLeft + tableWidth / 2,
-        finalY + 0.1,
-        {
-            align: 'center'
-        }
-    );
 
+    // Format the total text
+    const totalText = `Soit un Montant Total de: ${convertNumberToWords(totalExpenses)} (${formatPrice(totalExpenses)}).`;
+
+    // Split the text to fit within the available width
+    const availableWidth = tableWidth - 0.2; // Leaving a small margin
+    const splitText = doc.splitTextToSize(totalText, availableWidth);
+
+    // Calculate if we need to adjust the height of our box
+    const textHeight = splitText.length * 0.15; // Approximate height per line
+    const boxHeight = Math.max(0.5, textHeight + 0.2); // Min height 0.5, or text height plus margin
+
+    // Adjust the box size to fit the text
+    doc.setFillColor(...STYLES.colors.accent);
+    doc.rect(marginLeft, finalY - 0.1, tableWidth, boxHeight, 'F');
+
+    // Center the text vertically and horizontally
+    const textY = finalY - 0.1 + 0.15 + (boxHeight - textHeight) / 2;
+    for (let i = 0; i < splitText.length; i++) {
+        doc.text(splitText[i], marginLeft + tableWidth / 2, textY + i * 0.15, {
+            align: 'center'
+        });
+    }
+
+    // Update the final Y position based on the actual box height
     return {
-        finalY: finalY + 0.5,
+        finalY: finalY + boxHeight + 0.2, // Add some margin after the box
         totalAmount: totalExpenses
     };
 };
@@ -405,89 +409,55 @@ const createSignature = (doc: jsPDF, finalY: number) => {
         month: 'long',
         year: 'numeric'
     });
-
+    doc.setFont(undefined, 'normal');
     doc.setFontSize(STYLES.fonts.normal.size);
     doc.text(`Conakry, ${date}`, doc.internal.pageSize.width - 0.5, finalY, { align: 'right' });
-
-    const signatureY = finalY + 0.8;
-    const centerX = doc.internal.pageSize.width / 2;
-
-    // Signature gauche
-    doc.text('Fonction', centerX - 2.5, signatureY, { align: 'center' });
-    doc.text('Titre', centerX - 2.5, signatureY + 0.5, { align: 'center' });
-    doc.text('Grade Prénom et Nom', centerX - 2.5, signatureY + 1.0, { align: 'center' });
-
-    // Signature droite
-    doc.text('Fonction', centerX + 2.5, signatureY, { align: 'center' });
-    doc.text('Titre', centerX + 2.5, signatureY + 0.5, { align: 'center' });
-    doc.text('Grade Prénom et Nom', centerX + 2.5, signatureY + 1.0, { align: 'center' });
 };
 
 // Créer le pied de page
-const createFooter = (doc: jsPDF) => {
+// Modifier la fonction createFooter pour mieux gérer la pagination
+const createFooter = (doc: jsPDF, data: any, pageNumber: number, totalPages: number) => {
     const pageHeight = doc.internal.pageSize.height;
     const pageWidth = doc.internal.pageSize.width;
 
-    doc.setDrawColor(150);
-    doc.setLineWidth(0.05);
-    doc.line(0.5, pageHeight - 1.0, pageWidth - 0.5, pageHeight - 1.0);
+    // Configuration des espacements
+    const marginX = 0.5; // Marge latérale
+    const lineYPosition = pageHeight - 0.4; // Position Y de la ligne
+    const textYPosition = pageHeight - 0.2; // Position Y du texte (en dessous de la ligne)
+    const linePadding = 0.1; // Espace entre la ligne et le texte
 
-    const now = new Date();
+    // Dessiner la ligne horizontale en premier
+    doc.setDrawColor(150); // Couleur grise
+    doc.setLineWidth(0.05); // Épaisseur de la ligne
+    doc.line(marginX, lineYPosition, pageWidth - marginX, lineYPosition);
+
+    // Préparer les textes à afficher
+    const now = new Date().toLocaleString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    const domain = window.location.hostname;
+    const pagination = `Page ${pageNumber} sur ${totalPages}`;
+
+    // Configurer la police
     doc.setFontSize(10);
-    doc.text(now.toLocaleString('fr-FR'), 0.5, pageHeight - 0.5);
-    doc.text('Page 1/1', pageWidth / 2, pageHeight - 0.5, { align: 'center' });
-    doc.text('localhost', pageWidth - 0.5, pageHeight - 0.5, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+
+    // Afficher la date à gauche
+    doc.text(now, marginX, textYPosition);
+
+    // Afficher la pagination au centre
+    doc.text(pagination, pageWidth / 2, textYPosition, { align: 'center' });
+
+    // Afficher le domaine à droite
+    doc.text(domain, pageWidth - marginX, textYPosition, { align: 'right' });
+
+    // Option: Ajouter un petit espacement vertical si nécessaire
+    // doc.text('', marginX, textYPosition + 0.2);
 };
-
-const loadImages = async (items: any[]) => {
-    const promises = items.map((item) => {
-        return new Promise((resolve) => {
-            if (!item.image) return resolve(null);
-            const img = new Image();
-            img.onload = () => resolve(img);
-            img.onerror = () => resolve(null);
-            img.src = item.image;
-        });
-    });
-    return Promise.all(promises);
-};
-
-
-// Fonction pour redimensionner une image
-const resizeImage = (base64Str: string, maxWidth: number, maxHeight: number): Promise<string> => {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.src = base64Str;
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
-
-            if (width > height) {
-                if (width > maxWidth) {
-                    height *= maxWidth / width;
-                    width = maxWidth;
-                }
-            } else {
-                if (height > maxHeight) {
-                    width *= maxHeight / height;
-                    height = maxHeight;
-                }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror = () => resolve(base64Str); // Retourne l'original si erreur
-    });
-};
-
-// Puis dans votre boucle de données :
-
-
 
 // Fonction principale pour générer le PDF
 export const generatePDF = async (data: any) => {
@@ -510,12 +480,14 @@ export const generatePDF = async (data: any) => {
         createItemsTable(doc, dynamicData.items);
 
         const { finalY } = createExpensesTables(doc, dynamicData.menus.repartition, dynamicData.spends);
+
         createSignature(doc, finalY);
-        createFooter(doc);
+
+        createFooter(doc,dynamicData, 1, 2);
     });
 
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);
     window.open(url);
 };
-export default generatePDF;
+

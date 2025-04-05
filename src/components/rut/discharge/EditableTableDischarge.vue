@@ -635,7 +635,6 @@
             current_category.value = item.category;
             recap.value  = item.category;
             current_sub_area.value = item.sub_area;
-            
             // Charger les données existantes
             const menusArrays = await store.menus.filter((item: { type_menu: string }) => item.type_menu === 'food');
             menusData.value = await repartirBudgetAvecTauxPrecis(menusArrays, effective.value);
