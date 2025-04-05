@@ -350,7 +350,7 @@
             const signators = await fetchSignators();
 
             console.table(allItems);
-            await generatePDF(allItems);
+            await generatePDF(allItems, signators);
             // await slipsOfMenus("BORDEREAU D'ENVOI",allItems, signators, currentMoment.value)
 
 

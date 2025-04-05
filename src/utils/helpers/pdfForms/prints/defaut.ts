@@ -103,8 +103,26 @@ const formatPrice = (price: number): string => {
 };
 
 // Créer l'en-tête du document
-const createHeader = (doc: jsPDF, title: string, unitName: string) => {
+const createHeader = (doc: jsPDF, title: string, unitName: string, signators?: any) => {
     const pageWidth = doc.internal.pageSize.width;
+
+    // Dessiner une ligne horizontale
+    const drawCenteredText = (textArray: string[], x: number, startY: number, containerWidth: number) => {
+        let counter = 0;
+        let currentY = startY;
+
+        textArray.forEach((text, index) => {
+            const centerX = x + (containerWidth / 2 - 0.1);
+            counter++;
+            doc.text(text, centerX, currentY, { align: 'center' });
+            if (counter === 1) {
+                currentY += 0.72;
+            } else {
+                currentY += 0.15;
+            }
+        });
+        return currentY;
+    };
 
     // Informations nationales
     doc.setFontSize(STYLES.fonts.subHeader.size);
@@ -133,17 +151,24 @@ const createHeader = (doc: jsPDF, title: string, unitName: string) => {
     doc.setTextColor(...STYLES.colors.solidarite);
     doc.text('Solidarité', currentX + (travailWidth + justiceWidth) * 1, 0.75, { align: 'right' });
 
-    // Center emblem with enhanced positioning
+    doc.setTextColor(...STYLES.colors.black);
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(STYLES.fonts.normal.size);
+
+    // Positionnement des signataires
+    if (signators) {
+        const containerWidth = pageWidth / 4; // Ajustez selon vos besoins
+        const rightContainerX = pageWidth - containerWidth - 0.5; // Aligné à droite avec marge
+        const startY = 1.0; // Position Y juste en dessous de la devise (0.75 + 0.25 d'espace)
+
+        drawCenteredText(signators, rightContainerX + 0.2, startY, containerWidth);
+    }
+
+    // Centre emblem
     const img = '../../../public/assets/apps/armoirie-guinée-1024x513.png';
     const imgWidth = 1.75;
     const imgHeight = 1.1;
     const imgX = (pageWidth - imgWidth) / 2;
-
-    // // Add shadow effect for the image
-    // doc.setFillColor(200, 200, 200);
-    // doc.roundedRect(imgX + 0.05, 0.35, imgWidth, imgHeight, 0.1, 0.1, 'F');
-
-    // Add the image
     doc.addImage(img, 'PNG', imgX, 0.3, imgWidth, imgHeight);
 
     // Informations ministérielles
@@ -161,18 +186,13 @@ const createHeader = (doc: jsPDF, title: string, unitName: string) => {
 
     if (unitName) {
         doc.setFontSize(STYLES.fonts.subHeader.size);
-        // doc.setTextColor(styles.subtitle.r, styles.subtitle.g, styles.subtitle.b);
-
-        // Calculate if text needs wrapping
-        const maxWidth = pageWidth - 2; // Leave margins on both sides
+        const maxWidth = pageWidth - 2;
         const nameWidth = doc.getTextWidth(unitName);
 
         if (nameWidth > maxWidth) {
-            // Text needs wrapping
             const splitText = doc.splitTextToSize(unitName, maxWidth);
             doc.text(splitText, pageWidth / 2, 2, { align: 'center' });
         } else {
-            // Text fits on one line
             doc.text(unitName, pageWidth / 2, 2, { align: 'center' });
         }
     }
@@ -403,7 +423,7 @@ const createExpensesTables = (doc: jsPDF, menus: any[], spends: any[]) => {
 };
 
 // Créer la section de signature
-const createSignature = (doc: jsPDF, finalY: number) => {
+const createSignature = (doc: jsPDF, signators: any, finalY: number) => {
     const date = new Date().toLocaleDateString('fr-FR', {
         day: '2-digit',
         month: 'long',
@@ -411,7 +431,45 @@ const createSignature = (doc: jsPDF, finalY: number) => {
     });
     doc.setFont(undefined, 'normal');
     doc.setFontSize(STYLES.fonts.normal.size);
-    doc.text(`Conakry, ${date}`, doc.internal.pageSize.width - 0.5, finalY, { align: 'right' });
+    doc.text(`Conakry, ${date}`, doc.internal.pageSize.width - 1.2, finalY- 0.1, { align: 'right' });
+
+    // Ajuster la position Y après la date
+    const dateFinalY = finalY + 0.13;
+
+    const pageHeight = doc.internal.pageSize.height;
+    const pageWidth = doc.internal.pageSize.width;
+
+    // Dimensions and margins
+    const leftMargin = 0.5;
+    const rightMargin = pageWidth - 0.9;
+    const containerWidth = pageWidth / 3;
+    const leftContainerX = leftMargin;
+    const rightContainerX = rightMargin - containerWidth + 0.4;
+
+    // Initialize empty arrays for content
+    let leftContent: string[] = [];
+    let rightContent: string[] = [];
+
+   
+
+    const drawCenteredText = (textArray: string[], x: number, startY: number, containerWidth: number) => {
+        let currentY = startY;
+
+        textArray.forEach((text,index) => {
+            const centerX = x + (containerWidth / 2 - 0.1);
+            doc.text(text, centerX, currentY, { align: 'center' });
+
+            currentY += index === 1 ? 0.2: 0.93;
+
+        });
+        return currentY;
+    };
+
+    // Draw containers and content
+    const leftFinalY = drawCenteredText(signators, leftContainerX, dateFinalY, containerWidth);
+    const rightFinalY = drawCenteredText(signators, rightContainerX, dateFinalY, containerWidth);
+
+    return Math.max(leftFinalY, rightFinalY);
 };
 
 // Créer le pied de page
@@ -431,11 +489,28 @@ const createFooter = (doc: jsPDF, data: any, pageNumber: number, totalPages: num
     doc.setLineWidth(0.05); // Épaisseur de la ligne
     doc.line(marginX, lineYPosition, pageWidth - marginX, lineYPosition);
 
+    // Sauvegarder l'état graphique actuel
+    doc.saveGraphicsState();
+
+    // Définir l'opacité
+    doc.setGState(doc.GState({ opacity: 0.05 }));
+
+    // Ajouter le filigrane
+    doc.setFontSize(150);
+    doc.setTextColor(150); // Couleur claire pour le filigrane
+    doc.text('DGIM', pageWidth / 1.5, pageHeight / 2, {
+        align: 'center',
+        angle: 45
+    });
+
+    // Restaurer l'état graphique d'origine
+    doc.restoreGraphicsState();
+
     // Préparer les textes à afficher
     const now = new Date().toLocaleString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
+        // day: '2-digit',
+        // month: '2-digit',
+        // year: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
     });
@@ -447,7 +522,7 @@ const createFooter = (doc: jsPDF, data: any, pageNumber: number, totalPages: num
     doc.setFont('helvetica', 'normal');
 
     // Afficher la date à gauche
-    doc.text(now, marginX, textYPosition);
+    doc.text(`Heure: ${now}`, marginX, textYPosition);
 
     // Afficher la pagination au centre
     doc.text(pagination, pageWidth / 2, textYPosition, { align: 'center' });
@@ -460,7 +535,14 @@ const createFooter = (doc: jsPDF, data: any, pageNumber: number, totalPages: num
 };
 
 // Fonction principale pour générer le PDF
-export const generatePDF = async (data: any) => {
+
+
+/**
+  * 
+  * @param data 
+  * @param signators 
+  */
+export const generatePDF = async (data: any, signators: any) => {
     const doc = new jsPDF({
         unit: 'in',
         format: 'a4',
@@ -472,7 +554,31 @@ export const generatePDF = async (data: any) => {
             doc.addPage();
         }
 
-        createHeader(doc, "BORDEREAU D'ENVOI", dynamicData.unit.name);
+        // Initialize empty arrays for content
+        let leftContent: string[] = [];
+        let rightContent: string[] = [];
+
+        // Populate arrays based on signators data
+        if (signators && signators.length > 0) {
+            signators.forEach(
+                (element: { position: string; function_name: string; title: string; grade: any; first_name: any; last_name: any }) => {
+                    if (element.position === 'left') {
+                        leftContent = [element.function_name, element.title, `${element.grade} ${element.first_name} ${element.last_name}`];
+                    } else if (element.position === 'right') {
+                        rightContent = [
+                            element.function_name,
+                            element.title,
+                            `${element.grade} ${element.first_name} ${element.last_name}`
+                        ];
+                    }
+                }
+            );
+        } else {
+            leftContent = ['Fonction', 'Titre', 'Grade Prénom et Nom'];
+            rightContent = ['Fonction', 'Titre', 'Grade Prénom et Nom'];
+        }
+
+        createHeader(doc, "BORDEREAU D'ENVOI", dynamicData.unit.name, rightContent);
 
         createClientInfo(doc);
 
@@ -481,9 +587,9 @@ export const generatePDF = async (data: any) => {
 
         const { finalY } = createExpensesTables(doc, dynamicData.menus.repartition, dynamicData.spends);
 
-        createSignature(doc, finalY);
+        createSignature(doc, rightContent, finalY);
 
-        createFooter(doc,dynamicData, 1, 2);
+        createFooter(doc, dynamicData, index + 1, data.length); // Remplacez par le numéro de page réel
     });
 
     const blob = doc.output('blob');
